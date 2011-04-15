@@ -1,0 +1,145 @@
+'''
+Created on 27.03.2011
+
+@author: michi
+'''
+from PyQt4.QtGui import QWidget,QDialog, QListWidget, QListView, \
+    QStackedWidget, QHBoxLayout, QListWidgetItem, QVBoxLayout, QSizePolicy,\
+    QIcon,QDialogButtonBox, QFontMetricsF
+from PyQt4.QtCore import QSize, Qt, pyqtSlot, SIGNAL, SLOT, pyqtSignal
+
+class ListFormContainer(QWidget):
+    aboutToClose = pyqtSignal()
+    def __init__(self, parent=None, **kwargs):
+        super(ListFormContainer, self).__init__(parent)
+        self._iconSize = 64
+        self._processKwArgs(kwargs)
+        self._kwargs = kwargs
+        #init icon view on right
+        self.contentsWidget = QListWidget()
+        self.contentsWidget.setViewMode(QListView.IconMode)
+        self.contentsWidget.setIconSize(QSize(self._iconSize, self._iconSize))
+        self.contentsWidget.setMovement(QListView.Static)
+        self.contentsWidget.setFixedWidth(2 * self._iconSize)
+        self.contentsWidget.setFlow(QListView.TopToBottom)
+        self.contentsWidget.setUniformItemSizes(True)
+        self.contentsWidget.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.contentsWidget.setWrapping(True)
+        
+        self.contentsWidget.setSpacing(0)
+        
+        #pagesWidget
+        self.pagesWidget = QStackedWidget()
+
+        mainLayout = QHBoxLayout()
+        mainLayout.addWidget(self.contentsWidget)
+        mainLayout.addWidget(self.pagesWidget,1)
+        mainLayout.setStretch(0,1)
+        self.setLayout(mainLayout)
+        
+        self.contentsWidget.currentItemChanged.connect(self.changePage)
+    
+    def _processKwArgs(self, args):
+        if args.has_key('windowTitle'):
+            self.setWindowTitle(args['windowTitle'])
+        if args.has_key('windowIcon'):
+            self.setWindowIcon(args['windowIcon'])
+        if args.has_key('iconSize'):
+            self._iconSize = args['iconSize']
+    
+    @pyqtSlot(QListWidgetItem, QListWidgetItem)
+    def changePage(self, current, previous):
+        if not current:
+            current = previous
+        self.pagesWidget.setCurrentIndex(self.contentsWidget.row(current))
+    
+    def addPage(self, pageWidget, item=None):
+        self.pagesWidget.addWidget(pageWidget)
+#        self.contentsWidget.
+        if item is None:
+            item = QListWidgetItem(self.contentsWidget)
+            item.setIcon(pageWidget.windowIcon())
+            item.setText(pageWidget.windowTitle())
+        elif isinstance(item, QListWidgetItem):
+            self.contentsWidget.addItem(item)
+        elif isinstance(item, QIcon):
+            item = QListWidgetItem(self.contentsWidget)
+            item.setIcon(item)
+#        item.setTextAlignment(Qt.AlignHCenter)
+        
+        item.setTextAlignment(Qt.AlignHCenter | Qt.AlignTop)
+        item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
+        itemWidth = self.contentsWidget.contentsRect().width()
+        fm = QFontMetricsF(item.font())
+        itemHeight = fm.boundingRect("9").height() + 4
+        item.setSizeHint(QSize(itemWidth,self._iconSize + itemHeight))
+    
+    @pyqtSlot()
+    def accept(self):
+        for idx in range(self.pagesWidget.count()):
+            page = self.pagesWidget.widget(idx)
+            if hasattr(page, 'accept') and callable(page.accept):
+                page.accept()
+        self.reject()
+    
+    @pyqtSlot()
+    def reject(self):
+        for idx in range(self.pagesWidget.count()):
+            page = self.pagesWidget.widget(idx)
+            if hasattr(page, 'reject') and callable(page.reject):
+                page.reject()
+        self.aboutToClose.emit()
+        self.close()
+    
+    def showEvent(self, event):
+        currentRow = 0
+        if self._kwargs.has_key('callPage'):
+            currentRow = self._kwargs['callPage']
+        self.contentsWidget.setCurrentRow(currentRow)
+        super(ListFormContainer, self).showEvent(event)
+    
+    @staticmethod
+    def toDialog(parent=None, invokeClass=None, acceptText="Accept", 
+                 rejectText="Reject", **kwargs):
+        
+        dialog = QDialog(parent)
+        if invokeClass is None:
+            widget = ListFormContainer(dialog,**kwargs)
+        else:
+            widget = invokeClass(dialog,**kwargs)
+        dialog.setWindowTitle(widget.windowTitle())
+        dialog.setWindowIcon(widget.windowIcon())
+        dialogLayout = QVBoxLayout()
+        dialogLayout.addWidget(widget)
+        dialog.setLayout(dialogLayout)
+        widget.dialog = dialog
+        dialog.container = widget
+        dialog.buttonBox = QDialogButtonBox(dialog)
+        dialog.buttonBox.setOrientation(Qt.Horizontal)
+        dialog.buttonBox.addButton(dialog.tr(acceptText),
+                                   QDialogButtonBox.AcceptRole)
+        dialog.buttonBox.addButton(dialog.tr(rejectText),
+                                   QDialogButtonBox.RejectRole)
+        dialog.buttonBox.connect(dialog.buttonBox,
+                                     SIGNAL("accepted()"),
+                                     widget,
+                                     SLOT("accept()"))
+        dialog.buttonBox.connect(dialog.buttonBox,
+                                     SIGNAL("rejected()"),
+                                     widget,
+                                     SLOT("reject()"))
+        dialog.connect(widget, SIGNAL("aboutToClose()"),SLOT('close()'))
+        dialogLayout.addWidget(dialog.buttonBox)
+        return dialog
+
+if __name__ == '__main__':
+    
+    import sys
+    from PyQt4.QtGui import QApplication
+    app = QApplication(sys.argv)
+    dialog = ListFormContainer.toDialog(None,callPage=154,windowTitle="Test")
+    from application.ui.Misc import Misc
+    from application.ui.Exporter import Exporter
+    dialog.container.addPage(Misc())
+    dialog.container.addPage(Exporter(None,None,parent=dialog.container))
+    dialog.exec_()

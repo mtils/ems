@@ -1,0 +1,46 @@
+'''
+Created on 24.02.2011
+
+@author: michi
+'''
+from ems.converter import Converter
+from ems.converter.readers.dbase import DBase
+from ems.converter.readers.dbdump import DBDump
+from ems.converter.readers.excel import Excel
+from ems.converter.writers.alchemycore import AlchemyCore
+from ems.converter.writers.csv import CSV
+from ems.converter.writers.dummy import Dummy
+from ems.converter.preprocessors.attributeset import AttributeSet 
+from ems.converter.tags.foreach import ForEach
+from ems.converter.tags.valueof import ValueOf
+from ems.converter.tags.element import Element
+from ems.converter.tags.modifier import Modifier
+from ems.converter.tags.variable import Variable
+from ems.converter.modifiers.replace import Replace
+from ems.converter.modifiers.concat import Concat
+from ems.converter.modifiers.generatecacheid import GenerateCacheId
+from ems.converter.modifiers.substring import Substring
+from ems.registry import Registry
+from ems.converter.plugin import Plugin
+
+
+def getPreConfigured(plugins=()):
+    converter = Converter()
+    converter.addPlugin(Converter.preprocessor,AttributeSet())
+    converter.addPlugin(Converter.reader,DBase())
+    converter.addPlugin(converter.reader,DBDump())
+    converter.addPlugin(Converter.reader,Excel())
+    converter.addPlugin(Converter.writer,AlchemyCore())
+    converter.addPlugin(Converter.writer,CSV())
+    converter.addPlugin(Converter.writer,Dummy())
+    converter.addPlugin(Converter.tag,ForEach())
+    converter.addPlugin(Converter.tag,ValueOf())
+    converter.addPlugin(Converter.tag,Element())
+    converter.addPlugin(Converter.tag,Modifier())
+    converter.addPlugin(Converter.tag,Variable())
+    converter.addPlugin(Converter.modifier,Replace())
+    converter.addPlugin(Converter.modifier,Concat())
+    converter.addPlugin(Converter.modifier,GenerateCacheId())
+    converter.addPlugin(Converter.modifier,Substring())
+    
+    return converter
