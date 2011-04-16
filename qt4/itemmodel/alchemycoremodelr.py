@@ -162,6 +162,7 @@ class AlchemyCoreModelR(QAbstractTableModel):
     def perform(self):
         if not self._dirty and not self._queryBuilder.dirty:
             return
+        
         self._inResetProgress = True
         lastPerformedQuery = self.buildQuery()
         labeledQuery = lastPerformedQuery.apply_labels()
