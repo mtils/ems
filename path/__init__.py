@@ -1,4 +1,7 @@
 import os.path
 
-def absAppPath(argv):
-    return os.path.abspath(argv)
+def absPathOf(basePath, *relPaths):
+    pathDict = [os.path.dirname(basePath)]
+    for path in relPaths:
+        pathDict.append(path)
+    return os.path.abspath(os.path.sep.join(pathDict))
