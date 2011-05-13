@@ -3,7 +3,30 @@ Created on 01.02.2010
 
 @author: michi
 '''
-from ems.baseplugin import BasePlugin
+from abc import ABCMeta,abstractmethod
+
+class BasePlugin(object):
+    '''
+    classdocs
+    '''
+    __metaclass__ = ABCMeta
+    
+    @abstractmethod
+    def notify(self,caller,eventName,params):
+        pass
+
+    def getEmitter(self):
+        return self.__emitter
+
+    def setEmitter(self, value):
+        if not isinstance(value, PluginEmitter):
+            raise TypeError("The Emitter has to by class or subclass of ems.pluginemitter.PluginEmitter")
+        self.__emitter = value
+
+    def delEmitter(self):
+        del self.__emitter
+
+    emitter = property(getEmitter, setEmitter, delEmitter, "emitter's docstring")
 
 class PluginEmitter(object):
     '''
@@ -20,7 +43,7 @@ class PluginEmitter(object):
     
     def registerPlugin(self,name,plugin):
         if not isinstance(plugin, BasePlugin):
-            raise TypeError("The Plugin has to be instance of ems.baseplugin.BasePlugin")
+            raise TypeError("The Plugin has to be instance of ems.pluginemitter.BasePlugin")
         if self.__pluginRegistry.has_key(name):
             raise KeyError("The Plugin %s is already registered" % name)
         plugin.emitter = self

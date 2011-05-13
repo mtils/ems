@@ -20,7 +20,8 @@ class ErrorHandler(Singleton):
     
     def registerPlugin(self,name,plugin):
         if not isinstance(plugin, ErrorPlugin):
-            raise TypeError("The Plugin has to be instance of ems.baseplugin.BasePlugin")
+            text = "The Plugin has to be instance of ems.pluginemitter.BasePlugin"
+            raise TypeError(text)
         if self.__pluginRegistry.has_key(name):
             raise KeyError("The Plugin %s is already registered" % name)
         plugin.emitter = self
