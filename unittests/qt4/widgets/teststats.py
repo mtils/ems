@@ -9,7 +9,8 @@ import platform
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
-from ems.qt4.gui.widgets.stats import TiledBar #@UnresolvedImport
+from ems.qt4.gui.widgets.stats import TiledBar, Ruler, TiledBarRulered #@UnresolvedImport
+from ems.qt4.gui.widgets.graphical import ColorButton #@UnresolvedImport
 
 class StatsTest(QDialog):
     def __init__(self, parent=None):
@@ -17,10 +18,7 @@ class StatsTest(QDialog):
         self.setupUi()
         
     def setupUi(self):
-        self.bar = TiledBar(self)
-
-        
-        
+        self.bar = TiledBarRulered(parent=self)
         self.mainLayout = QGridLayout(self)
         maxValueInput = QSpinBox(self)
         maxValueInput.setMaximum(5000000)
@@ -64,41 +62,25 @@ class StatsTest(QDialog):
         index = int(senderName.split("_")[1])
         self.bar.setValue(index,val)
 
-class ColorButton(QPushButton):
-    
-    colorChanged = pyqtSignal(QColor)
-    
+class RulerTest(QDialog):
     def __init__(self, parent=None):
-        super(ColorButton, self).__init__(parent)
-        self.color = QColor(Qt.white)
-        self.connect(self, SIGNAL("pressed()"),
-                     self.selectColor)
+        super(RulerTest, self).__init__(parent)
+        self.setupUi()
         
-    
-    def buildColorString(self, color):
-        
-        colorString = "background-color: rgb(%s, %s, %s);" % (color.red(),
-                                                              color.green(),
-                                                              color.blue())
-        styleSheet = 'QPushButton{' + colorString + '}'
-        return styleSheet
-    
-    def selectColor(self):
-        color = QColorDialog.getColor(initial=self.color, parent=self)
-        self.setColor(color)
-    
-    @pyqtSlot(QColor)
-    def setColor(self, color):
-        self.color = color
-        self.setStyleSheet(self.buildColorString(color))
-        self.colorChanged.emit(color)
+    def setupUi(self):
+        self.mainLayout = QGridLayout(self)
+        self.ruler = Ruler(100,parent=self)
+        self.mainLayout.addWidget(self.ruler)
+        self.resize(QSize(150,200))
         
 
 if __name__ == "__main__":
     import sys
 
     app = QApplication(sys.argv)
+    
     form = StatsTest()
+    #form = RulerTest()
 
     
     form.show()

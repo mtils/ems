@@ -8,67 +8,36 @@ import platform
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
+from ems.qt4.gui.painterpilots.stats import RulerPainter, TiledBarPainter  #@UnresolvedImport
+
 class TiledBar(QWidget):
     WSTRING = '999'
-    def __init__(self, parent=None):
-        self._maxValue = 100
-        self._orientation = Qt.Horizontal
+    def __init__(self, maxValue=100, parent=None):
+        self._maxValue = maxValue
+        self.painter = TiledBarPainter(self._maxValue)
         self.barMargin = 0
-        self._values = []
         super(TiledBar, self).__init__(parent)
     
     def minimumSizeHint(self):
-        font = QFont(self.font())
-        font.setPointSize(font.pointSize() - 1)
-        fm = QFontMetricsF(font)
-        return QSize(fm.width(TiledBar.WSTRING),100)
+        return self.painter.minimumSizeHint(self.font())
     
     def sizeHint(self):
         return self.minimumSizeHint()
         
     def paintEvent(self, event=None):
         painter = QPainter(self)
-        painter.setPen(self.palette().color(QPalette.Mid))
-        painter.setBrush(self.palette().brush(QPalette.AlternateBase))
-        painter.drawRect(self.rect())
-        
-        rectBorder = 0
-        rectBorderD = rectBorder+rectBorder
-        barMarginD = self.barMargin+self.barMargin
-        pixelVal = (self.height()-(barMarginD))/self._maxValue
-        barWidth = self.width()-(barMarginD)-rectBorderD
-        
-        startY = self.height() - self.barMargin
-        currentY = startY
-        
-        #print painter.pen().setWidth(3)
-        x = self.barMargin + rectBorder
-        for value in self._values:
-            if value <= 0:
-                continue
-            segLineColor = value['col'].dark()
-            painter.setPen(segLineColor)
-            painter.setBrush(value['col'])
-            
-            rectHeight = value['val']*pixelVal
-            
-            rect = QRectF(x,currentY-rectHeight,
-                             barWidth,
-                             (rectHeight)-rectBorderD)
-            painter.fillRect(rect,painter.brush())
-            currentY -= rectHeight
-            
+        self.painter.paintEvent(painter, self.rect(), event,0.0)
         
     def addValue(self, val, col):
-        self._values.append({'val':val,'col':col})
+        self.painter.addValue(val,col)
         self.update()
     
     def setValue(self, index, val):
-        self._values[index]['val'] = val
+        self.painter.setValue(index, val)
         self.update()
     
     def setColor(self, index, col):
-        self._values[index]['col'] = col
+        self.painter.setColor(index, col)
         self.update()
     
     def getMaxValue(self):
@@ -76,7 +45,91 @@ class TiledBar(QWidget):
     
     @pyqtSlot(int)
     def setMaxValue(self, value):
-        self._maxValue = value
+        self.painter.setMaxValue(value)
         self.update()
     
     maxValue = property(getMaxValue,setMaxValue)
+
+
+class Ruler(QWidget):
+    def __init__(self, maxValue=100, parent=None):
+        super(Ruler, self).__init__(parent)
+        self.ruler = RulerPainter(maxValue)
+        
+        self.setFont(self.ruler.getFont())
+        
+    def minimumSizeHint(self):
+        return self.ruler.minimumSizeHint()
+    
+    def sizeHint(self):
+        return self.minimumSizeHint()
+    
+    def paintEvent(self, event=None):
+        painter = QPainter(self)
+        painter.fillRect(self.rect(), Qt.white)
+        self.ruler.paintEvent(painter, self.rect(), event, 0.0)
+    
+    def getMaxValue(self):
+        return self._maxValue
+    
+    def setMaxValue(self, value):
+        self.ruler.setMaxValue(value)
+        self.update()
+    
+    maxValue = property(getMaxValue,setMaxValue)
+
+class TiledBarRulered(QWidget):
+    def __init__(self, maxValue=100, parent=None):
+        super(TiledBarRulered, self).__init__(parent)
+        self.ruler = RulerPainter(maxValue)
+        self.ruler.scaleOrientation = Qt.LeftToRight
+        self.setFont(self.ruler.getFont())
+        self.bar = TiledBarPainter(maxValue)
+    
+    def minimumSizeHint(self):
+        return self.ruler.minimumSizeHint()
+    
+    def sizeHint(self):
+        return self.minimumSizeHint()
+    
+    def getMaxValue(self):
+        return self.ruler.getMaxValue()
+    
+    @pyqtSlot(int)
+    def setMaxValue(self, value):
+        self.ruler.setMaxValue(value)
+        self.bar.setMaxValue(value)
+        self.update()
+    
+    def paintEvent(self, event=None):
+        painter = QPainter(self)
+        #height = self.ruler.getRulerHeight(self.height())
+        positions = self.ruler.getPositions(self.rect())
+        #print height
+        barRect = QRectF(positions['line'].x1(),positions['line'].y1(),
+                         self.width(),
+                         positions['line'].y2()-positions['line'].y1())
+        #painter.fillRect(barRect, Qt.white)
+        #print barRect
+        
+        
+        self.bar.paintEvent(painter, barRect, event,0.0)
+        painter.setBrush(self.palette().foreground())
+        painter.setPen(self.palette().color(QPalette.Foreground))
+        self.ruler.paintEvent(painter, self.rect(), event,0.0)
+        
+    def addValue(self, val, col):
+        self.bar.addValue(val,col)
+        self.update()
+    
+    def setValue(self, index, val):
+        self.bar.setValue(index, val)
+        self.update()
+    
+    def setColor(self, index, col):
+        self.bar.setColor(index, col)
+        self.update()
+    
+    maxValue = property(getMaxValue,setMaxValue)
+    
+        
