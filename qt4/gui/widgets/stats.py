@@ -87,6 +87,8 @@ class TiledBarRulered(QWidget):
         self.bar = TiledBarPainter(maxValue)
     
     def minimumSizeHint(self):
+        rulerSize = self.ruler.minimumSizeHint()
+        barSize = self.bar.minimumSizeHint(self.font())
         return self.ruler.minimumSizeHint()
     
     def sizeHint(self):
@@ -131,5 +133,13 @@ class TiledBarRulered(QWidget):
         self.update()
     
     maxValue = property(getMaxValue,setMaxValue)
+    
+    def getSubDivisionCount(self):
+        return self.ruler.subDivisionCount
+    
+    def setSubDivisionCount(self, count):
+        self.ruler.subDivisionCount = count
+        
+    subDivisionCount = property(getSubDivisionCount,setSubDivisionCount)
     
         

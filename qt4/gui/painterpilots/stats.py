@@ -16,6 +16,7 @@ class RulerPainter(object):
         self._subDivisions = []
         self._orientation = Qt.Horizontal
         self.textOrientation = self.nonScaleSide
+        self.subDivisionCount = 10
         #self.textOrientation = self.scaleSide
         #self.scaleOrientation = Qt.LeftToRight
         self.scaleOrientation = Qt.RightToLeft
@@ -170,11 +171,10 @@ class RulerPainter(object):
     
     def setMaxValue(self, value):
         self._maxValue = value
-        singleVal = int(value/10)
+        singleVal = int(value/self.subDivisionCount)
         self._subDivisions = []
         for val in range(0,value,singleVal):
             self._subDivisions.append(val)
-        
     
     maxValue = property(getMaxValue,setMaxValue)
 
