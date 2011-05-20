@@ -7,29 +7,34 @@ Created on 18.05.2011
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 
+from ems.math import ceilInt #@UnresolvedImport
+
 class RulerPainter(object):
     
     scaleSide = 1
     nonScaleSide = 2
     
-    def __init__(self, maxValue=100, font=None):
+    def __init__(self, maxValue=100, subDivisionCount=10, font=None,
+                 autoCeilMaxValue=True):
         self._subDivisions = []
         self._orientation = Qt.Horizontal
         self.textOrientation = self.nonScaleSide
-        self.subDivisionCount = 10
+        self.subDivisionCount = subDivisionCount
+        self.autoCeilMaxValue = autoCeilMaxValue
         #self.textOrientation = self.scaleSide
         #self.scaleOrientation = Qt.LeftToRight
         self.scaleOrientation = Qt.RightToLeft
         self.maxValue = maxValue
-        self.divisionWidth = 20.0
+        self.divisionWidth = 10.0
         self.textLineMargin = 2.0
         if font is None:
             font = self.getDefaultFont()
         self.setFont(font)
             
     def getDefaultFont(self):
-        font = QFont("Monospace")
-        font.setStyleHint(font.TypeWriter)
+#        font = QFont("Monospace")
+#        font.setStyleHint(font.TypeWriter)
+        font = QApplication.font()
         font.setPointSize(QApplication.font().pointSize()-2)
         return font
 #        self.font().setPointSize(self.font().pointSize())
@@ -169,11 +174,23 @@ class RulerPainter(object):
     def getMaxValue(self):
         return self._maxValue
     
+    def ceilMaxValue(self, value):
+        strVal = str(value)
+        zeros = len(strVal)-1
+        if (value % (10**zeros)) == 0:
+            return value
+            
+        else:
+            return ceilInt(value,zeros)
+        
+    
     def setMaxValue(self, value):
+        if self.autoCeilMaxValue:
+            value = self.ceilMaxValue(value)
         self._maxValue = value
-        singleVal = int(value/self.subDivisionCount)
+        singleVal = int(self._maxValue/self.subDivisionCount)
         self._subDivisions = []
-        for val in range(0,value,singleVal):
+        for val in range(0,self._maxValue,singleVal):
             self._subDivisions.append(val)
     
     maxValue = property(getMaxValue,setMaxValue)
@@ -235,3 +252,4 @@ class TiledBarPainter(object):
         self._maxValue = value
     
     maxValue = property(getMaxValue,setMaxValue)
+
