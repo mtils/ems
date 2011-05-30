@@ -109,7 +109,7 @@ class TiledBarRulered(QWidget):
         barRect = QRectF(positions['line'].x1(),positions['line'].y1(),
                          self.width(),
                          positions['line'].y2()-positions['line'].y1())
-        #painter.fillRect(barRect, Qt.white)
+        painter.fillRect(self.rect(), Qt.white)
         #print barRect
         
         
