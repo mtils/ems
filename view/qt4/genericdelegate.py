@@ -26,7 +26,9 @@ class GenericDelegate(QItemDelegate):
 
 
     def paint(self, painter, option, index):
+        print "Ich zeischne"
         delegate = self.delegates.get(index.column())
+        
         if delegate is not None:
             delegate.paint(painter, option, index)
         else:
