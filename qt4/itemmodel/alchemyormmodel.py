@@ -45,7 +45,7 @@ class AlchemyOrmModel(QAbstractTableModel):
         if not index.isValid() or \
            not (0 <= index.row() < self.rowCount()):
             return QVariant()
-        if role == Qt.DisplayRole:
+        if role in (Qt.DisplayRole, Qt.EditRole):
             value = self._resultCache[index.row()].__getattribute__(columnName)
             if isinstance(value, basestring):
                 return QVariant(unicode(value))
@@ -85,6 +85,7 @@ class AlchemyOrmModel(QAbstractTableModel):
         elif value.type() == QVariant.Int:
             pyValue = int(value.toInt())
         print pyValue
+        print self._session.dirty
         
         self._resultCache[index.row()].__setattr__(columnName, pyValue)
         
