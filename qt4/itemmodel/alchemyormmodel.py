@@ -22,6 +22,7 @@ class AlchemyOrmModel(QAbstractTableModel):
         reversed = {}
         for column in columns:
             reversed[str(column)] = i
+            i += 1
         return reversed
     
     def rowCount(self, index=QModelIndex()):
@@ -32,15 +33,15 @@ class AlchemyOrmModel(QAbstractTableModel):
         self.perform()
         return len(self._columns)
     
-    def getColumnNameFromIndex(self, index):
+    def getPropertyNameByIndex(self, index):
         return self._columns[index]
     
-    def getIndexFromColumnName(self, name):
+    def getIndexByPropertyName(self, name):
         return self._columnName2Index[name]
     
     def data(self, index, role=Qt.DisplayRole):
         self.perform()
-        columnName = self.getColumnNameFromIndex(index.column())
+        columnName = self.getPropertyNameByIndex(index.column())
         #return QVariant()
         if not index.isValid() or \
            not (0 <= index.row() < self.rowCount()):
@@ -62,7 +63,7 @@ class AlchemyOrmModel(QAbstractTableModel):
         if role != Qt.DisplayRole:
             return QVariant()
         if orientation == Qt.Horizontal:
-            columnName = unicode(self.getColumnNameFromIndex(section))
+            columnName = unicode(self.getPropertyNameByIndex(section))
 #            if self.columnHeaderTranslated.has_key(columnName):
 #                return QVariant(self.columnHeaderTranslated[columnName])
             return QVariant(columnName)
@@ -72,7 +73,7 @@ class AlchemyOrmModel(QAbstractTableModel):
         return Qt.ItemIsEditable | Qt.ItemIsSelectable | Qt.ItemIsEnabled
     
     def setData(self, index, value, role=Qt.EditRole):
-        columnName = self.getColumnNameFromIndex(index.column())
+        columnName = self.getPropertyNameByIndex(index.column())
         pyValue = None
         if value.isNull():
             pyValue = None
@@ -83,7 +84,7 @@ class AlchemyOrmModel(QAbstractTableModel):
         elif value.type() == QVariant.Double:
             pyValue = float(value.toDouble())
         elif value.type() == QVariant.Int:
-            pyValue = int(value.toInt())
+            pyValue = int(value.toInt()[0])
         print pyValue
         print self._session.dirty
         
@@ -96,14 +97,16 @@ class AlchemyOrmModel(QAbstractTableModel):
     
     def submit(self):
         print "Ich wurde jetriggert"
-        
+        self._dirty = True
         return True
     
     def perform(self):
         if not self._dirty:
             return
+        print "I actually perform"
         #print self._session.get_bind(self._queriedObject)
         i = 0
         for obj in self._session.query(self._queriedObject).all():
             self._resultCache[i] = obj
             i += 1
+        self._dirty = False

@@ -131,15 +131,3 @@ class ListFormContainer(QWidget):
         dialog.connect(widget, SIGNAL("aboutToClose()"),SLOT('close()'))
         dialogLayout.addWidget(dialog.buttonBox)
         return dialog
-
-if __name__ == '__main__':
-    
-    import sys
-    from PyQt4.QtGui import QApplication
-    app = QApplication(sys.argv)
-    dialog = ListFormContainer.toDialog(None,callPage=154,windowTitle="Test")
-    from application.ui.Misc import Misc
-    from application.ui.Exporter import Exporter
-    dialog.container.addPage(Misc())
-    dialog.container.addPage(Exporter(None,None,parent=dialog.container))
-    dialog.exec_()
