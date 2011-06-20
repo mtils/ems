@@ -63,8 +63,10 @@ class ListFormContainer(QWidget):
         elif isinstance(item, QListWidgetItem):
             self.contentsWidget.addItem(item)
         elif isinstance(item, QIcon):
+            icon = item
             item = QListWidgetItem(self.contentsWidget)
-            item.setIcon(item)
+            item.setText(pageWidget.windowTitle())
+            item.setIcon(icon)
 #        item.setTextAlignment(Qt.AlignHCenter)
         
         item.setTextAlignment(Qt.AlignHCenter | Qt.AlignTop)
