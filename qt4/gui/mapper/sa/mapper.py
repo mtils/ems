@@ -14,6 +14,7 @@ from sqlalchemy.util import symbol
 
 from ems.thirdparty.singletonmixin import Singleton
 from ems.qt4.itemmodel.alchemyormmodel import AlchemyOrmModel
+from ems.view.qt4.genericdelegate import GenericDelegate
 
 from strategy.base import BaseStrategy
 
@@ -25,7 +26,6 @@ class SAInterfaceMixin(object):
         if not isinstance(strategy, BaseStrategy):
             raise TypeError("strategy has to be instance of BaseStrategy")
         self._strategies[hash(type_)] = strategy
-        print self._strategies
         
 
 class SAMapperDefaults(Singleton, SAInterfaceMixin):
@@ -38,6 +38,8 @@ class SAMapper(QObject, SAInterfaceMixin):
         SAInterfaceMixin._init(self)
         self._defaults = SAMapperDefaults.getInstance()
         self._dataWidgetMapper = QDataWidgetMapper(self)
+        self._delegate = GenericDelegate(self)
+        self._dataWidgetMapper.setItemDelegate(self._delegate)
         self._defaultStrategy = BaseStrategy(self)
         self._defaultStrategy.mapper = self
         self._mappings = {}
@@ -48,6 +50,10 @@ class SAMapper(QObject, SAInterfaceMixin):
     def dataWidgetMapper(self):
         return self._dataWidgetMapper
     
+    @property
+    def delegate(self):
+        return self._delegate
+    
     def getModel(self):
         return self._model
     
@@ -56,6 +62,7 @@ class SAMapper(QObject, SAInterfaceMixin):
             raise TypeError("Model has to be instanceof AlchemyOrmModel")
         self._model = model
         self._dataWidgetMapper.setModel(model)
+        #self._dataWidgetMapper.setItemDelegate(self._delegate)
     
     
     model = property(getModel, setModel)
@@ -98,7 +105,7 @@ class SAMapper(QObject, SAInterfaceMixin):
         key = hash(mappingKey)
         self._hashToType[key] = mappingKey
         if self._strategies.has_key(key):
-            print "Ja da jibt es einen"
+            self._strategies[key].mapper = self
             self._strategies[key].map(widget, prototype, property)
         
         else:

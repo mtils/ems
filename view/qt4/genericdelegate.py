@@ -26,7 +26,7 @@ class GenericDelegate(QItemDelegate):
 
 
     def paint(self, painter, option, index):
-        print "Ich zeischne"
+#        print "Ich zeischne"
         delegate = self.delegates.get(index.column())
         
         if delegate is not None:
@@ -36,6 +36,7 @@ class GenericDelegate(QItemDelegate):
 
 
     def createEditor(self, parent, option, index):
+#        print "gDelegate.createEditor %s" % parent
         delegate = self.delegates.get(index.column())
         if delegate is not None:
             return delegate.createEditor(parent, option, index)
@@ -45,6 +46,7 @@ class GenericDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
+#        print "gDelegate.setEditorData %s" % editor
         delegate = self.delegates.get(index.column())
         if delegate is not None:
             delegate.setEditorData(editor, index)
@@ -53,6 +55,7 @@ class GenericDelegate(QItemDelegate):
 
 
     def setModelData(self, editor, model, index):
+#        print "gDelegate.setModelData %s" % editor
         delegate = self.delegates.get(index.column())
         if delegate is not None:
             delegate.setModelData(editor, model, index)

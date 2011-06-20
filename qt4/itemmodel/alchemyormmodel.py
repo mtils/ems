@@ -7,6 +7,7 @@ from PyQt4.QtCore import QAbstractTableModel, QModelIndex, Qt, QVariant
 
 from ems import qt4
 
+
 class AlchemyOrmModel(QAbstractTableModel):
     def __init__(self,session, queriedObject, columns):
         super(AlchemyOrmModel, self).__init__()
@@ -24,6 +25,10 @@ class AlchemyOrmModel(QAbstractTableModel):
             reversed[str(column)] = i
             i += 1
         return reversed
+    
+    @property
+    def session(self):
+        return self._session
     
     def rowCount(self, index=QModelIndex()):
         self.perform()
@@ -48,6 +53,8 @@ class AlchemyOrmModel(QAbstractTableModel):
             return QVariant()
         if role in (Qt.DisplayRole, Qt.EditRole):
             value = self._resultCache[index.row()].__getattribute__(columnName)
+#            if self._queriedObject.__name__ == 'Gruppe':
+#                print "row:%s col:%s role:%s value:%s" % (index.row(), index.column(), role, value)
             if isinstance(value, basestring):
                 return QVariant(unicode(value))
             return QVariant(value)
@@ -85,8 +92,9 @@ class AlchemyOrmModel(QAbstractTableModel):
             pyValue = float(value.toDouble())
         elif value.type() == QVariant.Int:
             pyValue = int(value.toInt()[0])
-        print pyValue
-        print self._session.dirty
+        #print pyValue
+        for obj in self._session.dirty:
+            print obj
         
         self._resultCache[index.row()].__setattr__(columnName, pyValue)
         
@@ -103,7 +111,7 @@ class AlchemyOrmModel(QAbstractTableModel):
     def perform(self):
         if not self._dirty:
             return
-        print "I actually perform"
+        #print "%s : I actually perform" % self._queriedObject
         #print self._session.get_bind(self._queriedObject)
         i = 0
         for obj in self._session.query(self._queriedObject).all():

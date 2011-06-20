@@ -71,7 +71,6 @@ class BaseStrategy(QObject):
             raise TypeError("SAMapperStrategy can only handle ColumnProperties")
         
     def _setQWidgetParams(self, widget, rProperty):
-        print "Isch bin dranne"
         col = rProperty.columns[0]
         if col.doc is not None:
             widget.setToolTip(self.trUtf8(col.doc))
