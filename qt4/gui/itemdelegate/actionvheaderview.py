@@ -45,9 +45,10 @@ class ActionVHeaderView(QHeaderView):
                     return action
     
     def sizeHint(self):
+#        width = (len(self._actions)* (self.iconSize().width() + self.margin)) +\
+#            self.margin + super(ActionVHeaderView, self).sizeHint().width()
         width = (len(self._actions)* (self.iconSize().width() + self.margin)) +\
-            self.margin + super(ActionVHeaderView, self).sizeHint().width()
-         
+            self.margin
         return QSize(width,24)
     
     def addAction(self, action):
@@ -55,7 +56,7 @@ class ActionVHeaderView(QHeaderView):
         self._actions.append(action)
 
     def paintSection(self, painter, rect, index):
-        super(ActionVHeaderView, self).paintSection(painter, rect, index)
+        #super(ActionVHeaderView, self).paintSection(painter, rect, index)
         xOffset = rect.x()
         for action in self._actions:
             iconRect = QRect(xOffset+self.margin,
