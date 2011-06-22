@@ -95,7 +95,8 @@ class AlchemyLoader(object):
 #        print self.getCfgForHandle(handle)
         url = self.__buildUrl(engineConfig)
         self.__engines[handle] = self._createEngine(url, handle)
-        self._applyConfigurators(handle,'loadEngine')
+        self._applyConfigurators(handle,'engineAboutToLoad')
+        self._applyConfigurators(handle, "engineLoaded")
         return self.__engines[handle]
     
     def _createEngine(self, url, handle):
@@ -180,7 +181,8 @@ class AlchemyLoader(object):
         if not self.__sessionMakers.has_key(handle):
             self.__sessionMakers[handle] = \
                 sessionmaker(bind=self.getEngine(handle))
-            self._applyConfigurators(handle, "loadSessionMaker")
+            self._applyConfigurators(handle, "sessionMakerAboutToLoad")
+            self._applyConfigurators(handle, "sessionMakerLoaded")
         return self.__sessionMakers[handle]
     
     def printEngines(self):
