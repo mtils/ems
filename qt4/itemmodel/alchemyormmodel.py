@@ -5,18 +5,48 @@ Created on 14.06.2011
 '''
 from PyQt4.QtCore import QAbstractTableModel, QModelIndex, Qt, QVariant
 
-from ems import qt4
+from sqlalchemy.orm import object_mapper, ColumnProperty, RelationshipProperty
 
+from ems import qt4
+from ems.thirdparty.odict import OrderedDict
 
 class AlchemyOrmModel(QAbstractTableModel):
-    def __init__(self,session, queriedObject, columns):
+    def __init__(self,session, queriedObject, columns = []):
         super(AlchemyOrmModel, self).__init__()
         self._session = session
         self._queriedObject = queriedObject
         self._resultCache = {}
         self._columns = columns
+        self._mapper = None
+        self._ormProperties = None
+        self._flagsCache = {}
+        if not len(self._columns):
+            self._columns = self._buildDefaultColumns()
         self._columnName2Index = self._buildReversedColumnLookup(columns)
         self._dirty = True
+    
+    @property
+    def mapper(self):
+        if self._mapper is None:
+            self._mapper = object_mapper(self._queriedObject())
+        return self._mapper
+    
+    
+    @property
+    def ormProperties(self):
+        if self._ormProperties is None:
+            self._ormProperties = OrderedDict()
+            for property in self.mapper.iterate_properties:
+                self._ormProperties[property.key] = property
+                #self._ormProperties.append(property)
+        return self._ormProperties
+    
+    
+    def _buildDefaultColumns(self):
+        columns = []
+        for property in self.ormProperties.keys():
+            columns.append(property)
+        return columns
     
     def _buildReversedColumnLookup(self, columns):
         i = 0
@@ -76,8 +106,25 @@ class AlchemyOrmModel(QAbstractTableModel):
             return QVariant(columnName)
         return QVariant(int(section + 1))
     
+    def isPrimaryKey(self, index):
+        self._flagsCache
+        
+        print 
+    
     def flags(self, index):
-        return Qt.ItemIsEditable | Qt.ItemIsSelectable | Qt.ItemIsEnabled
+        
+        propertyName = self.getPropertyNameByIndex(index.column())
+        if not self._flagsCache.has_key(propertyName):
+            isPk = False
+            for col in self.ormProperties[propertyName].columns:
+                if col.primary_key:
+                    isPk = True
+            if not isPk:
+                self._flagsCache[propertyName] = Qt.ItemIsEditable | Qt.ItemIsSelectable | Qt.ItemIsEnabled
+            else:
+                self._flagsCache[propertyName] = Qt.ItemIsSelectable | Qt.ItemIsEnabled
+                
+        return self._flagsCache[propertyName]
     
     def setData(self, index, value, role=Qt.EditRole):
         columnName = self.getPropertyNameByIndex(index.column())
