@@ -8,7 +8,7 @@ import sys
 from PyQt4.QtCore import QObject, QVariant, SIGNAL, SLOT, pyqtSignal, pyqtSlot, \
     Qt, QString
 from PyQt4.QtGui import QWidget, QComboBox, QCheckBox, QLineEdit, QGridLayout, \
-    QPushButton, QTreeWidgetItem
+    QPushButton, QTreeWidgetItem, QStackedWidget
 
 from ems.qt4.gui.widgets.treecombo import TreeComboBox #@UnresolvedImport
 
@@ -42,17 +42,27 @@ class SearchRow(QObject):
         self.fieldInput = TreeComboBox()
         self.fieldInput.setMinimumWidth(150)
         self.operatorInput = QComboBox()
+        self.operatorInput.setMinimumContentsLength(12)
+        self.valueStack = QStackedWidget()
         self.valueInput = QLineEdit()
+        self.valueStack.addWidget(self.valueInput)
         self.matchesInput = QCheckBox()
         
-        self.setupUi()
+        
         self.connect(self.fieldInput, SIGNAL("currentIndexChanged(int)"),
                      self, SLOT("onFieldInputCurrentIndexChanged(int)"))
+        self.setupUi()
         
 #        self.connect(self.fieldInput, SIGNAL("currentIndexChanged(QString)"),
 #                     self, SLOT("onFieldInputCurrentTextChanged(QString)"))
 #        
         #self.onFieldInputCurrentIndexChanged(0)
+    
+    def replaceValueInput(self, widget):
+        self.valueStack.removeWidget(self.valueInput)
+        i = self.valueStack.addWidget(widget)
+        self.valueStack.setCurrentIndex(i)
+        self.valueInput = widget
     
     @pyqtSlot(QString)
     def onFieldInputCurrentTextChanged(self, text):
@@ -64,14 +74,16 @@ class SearchRow(QObject):
         currentItem = self.fieldInput.itemView.currentItem()
         if currentItem is None:
             comboText = self.fieldInput.itemData(index, Qt.DisplayRole).toString()
-            print self.fieldInput.itemView.findItems(comboText,Qt.MatchExactly,0)
-            print "ComboBox: %s" % self.fieldInput.itemData(index, Qt.DisplayRole).toString()
+            foundedItems = self.fieldInput.itemView.findItems(comboText,Qt.MatchExactly,0)
+            if len(foundedItems):
+                currentItem = foundedItems[0]
+                self._builder.onFieldInputCurrentItemChanged(self, currentItem)
         else:
             self._builder.onFieldInputCurrentItemChanged(self, currentItem)
         
     def reset(self):
         self.fieldInput.setCurrentIndex(0)
-        self.valueInput.setText("")
+        #self.valueInput.setText("")
     
     def setEnabled(self, enabled=True):
         for widget in (self.fieldInput, self.operatorInput,
@@ -196,8 +208,9 @@ class RowAddSearch(QWidget):
         
         layout.addWidget(row.fieldInput, layoutRow,2)
         layout.addWidget(row.operatorInput, layoutRow,3)
-        row.valueInput.setText("%s" % layoutRow)
-        layout.addWidget(row.valueInput, layoutRow,4)
+        #row.valueInput.setText("%s" % layoutRow)
+        #layout.addWidget(row.valueInput, layoutRow,4)
+        layout.addWidget(row.valueStack, layoutRow,4)
         layout.addWidget(row.matchesInput, layoutRow,5)
         
         layout.addWidget(self.addRowButton, layoutRow+1,0)
@@ -223,7 +236,7 @@ class RowAddSearch(QWidget):
             layout.addWidget(self._rows[i].booleanOperatorButton,i,1)
             layout.addWidget(self._rows[i].fieldInput, i,2)
             layout.addWidget(self._rows[i].operatorInput, i,3)
-            layout.addWidget(self._rows[i].valueInput, i,4)
+            layout.addWidget(self._rows[i].valueStack, i,4)
             layout.addWidget(self._rows[i].matchesInput, i,5)
             
             layout.addWidget(self.addRowButton, i+1,0)
@@ -235,7 +248,7 @@ class RowAddSearch(QWidget):
 #        print "removeRow %s" % idx
         
         for widget in (row.removeButton,row.booleanOperatorButton,
-                       row.fieldInput, row.operatorInput, row.valueInput,
+                       row.fieldInput, row.operatorInput, row.valueStack,
                        row.matchesInput):
             
             self.layout().removeWidget(widget)

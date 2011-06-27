@@ -5,6 +5,7 @@ Created on 26.06.2011
 @author: michi
 '''
 from PyQt4.QtCore import QVariant, QString, Qt
+from PyQt4.QtGui import QSpinBox, QDoubleSpinBox, QLineEdit
 
 from sqlalchemy.orm import RelationshipProperty, ColumnProperty
 from sqlalchemy.types import AbstractType, String, Integer, Float, Boolean
@@ -78,10 +79,6 @@ class SABuilderBackend(BuilderBackend):
                     self._orderedProperties.append((propertyPath,
                                                     self.getFieldFriendlyName(propertyPath),
                                                     'column'))
-                
-#                if not isinstance(self._queryBuilder.properties[propertyPath],
-#                                  (RelationshipProperty, ColumnProperty)):
-#                    print "WWWWWWWWWWWAAAAAAAAAAASSSSSSSSSSS?"
             
             pathStack.pop()
         return self._orderedProperties
@@ -95,7 +92,8 @@ class SABuilderBackend(BuilderBackend):
     
     def onFieldInputCurrentItemChanged(self, searchRow, item):
         self.refillOperatorCombo(searchRow, str(item.data(1,Qt.DisplayRole).toString()))
-    
+        self.displayValueWidget(searchRow, str(item.data(1,Qt.DisplayRole).toString()))
+        
     def refillOperatorCombo(self, searchRow, currentProperty):
         #print "refill: %s" % currentProperty
         property = self._queryBuilder.properties[currentProperty]
@@ -125,3 +123,22 @@ class SABuilderBackend(BuilderBackend):
             else:
                 raise NotImplementedError("ColumnProperties with more than " +
                                           "one Column are not supported")
+    def displayValueWidget(self, searchRow, currentProperty):
+        
+        property = self._queryBuilder.properties[currentProperty]
+        if isinstance(property, ColumnProperty):
+            cols = property.columns
+            if len(cols) == 1:
+                col = cols[0]
+                colType = col.type
+                if isinstance(colType, AbstractType):
+                    type_ = col.type
+                    if isinstance(type_,Integer):
+                        lastWidget = searchRow.valueStack.currentWidget()
+                        searchRow.replaceValueInput(QSpinBox())
+                    elif isinstance(type_, Float):
+                        lastWidget = searchRow.valueStack.currentWidget()
+                        searchRow.replaceValueInput(QDoubleSpinBox())
+                    else:
+                        lastWidget = searchRow.valueStack.currentWidget()
+                        searchRow.replaceValueInput(QLineEdit())

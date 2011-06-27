@@ -24,6 +24,9 @@ class BaseStrategy(QObject):
         self._mapper = mapper
     
     mapper = property(getMapper, setMapper)
+    
+    def getWidget(self, prototype, property):
+        print "Ich werde aufgerufen"
 
     def map(self, widget, prototype, property):
         objMapper = object_mapper(prototype)
