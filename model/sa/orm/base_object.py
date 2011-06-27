@@ -4,7 +4,7 @@ Created on 20.06.2011
 @author: michi
 '''
 
-from decorator import OrmDecorator
+from decorator import OrmDecorator #@UnresolvedImport
 
 class OrmBaseObject(object):
     def __init__(self,initVals={},**kwargs):
@@ -14,7 +14,8 @@ class OrmBaseObject(object):
             self.__setattr__(key,kwargs[key])
         self._decoratorObj = None
     
-    def ormDecorator(self):
-        if not hasattr(self, '_decoratorObj') or self._decoratorObj is None:
-            self._decoratorObj = OrmDecorator(self)
-        return self._decoratorObj
+    @classmethod
+    def __ormDecorator__(cls):
+        if not hasattr(cls, '__decoratorObj__') or cls.__decoratorObj__ is None:
+            cls.__decoratorObj__ = OrmDecorator(cls)
+        return cls.__decoratorObj__

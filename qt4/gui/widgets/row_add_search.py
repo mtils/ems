@@ -5,28 +5,69 @@ Created on 23.06.2011
 '''
 import sys
 
-from PyQt4.QtCore import QObject, QVariant, SIGNAL, SLOT, pyqtSignal, pyqtSlot
-from PyQt4.QtGui import QWidget, QComboBox, QCheckBox, QLineEdit, QGridLayout, QPushButton
+from PyQt4.QtCore import QObject, QVariant, SIGNAL, SLOT, pyqtSignal, pyqtSlot, \
+    Qt, QString
+from PyQt4.QtGui import QWidget, QComboBox, QCheckBox, QLineEdit, QGridLayout, \
+    QPushButton, QTreeWidgetItem
+
+from ems.qt4.gui.widgets.treecombo import TreeComboBox #@UnresolvedImport
+
+class BuilderBackend(QObject):
+    def setSearchWidget(self, widget):
+        self._searchWidget = widget
+    
+    def populateFieldInput(self, fieldInput):
+        print "Isch muss jetzt populaten"
+        
+    
+    def rowAdded(self, row):
+        print "Ich muss row Adden"
+    
+    def onFieldInputCurrentItemChanged(self, searchRow, item):
+        pass
 
 class SearchRow(QObject):
     
     rowEnabled = pyqtSignal(bool)
     rowDisabled = pyqtSignal(bool)
     
-    def __init__(self, row, parent=None):
+    def __init__(self, builder, parent=None):
         super(SearchRow, self).__init__(parent)
         
-        self._row = row
+        self._builder = builder
         self._enabled = True
         self.removeButton = None
         self.booleanOperatorButton = None
                     
-        self.fieldInput = QComboBox()
+        self.fieldInput = TreeComboBox()
+        self.fieldInput.setMinimumWidth(150)
         self.operatorInput = QComboBox()
         self.valueInput = QLineEdit()
         self.matchesInput = QCheckBox()
-        self.setupUi()
         
+        self.setupUi()
+        self.connect(self.fieldInput, SIGNAL("currentIndexChanged(int)"),
+                     self, SLOT("onFieldInputCurrentIndexChanged(int)"))
+        
+#        self.connect(self.fieldInput, SIGNAL("currentIndexChanged(QString)"),
+#                     self, SLOT("onFieldInputCurrentTextChanged(QString)"))
+#        
+        #self.onFieldInputCurrentIndexChanged(0)
+    
+    @pyqtSlot(QString)
+    def onFieldInputCurrentTextChanged(self, text):
+        print "onTextChanged: %s" % text
+        
+    
+    @pyqtSlot(int)
+    def onFieldInputCurrentIndexChanged(self, index):
+        currentItem = self.fieldInput.itemView.currentItem()
+        if currentItem is None:
+            comboText = self.fieldInput.itemData(index, Qt.DisplayRole).toString()
+            print self.fieldInput.itemView.findItems(comboText,Qt.MatchExactly,0)
+            print "ComboBox: %s" % self.fieldInput.itemData(index, Qt.DisplayRole).toString()
+        else:
+            self._builder.onFieldInputCurrentItemChanged(self, currentItem)
         
     def reset(self):
         self.fieldInput.setCurrentIndex(0)
@@ -44,7 +85,8 @@ class SearchRow(QObject):
         return self.setEnabled(enabled)
          
     def setupUi(self):
-        self.fieldInput.addItem("Name")
+        #self.fieldInput.addItem("Name")
+        self._builder.populateFieldInput(self.fieldInput)
         self.matchesInput.setChecked(True)
         self.matchesInput.setText(self.tr("Trifft zu"))
     
@@ -56,8 +98,16 @@ class SearchRow(QObject):
     
 
 class RowAddSearch(QWidget):
-    def __init__(self, parent=None):
+    
+    rowAdded = pyqtSignal(int)
+    
+    def __init__(self, builderBackend=None, parent=None):
         QWidget.__init__(self, parent)
+        if builderBackend is None:
+            builderBackend = BuilderBackend()
+        self._builder = builderBackend
+        self._builder.setSearchWidget(self)
+        
         self._rows = []
         self._addRowButton = None
         self.setupUi()
@@ -66,11 +116,6 @@ class RowAddSearch(QWidget):
     
     def setupUi(self):
         self.setLayout(QGridLayout(self))
-#        print "layout.RowCount(%s)" % self.layout().rowCount()
-#        self.layout().setColumnStretch(2,1)
-#        self.layout().setColumnStretch(4,1)
-        
-        
         
         self.addRow()
     
@@ -125,7 +170,7 @@ class RowAddSearch(QWidget):
         if currentRow < 0:
             currentRow = 0
             
-        row = SearchRow(currentRow, self)
+        row = SearchRow(self._builder, self)
         
         layout = self.layout()
         #layoutRow = layout.rowCount()
@@ -160,6 +205,8 @@ class RowAddSearch(QWidget):
         self.connect(removeButton, SIGNAL("clicked()"),
                      self, SLOT('_onDeleteClicked()'))
         self._rows.append(row)
+        self._builder.rowAdded(row)
+        self.rowAdded.emit(currentRow)
 #        print "nach addRow RowCount: %s" % self.layout().rowCount()
     
     def _repopulateRows(self):
