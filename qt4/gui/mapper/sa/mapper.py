@@ -71,13 +71,13 @@ class SAMapper(QObject, SAInterfaceMixin):
     def mapper(self):
         return self._mapper
     
-    def getStrategyFor(self, ormClassOrObj, property):
-        if isinstance(ormClassOrObj, type):
-            prototype = ormClassOrObj()
-        else:
-            prototype = ormClassOrObj
-        
-        objMapper = object_mapper(prototype)
+    def getPrototype(self, classOrObj):
+        if isinstance(classOrObj, type):
+            return classOrObj()
+        return classOrObj
+    
+    def getStrategyFor(self, ormObj, property):
+        objMapper = object_mapper(ormObj)
         rProperty = objMapper.get_property(property)
         mappingKey = None
         
@@ -90,7 +90,7 @@ class SAMapper(QObject, SAInterfaceMixin):
                     mappingKey = col.type.__class__
                 else:
                     raise TypeError("Could not determine Type of %s.%s" % \
-                                    (prototype.__class__.__name__,property))
+                                    (ormObj.__class__.__name__,property))
             else:
                 raise NotImplementedError("ColumnProperties with more than " +
                                           "one Column are not supported")
@@ -113,7 +113,7 @@ class SAMapper(QObject, SAInterfaceMixin):
         pass
             
     
-    def addMapping(self, widget, ormClassOrObj, property):
+    def addMapping(self, widget, ormObj, property):
         if not isinstance(self._model, AlchemyOrmModel):
             raise TypeError("Assign a AlchemyOrmModel prior to addMapping")
-        return self.getStrategyFor(ormClassOrObj, property).map(widget, ormClassOrObj, property)
+        return self.getStrategyFor(ormObj, property).map(widget, ormObj, property)

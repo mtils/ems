@@ -29,7 +29,7 @@ class RepresentativeModel(QAbstractListModel):
            not (0 <= index.row() < self.rowCount()):
             return QVariant()
         if role == Qt.DisplayRole:
-            value = self._resultCache[index.row()].ormDecorator().getReprasentiveString()
+            value = self._resultCache[index.row()].__ormDecorator__().getReprasentiveString(self._resultCache[index.row()])
 #            if self._queriedObject.__name__ == 'Gruppe':
 #                print "row:%s col:%s role:%s value:%s" % (index.row(), index.column(), role, value)
             if isinstance(value, basestring):
