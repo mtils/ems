@@ -70,18 +70,17 @@ class SAMapper(QObject, SAInterfaceMixin):
     @property
     def mapper(self):
         return self._mapper
-        
     
-    def addMapping(self, widget, ormClassOrObj, property):
-        if not isinstance(self._model, AlchemyOrmModel):
-            raise TypeError("Assign a AlchemyOrmModel prior to addMapping")
+    def getStrategyFor(self, ormClassOrObj, property):
         if isinstance(ormClassOrObj, type):
             prototype = ormClassOrObj()
         else:
             prototype = ormClassOrObj
+        
         objMapper = object_mapper(prototype)
         rProperty = objMapper.get_property(property)
         mappingKey = None
+        
         if isinstance(rProperty, ColumnProperty):
             cols = rProperty.columns
             if len(cols) == 1:
@@ -98,15 +97,23 @@ class SAMapper(QObject, SAInterfaceMixin):
             
         elif isinstance(rProperty, RelationshipProperty):
             mappingKey = rProperty.direction
-            
-        #print rProperty.direction
-        #print widget, prototype, property
-#        print mappingKey
+        
         key = hash(mappingKey)
         self._hashToType[key] = mappingKey
+        
         if self._strategies.has_key(key):
             self._strategies[key].mapper = self
-            self._strategies[key].map(widget, prototype, property)
+            return self._strategies[key]
         
         else:
-            return self._defaultStrategy.map(widget, prototype, property)
+            return self._defaultStrategy
+        
+    
+    def getWidget(self, ormClassOrObj, property):
+        pass
+            
+    
+    def addMapping(self, widget, ormClassOrObj, property):
+        if not isinstance(self._model, AlchemyOrmModel):
+            raise TypeError("Assign a AlchemyOrmModel prior to addMapping")
+        return self.getStrategyFor(ormClassOrObj, property).map(widget, ormClassOrObj, property)
