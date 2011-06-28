@@ -21,7 +21,9 @@ class TreeComboBox(QComboBox):
         if depth == 0:
             self.itemView.addTopLevelItem(self._flatItemTree[depth])
         else:
-            self._flatItemTree[depth-1].addChild(QTreeWidgetItem(texts))
+            newItem = QTreeWidgetItem(texts)
+            self._flatItemTree[depth-1].addChild(newItem)
+            self._flatItemTree[depth] = newItem
             
     def keyPressEvent(self, event):
         if event.key() in (Qt.Key_Up, Qt.Key_Down):

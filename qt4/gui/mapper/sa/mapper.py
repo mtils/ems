@@ -109,9 +109,8 @@ class SAMapper(QObject, SAInterfaceMixin):
             return self._defaultStrategy
         
     
-    def getWidget(self, ormClassOrObj, property):
-        pass
-            
+    def getWidget(self, ormObj, property):
+        return self.getStrategyFor(ormObj, property).getWidget(ormObj, property)
     
     def addMapping(self, widget, ormObj, property):
         if not isinstance(self._model, AlchemyOrmModel):

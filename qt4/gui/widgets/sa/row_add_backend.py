@@ -14,8 +14,9 @@ from ems.qt4.gui.widgets.row_add_search import BuilderBackend #@UnresolvedImport
 from ems.model.sa.orm.querybuilder import SAQueryBuilder #@UnresolvedImport
 
 class SABuilderBackend(BuilderBackend):
-    def __init__(self, ormObj):
+    def __init__(self, ormObj, mapper):
         self._ormObj = ormObj
+        self._mapper = mapper
         self._decorators = {}
         self._queryBuilder = SAQueryBuilder(ormObj)
         self._orderedProperties = []
@@ -28,7 +29,7 @@ class SABuilderBackend(BuilderBackend):
             depth = len(property[0].split('.')) - 1
             fieldInput.addItemFlat(depth, (QString.fromUtf8(property[1]),
                                            property[0]))
-
+            print property
             i += 1
         
     
@@ -124,21 +125,8 @@ class SABuilderBackend(BuilderBackend):
                 raise NotImplementedError("ColumnProperties with more than " +
                                           "one Column are not supported")
     def displayValueWidget(self, searchRow, currentProperty):
+        propertyKey = currentProperty.split('.')[-1:][0]
+        class_ = self._queryBuilder.propertyName2Class[currentProperty]
+        newWidget = self._mapper.getWidget(class_(), propertyKey)
+        searchRow.replaceValueInput(newWidget)
         
-        property = self._queryBuilder.properties[currentProperty]
-        if isinstance(property, ColumnProperty):
-            cols = property.columns
-            if len(cols) == 1:
-                col = cols[0]
-                colType = col.type
-                if isinstance(colType, AbstractType):
-                    type_ = col.type
-                    if isinstance(type_,Integer):
-                        lastWidget = searchRow.valueStack.currentWidget()
-                        searchRow.replaceValueInput(QSpinBox())
-                    elif isinstance(type_, Float):
-                        lastWidget = searchRow.valueStack.currentWidget()
-                        searchRow.replaceValueInput(QDoubleSpinBox())
-                    else:
-                        lastWidget = searchRow.valueStack.currentWidget()
-                        searchRow.replaceValueInput(QLineEdit())
