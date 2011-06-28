@@ -18,6 +18,7 @@ class BigComboBox(QComboBox):
         #self.sModel = QStringListModel(l, self)
         completer = QCompleter(l)
         completer.setCompletionMode(QCompleter.PopupCompletion)
+        completer.setCaseSensitivity(Qt.CaseInsensitive)
         self.setCompleter(completer)
 
 if __name__ == '__main__':
