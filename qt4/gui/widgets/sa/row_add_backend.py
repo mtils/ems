@@ -29,7 +29,7 @@ class SABuilderBackend(BuilderBackend):
             depth = len(property[0].split('.')) - 1
             fieldInput.addItemFlat(depth, (QString.fromUtf8(property[1]),
                                            property[0]))
-            print property
+#            print property
             i += 1
         
     
@@ -125,6 +125,7 @@ class SABuilderBackend(BuilderBackend):
                 raise NotImplementedError("ColumnProperties with more than " +
                                           "one Column are not supported")
     def displayValueWidget(self, searchRow, currentProperty):
+#        print "displayValueWidget %s" % currentProperty
         propertyKey = currentProperty.split('.')[-1:][0]
         class_ = self._queryBuilder.propertyName2Class[currentProperty]
         newWidget = self._mapper.getWidget(class_(), propertyKey)

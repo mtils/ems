@@ -17,11 +17,11 @@ class BuilderBackend(QObject):
         self._searchWidget = widget
     
     def populateFieldInput(self, fieldInput):
-        print "Isch muss jetzt populaten"
+        pass
         
     
     def rowAdded(self, row):
-        print "Ich muss row Adden"
+        pass
     
     def onFieldInputCurrentItemChanged(self, searchRow, item):
         pass

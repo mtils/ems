@@ -45,6 +45,8 @@ class SAMapper(QObject, SAInterfaceMixin):
         self._mappings = {}
         self._hashToType = {}
         self._model = None
+        self.session = None
+    
     
     @property
     def dataWidgetMapper(self):
@@ -76,6 +78,15 @@ class SAMapper(QObject, SAInterfaceMixin):
             return classOrObj()
         return classOrObj
     
+    def getRealRelationSymbol(self, rProperty):
+        direction = rProperty.direction
+        uselist = rProperty.uselist
+        #print "%s uselist %s" % (direction, uselist)
+        if uselist:
+            return symbol('ONETOMANY')
+        else:
+            return symbol('MANYTOONE')
+    
     def getStrategyFor(self, ormObj, property):
         objMapper = object_mapper(ormObj)
         rProperty = objMapper.get_property(property)
@@ -96,8 +107,10 @@ class SAMapper(QObject, SAInterfaceMixin):
                                           "one Column are not supported")
             
         elif isinstance(rProperty, RelationshipProperty):
-            mappingKey = rProperty.direction
-        
+            realSymbol = self.getRealRelationSymbol(rProperty)
+            mappingKey = realSymbol
+            #mappingKey = rProperty.direction
+        #print "%s.%s mappingKey: %s" % (ormObj.__class__.__name__, property, mappingKey)
         key = hash(mappingKey)
         self._hashToType[key] = mappingKey
         
@@ -111,6 +124,7 @@ class SAMapper(QObject, SAInterfaceMixin):
     
     def getWidget(self, ormObj, property):
         return self.getStrategyFor(ormObj, property).getWidget(ormObj, property)
+        
     
     def addMapping(self, widget, ormObj, property):
         if not isinstance(self._model, AlchemyOrmModel):

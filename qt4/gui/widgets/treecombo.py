@@ -6,10 +6,15 @@ Created on 27.06.2011
 from PyQt4.QtCore import QVariant, Qt
 from PyQt4.QtGui import QComboBox, QTreeWidget, QTreeWidgetItem
 
+class CustomTreeWidget(QTreeWidget):
+    def __init__(self, parent=None):
+        super(CustomTreeWidget, self).__init__(parent)
+        
+
 class TreeComboBox(QComboBox):
     def __init__(self, parent=None):
         super(TreeComboBox, self).__init__(parent)
-        self.itemView = QTreeWidget()
+        self.itemView = CustomTreeWidget()
         self.itemView.setColumnCount(1)
         self.itemView.setHeaderHidden(True)
         self.setModel(self.itemView.model())

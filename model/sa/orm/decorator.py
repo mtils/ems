@@ -41,3 +41,8 @@ class OrmDecorator(object):
                     self._shownProperties.append(prop.key)
         
         return self._shownProperties
+    
+    def getDefaultOrderByProperty(self, obj):
+        if hasattr(self._class,'__reprasentive_column__'):
+            return self._class.__reprasentive_column__
+        
