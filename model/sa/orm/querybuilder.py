@@ -6,6 +6,7 @@ Created on 26.06.2011
 
 from sqlalchemy.orm import joinedload, joinedload_all, object_mapper, \
     RelationshipProperty, ColumnProperty
+    
 
 from sqlalchemy.util import symbol
 
@@ -31,6 +32,19 @@ class SAQueryBuilder(object):
         return self._propertyNames
     
     propertyNames = property(getPropertyNames)
+    
+    def getQuery(self, session, properties=[], joins=[]):
+        query = session.query(self._ormObj.__class__)
+        
+        joinloads = []
+        
+        for join in joins:
+            joinloads.append(joinedload_all(join))
+        else:
+            for joinName in self.joinNames:
+                joinloads.append(joinedload_all(joinName))
+        query = query.options(*joinloads)
+        return query
     
     @property
     def propertyName2Class(self):

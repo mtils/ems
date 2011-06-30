@@ -137,4 +137,15 @@ class SABuilderBackend(BuilderBackend):
         class_ = self._queryBuilder.propertyName2Class[currentProperty]
         newWidget = self._mapper.getWidget(class_(), propertyKey)
         searchRow.replaceValueInput(newWidget)
+    
+    def buildQuery(self, clauses):
+        query = self._queryBuilder.getQuery(self._mapper.session)
+        crit = self._queryBuilder.propertyName2Class['zustand.baujahrklasseId'].baujahrklasseId == 15
+        #print type(crit)
+        #print query.filter(crit)
+        print query
+        
+        for clause in clauses:
+            field = unicode(clause['field'])
+            print field
         

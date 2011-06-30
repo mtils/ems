@@ -27,6 +27,9 @@ class BuilderBackend(QObject):
     
     def onFieldInputCurrentItemChanged(self, searchRow, item):
         pass
+    
+    def buildQuery(self, criterias):
+        raise NotImplementedError("Please create a buildQuery Method")
 
 class SearchRow(QObject):
     
@@ -270,11 +273,6 @@ class RowAddSearch(QWidget):
         print "buildQuery called"
         clauses = []
         for row in self._rows:
-            print "%s %s" % (row.booleanOperatorButton, self.extractValueOfWidget(row.booleanOperatorButton))
-            print "%s %s" % (row.fieldInput, self.extractValueOfWidget(row.fieldInput))
-            print "%s %s" % (row.operatorInput, self.extractValueOfWidget(row.operatorInput))
-            print "%s %s" % (row.valueInput, self.extractValueOfWidget(row.valueInput))
-            print "%s %s" % (row.matchesInput, self.extractValueOfWidget(row.matchesInput))
             clauses.append({
                             'booleanOperator': self.extractValueOfWidget(row.booleanOperatorButton),
                             'field': self.extractValueOfWidget(row.fieldInput),
@@ -282,7 +280,8 @@ class RowAddSearch(QWidget):
                             'value': self.extractValueOfWidget(row.valueInput),
                             'matches': self.extractValueOfWidget(row.matchesInput)
                             })
-        print clauses
+        
+        self._builder.buildQuery(clauses)
 #        print "removeRow RowCount: %s" % self.layout().rowCount()
         #del row
     
