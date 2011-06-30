@@ -3,16 +3,16 @@ Created on 14.06.2011
 
 @author: michi
 '''
-from PyQt4.QtCore import QAbstractTableModel, QModelIndex, Qt, QVariant
+from PyQt4.QtCore import QAbstractTableModel, QModelIndex, Qt, QVariant, QString
 
 from sqlalchemy.orm import object_mapper, ColumnProperty, RelationshipProperty
 
 from ems import qt4
 from ems.thirdparty.odict import OrderedDict
 
-class AlchemyOrmModel(QAbstractTableModel):
-    def __init__(self,session, queriedObject, columns = []):
-        super(AlchemyOrmModel, self).__init__()
+class SAOrmSearchModel(QAbstractTableModel):
+    def __init__(self,session, queriedObject, querybuilder, columns = []):
+        super(SAOrmSearchModel, self).__init__()
         self._session = session
         self._queriedObject = queriedObject
         self._resultCache = {}
@@ -20,9 +20,10 @@ class AlchemyOrmModel(QAbstractTableModel):
         self._mapper = None
         self._ormProperties = None
         self._flagsCache = {}
+        self._queryBuilder = querybuilder
+        self._headerNameCache = {}
         if not len(self._columns):
             self._columns = self._buildDefaultColumns()
-            print self._columns
         self._columnName2Index = self._buildReversedColumnLookup(columns)
         self._dirty = True
     
@@ -37,8 +38,9 @@ class AlchemyOrmModel(QAbstractTableModel):
     def ormProperties(self):
         if self._ormProperties is None:
             self._ormProperties = OrderedDict()
-            for property in self.mapper.iterate_properties:
-                self._ormProperties[property.key] = property
+            for propertyName in self._queryBuilder.propertyNames:
+                self._ormProperties[propertyName] = \
+                    self._queryBuilder.properties[propertyName]
                 #self._ormProperties.append(property)
         return self._ormProperties
     
@@ -75,6 +77,30 @@ class AlchemyOrmModel(QAbstractTableModel):
     def getIndexByPropertyName(self, name):
         return self._columnName2Index[name]
     
+    def extractValue(self, index, propertyName):
+        
+        currentObj = self._resultCache[index.row()]
+        if hasattr(currentObj, propertyName):
+            return currentObj.__getattribute__(propertyName)
+        else:
+            if propertyName.find('.'):
+                stack = propertyName.split('.')
+                value = self._extractValue(currentObj, stack)
+                if value:
+                    return value
+                
+        return "*Nichts*"
+    
+    def _extractValue(self, obj, pathStack):
+        
+        if(hasattr(obj, pathStack[0])):
+            if len(pathStack) < 2:
+                return obj.__getattribute__(pathStack[0])
+            nextObj = obj.__getattribute__(pathStack[0])
+            pathStack.pop(0)
+            return self._extractValue(nextObj, pathStack)
+            
+    
     def data(self, index, role=Qt.DisplayRole):
         self.perform()
         columnName = self.getPropertyNameByIndex(index.column())
@@ -83,7 +109,9 @@ class AlchemyOrmModel(QAbstractTableModel):
            not (0 <= index.row() < self.rowCount()):
             return QVariant()
         if role in (Qt.DisplayRole, Qt.EditRole):
-            value = self._resultCache[index.row()].__getattribute__(columnName)
+            #print self._resultCache[index.row()]
+            #value = self._resultCache[index.row()].__getattribute__(columnName)
+            value = self.extractValue(index, columnName)
             #print value
 #            if self._queriedObject.__name__ == 'Gruppe':
 #                print "row:%s col:%s role:%s value:%s" % (index.row(), index.column(), role, value)
@@ -105,9 +133,18 @@ class AlchemyOrmModel(QAbstractTableModel):
             return QVariant()
         if orientation == Qt.Horizontal:
             columnName = unicode(self.getPropertyNameByIndex(section))
-#            if self.columnHeaderTranslated.has_key(columnName):
-#                return QVariant(self.columnHeaderTranslated[columnName])
-            return QVariant(columnName)
+            if not self._headerNameCache.has_key(columnName):
+                fieldName = columnName.split('.')[-1:][0]
+                #print "%s %s" % (columnName, columnName.split('.')[-1:][0])
+                try:
+                    dec = self._queryBuilder.propertyName2Class[columnName].__ormDecorator__()
+                    name = dec.getPropertyFriendlyName(fieldName)
+                    
+                except KeyError:
+                    name = fieldName
+                self._headerNameCache[columnName] = QString.fromUtf8(name)
+
+            return QVariant(self._headerNameCache[columnName])
         return QVariant(int(section + 1))
     
     def isPrimaryKey(self, index):
@@ -115,56 +152,33 @@ class AlchemyOrmModel(QAbstractTableModel):
         
         print 
     
-    def flags(self, index):
-        
-        propertyName = self.getPropertyNameByIndex(index.column())
-        if not self._flagsCache.has_key(propertyName):
-            isPk = False
-            if isinstance(self.ormProperties[propertyName], ColumnProperty):
-                for col in self.ormProperties[propertyName].columns:
-                    if col.primary_key:
-                        isPk = True
-                if not isPk:
-                    self._flagsCache[propertyName] = Qt.ItemIsEditable | Qt.ItemIsSelectable | Qt.ItemIsEnabled
-                else:
-                    self._flagsCache[propertyName] = Qt.ItemIsSelectable | Qt.ItemIsEnabled
-            else:
-                self._flagsCache[propertyName] = Qt.ItemIsSelectable | Qt.ItemIsEnabled
-                
-        return self._flagsCache[propertyName]
-    
-    def setData(self, index, value, role=Qt.EditRole):
-        columnName = self.getPropertyNameByIndex(index.column())
-        pyValue = None
-        if value.isNull():
-            pyValue = None
-        elif value.type() in (QVariant.Char,QVariant.String):
-            pyValue = unicode(value.toString())
-        elif value.type() == QVariant.Bool:
-            pyValue = bool(value.toBool())
-        elif value.type() == QVariant.Double:
-            pyValue = float(value.toDouble())
-        elif value.type() == QVariant.Int:
-            pyValue = int(value.toInt()[0])
-        #print pyValue
-        for obj in self._session.dirty:
-            print obj
-        
-        self._resultCache[index.row()].__setattr__(columnName, pyValue)
-        
-        return True
+#    def flags(self, index):
+#        
+#        propertyName = self.getPropertyNameByIndex(index.column())
+#        if not self._flagsCache.has_key(propertyName):
+#            isPk = False
+#            if isinstance(self.ormProperties[propertyName], ColumnProperty):
+#                for col in self.ormProperties[propertyName].columns:
+#                    if col.primary_key:
+#                        isPk = True
+#                if not isPk:
+#                    self._flagsCache[propertyName] = Qt.ItemIsEditable | Qt.ItemIsSelectable | Qt.ItemIsEnabled
+#                else:
+#                    self._flagsCache[propertyName] = Qt.ItemIsSelectable | Qt.ItemIsEnabled
+#            else:
+#                self._flagsCache[propertyName] = Qt.ItemIsSelectable | Qt.ItemIsEnabled
+#                
+#        return self._flagsCache[propertyName]
+
     
     def isDataChanged(self):
         return self._session.dirty
     
-    def submit(self):
-        print "Ich wurde jetriggert"
-        self._dirty = True
-        return True
     
     def perform(self):
         if not self._dirty:
             return
+        #self.beginResetModel()
         #print "%s : I actually perform" % self._queriedObject
         #print self._session.get_bind(self._queriedObject)
         i = 0

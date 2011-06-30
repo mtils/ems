@@ -22,6 +22,11 @@ class SABuilderBackend(BuilderBackend):
         self._orderedProperties = []
         self._shownPropertiesByClassName = {}
     
+    @property
+    def queryBuilder(self):
+        
+        return self._queryBuilder
+    
     def populateFieldInput(self, fieldInput):
         
         i=0
@@ -105,7 +110,7 @@ class SABuilderBackend(BuilderBackend):
                 colType = col.type
                 if isinstance(colType, AbstractType):
                     type_ = col.type
-                    if isinstance(type_,Integer):
+                    if isinstance(type_,(Integer, Float)):
                         searchRow.operatorInput.clear()
                         searchRow.operatorInput.addItem('=',QVariant('='))
                         searchRow.operatorInput.addItem('>',QVariant('>'))
@@ -124,6 +129,8 @@ class SABuilderBackend(BuilderBackend):
             else:
                 raise NotImplementedError("ColumnProperties with more than " +
                                           "one Column are not supported")
+        else:
+            searchRow.operatorInput.clear()
     def displayValueWidget(self, searchRow, currentProperty):
 #        print "displayValueWidget %s" % currentProperty
         propertyKey = currentProperty.split('.')[-1:][0]

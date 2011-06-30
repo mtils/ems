@@ -62,6 +62,10 @@ class RepresentativeModel(QAbstractListModel):
             if isinstance(value, basestring):
                 return QVariant(unicode(value))
             return QVariant(value)
+        if role == Qt.UserRole:
+            #value = self._resultCache[index.row()].__getattribute__(self._fkColumn)
+            value = self._resultCache[index.row()]
+            return QVariant(value)
         if role == qt4.ColumnNameRole:
             return QVariant(unicode(self._queryBuilder.currentColumnList[index.column()]))
         if role == qt4.ForeignKeysRole:

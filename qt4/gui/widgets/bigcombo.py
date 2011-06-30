@@ -137,7 +137,10 @@ class BigComboBox(QComboBox):
     def onCurrentIndexChanged(self, index):
         text = self.itemView.model().data(index, Qt.EditRole).toString()
         self.setEditText(text)
-
+    
+    def value(self):
+        index = self.itemView.currentIndex()
+        return self.itemView.model().data(index, Qt.UserRole)
     
     
 

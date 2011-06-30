@@ -11,6 +11,8 @@ from PyQt4.QtGui import QWidget, QComboBox, QCheckBox, QLineEdit, QGridLayout, \
     QPushButton, QTreeWidgetItem, QStackedWidget
 
 from ems.qt4.gui.widgets.treecombo import TreeComboBox #@UnresolvedImport
+from ems.qt4.gui.widgets.bigcombo import BigComboBox #@UnresolvedImport
+from ems.qt4.util import variant_to_pyobject #@UnresolvedImport
 
 class BuilderBackend(QObject):
     def setSearchWidget(self, widget):
@@ -44,6 +46,8 @@ class SearchRow(QObject):
         self.operatorInput = QComboBox()
         self.operatorInput.setMinimumContentsLength(12)
         self.valueStack = QStackedWidget()
+        self.valueStack.setMaximumHeight(50)
+        self.valueStack.setMinimumHeight(25)
         self.valueInput = QLineEdit()
         self.valueStack.addWidget(self.valueInput)
         self.matchesInput = QCheckBox()
@@ -261,9 +265,40 @@ class RowAddSearch(QWidget):
         del row
         
         self._repopulateRows()
-        
+    
+    def buildQuery(self):
+        print "buildQuery called"
+        clauses = []
+        for row in self._rows:
+            print "%s %s" % (row.booleanOperatorButton, self.extractValueOfWidget(row.booleanOperatorButton))
+            print "%s %s" % (row.fieldInput, self.extractValueOfWidget(row.fieldInput))
+            print "%s %s" % (row.operatorInput, self.extractValueOfWidget(row.operatorInput))
+            print "%s %s" % (row.valueInput, self.extractValueOfWidget(row.valueInput))
+            print "%s %s" % (row.matchesInput, self.extractValueOfWidget(row.matchesInput))
+            clauses.append({
+                            'booleanOperator': self.extractValueOfWidget(row.booleanOperatorButton),
+                            'field': self.extractValueOfWidget(row.fieldInput),
+                            'operator': self.extractValueOfWidget(row.operatorInput),
+                            'value': self.extractValueOfWidget(row.valueInput),
+                            'matches': self.extractValueOfWidget(row.matchesInput)
+                            })
+        print clauses
 #        print "removeRow RowCount: %s" % self.layout().rowCount()
         #del row
+    
+    def extractValueOfWidget(self, widget):
+        if isinstance(widget, QCheckBox):
+            return widget.isChecked()
+        if isinstance(widget, TreeComboBox):
+            return widget.value()
+        if isinstance(widget, BigComboBox):
+            return variant_to_pyobject(widget.value())
+        if isinstance(widget, QComboBox):
+            return variant_to_pyobject(widget.itemData(widget.currentIndex(), Qt.UserRole))
+        if hasattr(widget, 'value') and callable(widget.value):
+            return widget.value()
+        if hasattr(widget, 'text') and callable(widget.text):
+            return widget.text()
         
 
 if __name__ == "__main__":

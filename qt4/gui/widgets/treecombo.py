@@ -21,6 +21,15 @@ class TreeComboBox(QComboBox):
         self.setView(self.itemView)
         self._flatItemTree = {}
     
+    def value(self):
+        item = self.itemView.currentItem()
+        if item is not None:
+            return item.data(1, Qt.DisplayRole).toString()
+        currentText = self.itemText(self.currentIndex())
+        res = self.itemView.findItems(currentText, Qt.MatchExactly,0)
+        if len(res):
+            return res[0].data(1, Qt.DisplayRole).toString()
+    
     def addItemFlat(self, depth, texts):
         self._flatItemTree[depth] = QTreeWidgetItem(texts)
         if depth == 0:
