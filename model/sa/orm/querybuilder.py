@@ -6,9 +6,23 @@ Created on 26.06.2011
 
 from sqlalchemy.orm import joinedload, joinedload_all, object_mapper, \
     RelationshipProperty, ColumnProperty
-    
+
+from ems.util import GenClause   #@UnresolvedImport
 
 from sqlalchemy.util import symbol
+
+class PathClause(GenClause):
+    def like(self, other):
+        self.operator = 'like'
+        self.right = other
+        return self
+    
+    def notLike(self, other):
+        self.operator = 'notLike'
+        self.right = other
+        return self
+        
+    
 
 class SAQueryBuilder(object):
     
@@ -33,7 +47,7 @@ class SAQueryBuilder(object):
     
     propertyNames = property(getPropertyNames)
     
-    def getQuery(self, session, properties=[], joins=[]):
+    def getQuery(self, session, properties=[], joins=[], filters=[]):
         query = session.query(self._ormObj.__class__)
         
         joinloads = []

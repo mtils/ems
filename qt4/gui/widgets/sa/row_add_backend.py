@@ -11,7 +11,7 @@ from sqlalchemy.orm import RelationshipProperty, ColumnProperty
 from sqlalchemy.types import AbstractType, String, Integer, Float, Boolean
 
 from ems.qt4.gui.widgets.row_add_search import BuilderBackend #@UnresolvedImport
-from ems.model.sa.orm.querybuilder import SAQueryBuilder #@UnresolvedImport
+from ems.model.sa.orm.querybuilder import SAQueryBuilder, PathClause #@UnresolvedImport
 
 class SABuilderBackend(BuilderBackend):
     def __init__(self, ormObj, mapper):
@@ -131,6 +131,7 @@ class SABuilderBackend(BuilderBackend):
                                           "one Column are not supported")
         else:
             searchRow.operatorInput.clear()
+            searchRow.operatorInput.addItem(QString.fromUtf8('ist'),QVariant('='))
     def displayValueWidget(self, searchRow, currentProperty):
 #        print "displayValueWidget %s" % currentProperty
         propertyKey = currentProperty.split('.')[-1:][0]
@@ -143,9 +144,62 @@ class SABuilderBackend(BuilderBackend):
         crit = self._queryBuilder.propertyName2Class['zustand.baujahrklasseId'].baujahrklasseId == 15
         #print type(crit)
         #print query.filter(crit)
-        print query
+        #print query
+        pathClauses = []
         
         for clause in clauses:
             field = unicode(clause['field'])
-            print field
-        
+            pc = PathClause(field)
+            if clause['value'] is not None:
+                pc = self.buildPathClause(field, clause['operator'],
+                                          unicode(clause['value']),
+                                          clause['matches'])
+                pathClauses.append(pc)
+                #value = unicode(clause['value'])
+            #print "%s %s" % (field, value)
+            
+        for pathClause in pathClauses:
+            print pathClause
+            
+    def buildPathClause(self, field, operator, value, matches):
+        pc = PathClause(field)
+        if operator == '=':
+            if matches:
+                return pc.__eq__(value)
+            else:
+                return pc.__ne__(value)
+        elif operator == '<':
+            if matches:
+                return pc.__lt__(value)
+            else:
+                return pc.__ge__(value)
+        elif operator == '<=':
+            if matches:
+                return pc.__le__(value)
+            else:
+                return pc.__gt__(value)
+        elif operator == '>':
+            if matches:
+                return pc.__gt__(value)
+            else:
+                return pc.__le__(value)
+        elif operator == '>=':
+            if matches:
+                return pc.__ge__(value)
+            else:
+                return pc.__lt__(value)
+        elif operator == 'LIKE':
+            if matches:
+                return pc.like(value)
+            else:
+                return pc.notLike(value)
+        elif operator == 'BEFORE':
+            if matches:
+                return pc.__lt__(value)
+            else:
+                return pc.__gt__(value)
+        elif operator == 'AFTER':
+            if matches:
+                return pc.__gt__(value)
+            else:
+                return pc.__lt__(value)
