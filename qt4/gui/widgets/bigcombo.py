@@ -93,6 +93,11 @@ class PopupListView(QListView):
         self.hide()
         return result
     
+#    def reset(self):
+#        print "PopupListView.reset() called"
+#        print "self.model().rowCount() = %s" % self.model().rowCount()
+#        #super(PopupListView, self).reset()
+    
     
 
 class BigComboBox(QComboBox):

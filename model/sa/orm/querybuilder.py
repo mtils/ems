@@ -30,6 +30,7 @@ class SAQueryBuilder(object):
         self._ormObj = ormObj
         self._mapper = object_mapper(self._ormObj)
         self._propertyNames = []
+        self._propertyNamesDecorated = []
         self._properties = {}
         self._joinNames = []
         self._joinNameClasses = {}
@@ -46,6 +47,40 @@ class SAQueryBuilder(object):
         return self._propertyNames
     
     propertyNames = property(getPropertyNames)
+    
+    def getPropertyNamesDecorated(self):
+        if not len(self._propertyNamesDecorated):
+            self._loadPropertyNamesDecorated()
+        return self._propertyNamesDecorated
+    
+    propertyNamesDecorated = property(getPropertyNamesDecorated)
+    
+    def _loadPropertyNamesDecorated(self, ormClass=None, pathStack=[]):
+        
+        if ormClass is None:
+            ormClass = self._ormObj.__class__
+        
+        dec = ormClass.__ormDecorator__()
+        
+        for propertyName in dec.getShownProperties():
+            
+            pathStack.append(propertyName)
+            propertyPath = ".".join(pathStack)
+            
+            if self.properties.has_key(propertyPath):
+                if isinstance(self.properties[propertyPath],
+                              RelationshipProperty):
+                    if propertyPath in self.joinNames:
+                        joinClass = self.joinNameClasses[propertyPath]
+                        self._propertyNamesDecorated.append(propertyPath)
+                        self._loadPropertyNamesDecorated(joinClass, pathStack)
+                        
+                if isinstance(self.properties[propertyPath],
+                              ColumnProperty):
+                    self._propertyNamesDecorated.append(propertyPath)
+            
+            pathStack.pop()
+        return self._propertyNamesDecorated
     
     def getQuery(self, session, properties=[], joins=[], filters=[]):
         query = session.query(self._ormObj.__class__)

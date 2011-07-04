@@ -45,4 +45,13 @@ class OrmDecorator(object):
     def getDefaultOrderByProperty(self, obj):
         if hasattr(self._class,'__reprasentive_column__'):
             return self._class.__reprasentive_column__
+    
+    def getDefaultAllQuery(self, session):
+        return session.query(self._class).order_by(self.getDefaultOrderByProperty(None))
+    
+    def getAll(self, session):
+        return self.getDefaultAllQuery(session).all()
+    
+    def getFullTextQuery(self, session, text):
+        return None
         

@@ -19,6 +19,8 @@ class RepresentativeModel(QAbstractListModel):
         self._dirty = True
         self._fullTextCriteria = ""
         self._fullTextColumns = None
+        self.hardLimit = 250
+        
         if query is None:
             query = self._session.query(self._queriedObject)
         self._query = query
@@ -72,20 +74,26 @@ class RepresentativeModel(QAbstractListModel):
             return QVariant(self._resultCache[index.row()].__getattribute__(self._fkColumn))
         return QVariant()
     
-    def _buildFulltextCriteria(self):
-        criteria = None
-        if len(self._fullTextCriteria):
-            fulltextCols = self.fulltextColumns
-            if fulltextCols is not None:
-                if len(fulltextCols) > 1:
-                    criteria = or_()
-                    for col in fulltextCols:
-                        criteria.append(col[0].like(unicode(self._fullTextCriteria))+"%")
-                    
-                else:
-                    criteria = fulltextCols[0].like(unicode(self._fullTextCriteria)+"%")
-            return criteria
-        raise TypeError("No FulltextColumns found")
+    def _buildFulltextQuery(self):
+        query = None
+        dec = self._queriedObject.__ormDecorator__()
+        query = dec.getFullTextQuery(self._session, unicode(self._fullTextCriteria)+'%')
+        if query is None:
+            criteria = None
+            if len(self._fullTextCriteria):
+                fulltextCols = self.fulltextColumns
+                if fulltextCols is not None:
+                    if len(fulltextCols) > 1:
+                        criteria = or_()
+                        for col in fulltextCols:
+                            criteria.append(col[0].like(unicode(self._fullTextCriteria))+"%")
+                        
+                    else:
+                        criteria = fulltextCols[0].like(unicode(self._fullTextCriteria)+"%")
+                return self._query.filter(criteria)
+            raise TypeError("No FulltextColumns found")
+        else:
+            return query
     
     def perform(self):
         if not self._dirty:
@@ -96,12 +104,12 @@ class RepresentativeModel(QAbstractListModel):
         self.beginResetModel()
         self._resultCache.clear()
         if len(self._fullTextCriteria):
-            criteria = self._buildFulltextCriteria()
-            query = self._query.filter(criteria)
+            query = self._buildFulltextQuery()
+            #query = self._query.filter(criteria)
         else:
             query = self._query
         
-        for obj in query.all():
+        for obj in query[0:self.hardLimit]:
             self._resultCache[i] = obj
             i += 1
         self.endResetModel()

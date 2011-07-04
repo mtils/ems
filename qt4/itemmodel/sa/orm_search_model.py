@@ -38,7 +38,7 @@ class SAOrmSearchModel(QAbstractTableModel):
     def ormProperties(self):
         if self._ormProperties is None:
             self._ormProperties = OrderedDict()
-            for propertyName in self._queryBuilder.propertyNames:
+            for propertyName in self._queryBuilder.propertyNamesDecorated:
                 self._ormProperties[propertyName] = \
                     self._queryBuilder.properties[propertyName]
                 #self._ormProperties.append(property)

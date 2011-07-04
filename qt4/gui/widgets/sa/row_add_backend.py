@@ -132,6 +132,7 @@ class SABuilderBackend(BuilderBackend):
         else:
             searchRow.operatorInput.clear()
             searchRow.operatorInput.addItem(QString.fromUtf8('ist'),QVariant('='))
+            
     def displayValueWidget(self, searchRow, currentProperty):
 #        print "displayValueWidget %s" % currentProperty
         propertyKey = currentProperty.split('.')[-1:][0]
