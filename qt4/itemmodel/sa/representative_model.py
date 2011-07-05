@@ -3,9 +3,11 @@ Created on 20.06.2011
 
 @author: michi
 '''
+import re
+
 from PyQt4.QtCore import QAbstractListModel, QVariant, Qt, QModelIndex
 from sqlalchemy.orm import object_mapper, ColumnProperty
-from sqlalchemy import String, or_
+from sqlalchemy import String, or_, and_
 
 from ems import qt4
 
@@ -20,6 +22,7 @@ class RepresentativeModel(QAbstractListModel):
         self._fullTextCriteria = ""
         self._fullTextColumns = None
         self.hardLimit = 250
+        self.returnHtml = False
         
         if query is None:
             query = self._session.query(self._queriedObject)
@@ -61,9 +64,20 @@ class RepresentativeModel(QAbstractListModel):
             value = self._resultCache[index.row()].__ormDecorator__().getReprasentiveString(self._resultCache[index.row()])
 #            if self._queriedObject.__name__ == 'Gruppe':
 #                print "row:%s col:%s role:%s value:%s" % (index.row(), index.column(), role, value)
-            if isinstance(value, basestring):
-                return QVariant(unicode(value))
-            return QVariant(value)
+            if not self.returnHtml or role == Qt.EditRole:
+                if isinstance(value, basestring):
+                    return QVariant(unicode(value))
+                
+            else:
+                strVal = unicode(value)
+                i=0
+                
+                for cond in unicode(self._fullTextCriteria).split(' '):
+                    if len(cond.strip(' ')):
+                        strVal = re.sub(cond, "<b>%s</b>" % cond.strip(),
+                                        strVal,flags=re.IGNORECASE)
+                    i += 1
+            return QVariant(strVal)
         if role == Qt.UserRole:
             #value = self._resultCache[index.row()].__getattribute__(self._fkColumn)
             value = self._resultCache[index.row()]
@@ -77,7 +91,7 @@ class RepresentativeModel(QAbstractListModel):
     def _buildFulltextQuery(self):
         query = None
         dec = self._queriedObject.__ormDecorator__()
-        query = dec.getFullTextQuery(self._session, unicode(self._fullTextCriteria)+'%')
+        query = dec.getFullTextQuery(self._session, unicode(self._fullTextCriteria))
         if query is None:
             criteria = None
             if len(self._fullTextCriteria):

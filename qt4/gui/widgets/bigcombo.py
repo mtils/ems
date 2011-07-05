@@ -8,6 +8,8 @@ from PyQt4.QtCore import QVariant, Qt, QStringList, SIGNAL, SLOT, QAbstractItemM
 from PyQt4.QtGui import QComboBox, QTreeWidget, QTreeWidgetItem, QCompleter,\
 QStringListModel, QListView
 
+from ems.qt4.gui.itemdelegate.htmldelegate import HtmlDelegate #@UnresolvedImport
+from ems.qt4.itemmodel.sa.representative_model import RepresentativeModel
 class TestModel(QAbstractListModel):
     def __init__(self, parent=None):
         super(TestModel, self).__init__(parent)
@@ -71,6 +73,7 @@ class PopupListView(QListView):
     def __init__(self, parent=None):
         super(PopupListView, self).__init__(parent)
         self.setFrameStyle(self.Plain)
+        self.setItemDelegate(HtmlDelegate(self))
     
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Return:
@@ -107,7 +110,8 @@ class BigComboBox(QComboBox):
         
         self.itemView = PopupListView(self)
         self.itemView.setWindowFlags(Qt.Popup)
-        
+        if isinstance(model, RepresentativeModel):
+            model.returnHtml = True
         self.itemView.setModel(model)
         self.connect(self, SIGNAL("editTextChanged(QString)"),
                      self.onEditTextChanged)
@@ -115,7 +119,7 @@ class BigComboBox(QComboBox):
         self.connect(self.itemView,
                      SIGNAL("currentIndexChanged(QModelIndex)"),
                      self.onCurrentIndexChanged)
-        print self.completer().setCompletionMode(self.completer().InlineCompletion)
+        #print self.completer().setCompletionMode(self.completer().InlineCompletion)
     
     def keyPressEvent(self, event, fromListView=False):
         result = super(BigComboBox, self).keyPressEvent(event)
