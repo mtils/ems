@@ -42,7 +42,7 @@ class SearchRow(QObject):
         self._builder = builder
         self._enabled = True
         self.removeButton = None
-        self.booleanOperatorButton = None
+        self.conjunctionButton = None
                     
         self.fieldInput = TreeComboBox()
         self.fieldInput.setMinimumWidth(150)
@@ -150,10 +150,10 @@ class RowAddSearch(QWidget):
         return self._addRowButton
     
     @property
-    def booleanOperatorButton(self):
-        return self.getBooleanOperatorButton()
+    def conjunctionButton(self):
+        return self.getConjunctionButton()
     
-    def getBooleanOperatorButton(self):
+    def getConjunctionButton(self):
         widget = QComboBox()
         widget.setMinimumWidth(60)
         widget.setMaximumWidth(60)
@@ -161,7 +161,7 @@ class RowAddSearch(QWidget):
         widget.addItem("Oder", QVariant("OR"))
         return widget
     
-    def getBooleanOperatorPlaceHolder(self):
+    def getConjunctionPlaceHolder(self):
         widget = QWidget()
         widget.setMinimumWidth(60)
         widget.setMaximumWidth(60)
@@ -204,13 +204,13 @@ class RowAddSearch(QWidget):
         layout.addWidget(removeButton,layoutRow,0)
         
         if currentRow == 0:
-            booleanOperatorButton = self.getBooleanOperatorPlaceHolder()
+            conjunctionButton = self.getConjunctionPlaceHolder()
         else:
-            booleanOperatorButton = self.getBooleanOperatorButton()
+            conjunctionButton = self.getConjunctionButton()
         
-        row.booleanOperatorButton = booleanOperatorButton
+        row.conjunctionButton = conjunctionButton
             
-        layout.addWidget(booleanOperatorButton,layoutRow,1)
+        layout.addWidget(conjunctionButton,layoutRow,1)
         
         
         layout.addWidget(row.fieldInput, layoutRow,2)
@@ -234,13 +234,13 @@ class RowAddSearch(QWidget):
         for i in range(len(self._rows)):
             layout.addWidget(self._rows[i].removeButton,i,0)
             if i == 0:
-                if isinstance(self._rows[i].booleanOperatorButton, QComboBox):
-                    self.layout().removeWidget(self._rows[i].booleanOperatorButton)
-                    self._rows[i].booleanOperatorButton.close()
-                    self._rows[i].booleanOperatorButton.setParent(None)
-                    del self._rows[i].booleanOperatorButton
-                    self._rows[i].booleanOperatorButton = self.getBooleanOperatorPlaceHolder()
-            layout.addWidget(self._rows[i].booleanOperatorButton,i,1)
+                if isinstance(self._rows[i].conjunctionButton, QComboBox):
+                    self.layout().removeWidget(self._rows[i].conjunctionButton)
+                    self._rows[i].conjunctionButton.close()
+                    self._rows[i].conjunctionButton.setParent(None)
+                    del self._rows[i].conjunctionButton
+                    self._rows[i].conjunctionButton = self.getConjunctionPlaceHolder()
+            layout.addWidget(self._rows[i].conjunctionButton,i,1)
             layout.addWidget(self._rows[i].fieldInput, i,2)
             layout.addWidget(self._rows[i].operatorInput, i,3)
             layout.addWidget(self._rows[i].valueStack, i,4)
@@ -254,7 +254,7 @@ class RowAddSearch(QWidget):
         row = self._rows[idx]
 #        print "removeRow %s" % idx
         
-        for widget in (row.removeButton,row.booleanOperatorButton,
+        for widget in (row.removeButton,row.conjunctionButton,
                        row.fieldInput, row.operatorInput, row.valueStack,
                        row.matchesInput):
             
@@ -270,11 +270,11 @@ class RowAddSearch(QWidget):
         self._repopulateRows()
     
     def buildQuery(self):
-        print "buildQuery called"
+        #print "buildQuery called"
         clauses = []
         for row in self._rows:
             clauses.append({
-                            'booleanOperator': self.extractValueOfWidget(row.booleanOperatorButton),
+                            'conjunction': self.extractValueOfWidget(row.conjunctionButton),
                             'field': self.extractValueOfWidget(row.fieldInput),
                             'operator': self.extractValueOfWidget(row.operatorInput),
                             'value': self.extractValueOfWidget(row.valueInput),

@@ -5,11 +5,46 @@ Created on 26.06.2011
 '''
 
 from sqlalchemy.orm import joinedload, joinedload_all, object_mapper, \
-    RelationshipProperty, ColumnProperty
+    RelationshipProperty, ColumnProperty, aliased
+
 
 from ems.util import GenClause   #@UnresolvedImport
+from ems.thirdparty.odict import OrderedDict
 
 from sqlalchemy.util import symbol
+
+class PathClauseList(object):
+    def __init__(self, conjunction, initialClauses=[]):
+        self.conjunction = conjunction
+        self.clauses = []
+        
+        #self.clauses = initialClauses
+        
+    def append(self, clause):
+        self.clauses.append(clause)
+    
+#    def __str__(self):
+#        conjString = ""
+#        conjStrings = []
+#        #return str(id(self))
+#        for clause in self.clauses:
+#            conjStrings.append(conjString)
+#            conjStrings.append(str(clause))
+#            conjString = " " + self.conjunction + " "
+#            
+#            
+#        return "".join(conjStrings)
+#    
+#    def __repr__(self):
+#        return self.__str__()
+    
+class AndList(PathClauseList):
+    def __init__(self, *args):
+        super(AndList, self).__init__('AND',*args)
+        
+class OrList(PathClauseList):
+    def __init__(self, *args):
+        super(OrList, self).__init__('OR',*args)
 
 class PathClause(GenClause):
     def like(self, other):
@@ -82,19 +117,173 @@ class SAQueryBuilder(object):
             pathStack.pop()
         return self._propertyNamesDecorated
     
-    def getQuery(self, session, properties=[], joins=[], filters=[]):
-        query = session.query(self._ormObj.__class__)
+    def _calculateJoinNames(self, propertyNames, filter):
+        joins = []
+        filterPropertyNames = []
+        if isinstance(filter, PathClauseList):
+            #raise NotImplementedError("Or und And kommt noch")
+            filterPropertyNames = self._extractPropertyNamesFromClauseList(filter, [])
+        if isinstance(filter, PathClause):
+            filterPropertyNames = [filter.left]
         
-        joinloads = []
         
-        for join in joins:
-            joinloads.append(joinedload_all(join))
-        else:
-            for joinName in self.joinNames:
-                joinloads.append(joinedload_all(joinName))
-        query = query.options(*joinloads)
+        for propertyName in filterPropertyNames:
+            property = self.properties[propertyName]
+            if isinstance(property, RelationshipProperty):
+#                print "%s is RelationShip" % propertyName
+                if propertyName not in joins:
+                    joins.append(propertyName)
+            else:
+#                print "%s is Column" % propertyName
+                split = propertyName.split('.')
+                if len(split):
+                    parentName = ".".join(split[:-1])
+                    if parentName in self.joinNames:
+                        if parentName not in joins:
+                            joins.append(parentName)
+                else:
+                    parentName = None
+                
+                #print self.properties[propertyName]
+                #print "prop: %s parent: %s" % (propertyName, parentName)
+        for propertyName in propertyNames:
+            property = self.properties[propertyName]
+            if isinstance(property, RelationshipProperty):
+                if propertyName not in joins:
+                    joins.append(propertyName)
+            else:
+                split = propertyName.split('.')
+                if len(split) > 1:
+                    parentName = ".".join(split[:-1])
+                    if parentName not in joins:
+                        joins.append(parentName)
+            #print split
+            
+        #print joins
+        return joins
+    
+    def _buildJoinAliases(self, joinNames):
+        sortedAliases = OrderedDict()
+        aliases = {}
+        for joinName in joinNames:
+            #print self.joinNameClasses[joinName]
+            aliases[joinName] = aliased(self.joinNameClasses[joinName])
+        return aliases
+    
+    def _extractPropertyNamesFromClauseList(self, clauseList, propertyNames=[]):
+        
+        for clause in clauseList.clauses:
+            if isinstance(clause, PathClauseList):
+                self._extractPropertyNamesFromClauseList(clause, propertyNames)
+            elif isinstance(clause, PathClause):
+                if clause.left not in propertyNames:
+                    propertyNames.append(clause.left)
+            
+        return propertyNames
+    
+    def getQuery(self, session, propertySelection=[], joins=[], filter=None):
+        
+        #print "getQuery called"
+        
+        if not len(propertySelection):
+            propertySelection = self.propertyNamesDecorated
+        
+        uniqueJoinNames = self._calculateJoinNames(propertySelection, filter) 
+        aliases = self._buildJoinAliases(uniqueJoinNames)
+        joinNames = aliases.keys()
+        joinNames.sort()
+        
+        selectedClasses = self._getSelectedClasses(propertySelection, aliases,
+                                                   joinNames)
+        
+        query = session.query(*selectedClasses)
+        for joinName in joinNames:
+            parentClass = None
+            split = joinName.split('.')
+            #print split
+            if len(split) > 1:
+                propertyName = split[-1:][0]
+                parentName = ".".join(split[:-1])
+                parentClass = aliases[parentName]
+                query = query.outerjoin((aliases[joinName],parentClass.__getattr__(propertyName)))
+            else:
+                parentClass = self._ormObj.__class__
+                propertyName = joinName
+                #print aliases[joinName]
+                #print dir(parentClass)
+                #print self._ormObj
+                #print "(%s, %s)" % (aliases[joinName], parentClass.__dict__[propertyName])
+                query = query.outerjoin((aliases[joinName],parentClass.__dict__[propertyName]))
+            
+            #print "%s %s.%s" % (joinName, parentClass,propertyName)
+        
+        
+        query = self._addFilter(query, filter, aliases)
+            
+        #print self.propertyNamesDecorated
+        
+        
+#        for join in joins:
+#            joinloads.append(joinedload_all(join))
+#        else:
+#            for joinName in self.joinNames:
+#                joinloads.append(joinedload_all(joinName))
+        #query = query.options(*joinloads)
+        print str(query).replace('LEFT OUTER JOIN', '\nLEFT OUTER JOIN')
         return query
     
+    
+    def _getSelectedClasses(self, propertyNames, aliases, joinNames):
+        selectedClasses = [self._ormObj.__class__]
+        for joinName in joinNames:
+            selectedClasses.append(aliases[joinName])
+        return selectedClasses
+    
+    def _addFilter(self, query, filter, aliases):
+        #print filter
+        if isinstance(filter, PathClauseList):
+            #raise NotImplementedError("Or und And kommt noch")
+            #filterPropertyNames = self._extractPropertyNamesFromClauseList(filter, [])
+            pass
+        if isinstance(filter, PathClause):
+            clause = self._convertPathClause(filter, aliases)
+            
+            query = query.filter(clause)
+        
+        return query
+    def _convertPathClause(self, clause, aliases):
+        print clause
+        property = self.properties[clause.left]
+        if isinstance(property, ColumnProperty):
+            split = clause.left.split('.')
+            if len(split) < 2:
+                return self._ormObj.__class__.__dict__[clause.left].__getattribute__(self._translateOperator(clause.operator))(clause.right)
+            else:
+                parentName = ".".join(split[:-1])
+                propName = split[-1:][0]
+                method = self._translateOperator(clause.operator)
+                return aliases[parentName].__getattr__(propName).__getattr__(method)(clause.right)
+        if isinstance(property, RelationshipProperty):
+            split = clause.left.split('.')
+#            print type(clause.right)
+            if len(split) < 2:
+                return self._ormObj.__class__.__dict__[clause.left].__eq__(clause.right)
+            else:
+                parentName = ".".join(split[:-1])
+                propName = split[-1:][0]
+                return aliases[parentName].__getattr__(propName).__eq__(clause.right)
+    
+    def _translateOperator(self, operator):
+        table = {'==':'__eq__',
+         '!=':'__ne__',
+         '<':'__lt__',
+         '<=':'__le__',
+         '>':'__gt__',
+         '>=':'__ge__',
+         'like':'like',
+         'BEFORE':'<',
+         'AFTER':'>'}
+        return table[operator]
     @property
     def propertyName2Class(self):
         return self._propertyNameClasses

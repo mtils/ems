@@ -7,11 +7,12 @@ Created on 26.06.2011
 from PyQt4.QtCore import QVariant, QString, Qt
 from PyQt4.QtGui import QSpinBox, QDoubleSpinBox, QLineEdit
 
+from sqlalchemy import and_, or_
 from sqlalchemy.orm import RelationshipProperty, ColumnProperty
 from sqlalchemy.types import AbstractType, String, Integer, Float, Boolean
 
 from ems.qt4.gui.widgets.row_add_search import BuilderBackend #@UnresolvedImport
-from ems.model.sa.orm.querybuilder import SAQueryBuilder, PathClause #@UnresolvedImport
+from ems.model.sa.orm.querybuilder import SAQueryBuilder, PathClause, AndList, OrList #@UnresolvedImport
 
 class SABuilderBackend(BuilderBackend):
     def __init__(self, ormObj, mapper):
@@ -141,26 +142,55 @@ class SABuilderBackend(BuilderBackend):
         searchRow.replaceValueInput(newWidget)
     
     def buildQuery(self, clauses):
-        query = self._queryBuilder.getQuery(self._mapper.session)
+        
         crit = self._queryBuilder.propertyName2Class['zustand.baujahrklasseId'].baujahrklasseId == 15
         #print type(crit)
         #print query.filter(crit)
         #print query
+        
         pathClauses = []
+        conjunctions = []
         
         for clause in clauses:
             field = unicode(clause['field'])
             pc = PathClause(field)
             if clause['value'] is not None:
                 pc = self.buildPathClause(field, clause['operator'],
-                                          unicode(clause['value']),
+                                          clause['value'],
                                           clause['matches'])
                 pathClauses.append(pc)
+                conjunctions.append(clause['conjunction'])
                 #value = unicode(clause['value'])
             #print "%s %s" % (field, value)
+        filter=None
+        booleanClauses = []
+        currentClause = None
+        if len(pathClauses) > 1:
+            i=0
+            for clause in pathClauses:
+                if conjunctions[i] is not None:
+                    if conjunctions[i] == 'AND':
+                        currentClause = AndList()
+                    elif conjunctions[i] == 'OR':
+                        currentClause = OrList()
+                    if i > 0:
+                        if len(booleanClauses) >= 1:
+                            #booleanClauses[len(booleanClauses)-1].append(currentClause)
+                            currentClause.append(booleanClauses[len(booleanClauses)-1])
+                        else:
+                            currentClause.append(pathClauses[i-1])
+                    currentClause.append(clause)
+                    booleanClauses.append(currentClause)
+                    
+                i+=1
             
-        for pathClause in pathClauses:
-            print pathClause
+            filter = booleanClauses[len(booleanClauses)-1]
+        elif len(pathClauses) == 1:
+            filter = pathClauses[0]
+        
+        
+            
+        query = self._queryBuilder.getQuery(self._mapper.session, filter=filter)
             
     def buildPathClause(self, field, operator, value, matches):
         pc = PathClause(field)

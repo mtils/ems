@@ -74,8 +74,9 @@ class RepresentativeModel(QAbstractListModel):
                 
                 for cond in unicode(self._fullTextCriteria).split(' '):
                     if len(cond.strip(' ')):
-                        strVal = re.sub(cond, "<b>%s</b>" % cond.strip(),
-                                        strVal,flags=re.IGNORECASE)
+                        strVal = strVal.replace(cond, "<b>%s</b>" % cond.strip())
+#                        strVal = re.sub(cond, "<b>%s</b>" % cond.strip(),
+#                                        strVal,flags=re.IGNORECASE)
                     i += 1
             return QVariant(strVal)
         if role == Qt.UserRole:
