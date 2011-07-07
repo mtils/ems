@@ -6,12 +6,12 @@ Created on 14.06.2011
 from PyQt4.QtCore import QAbstractTableModel, QModelIndex, Qt, QVariant, QString
 
 from sqlalchemy.orm import object_mapper, ColumnProperty, RelationshipProperty
-
+from sqlalchemy.util import NamedTuple
 from ems import qt4
 from ems.thirdparty.odict import OrderedDict
 
 class SAOrmSearchModel(QAbstractTableModel):
-    def __init__(self,session, queriedObject, querybuilder, columns = []):
+    def __init__(self,session, queriedObject, querybuilder, query=None, columns = []):
         super(SAOrmSearchModel, self).__init__()
         self._session = session
         self._queriedObject = queriedObject
@@ -21,11 +21,24 @@ class SAOrmSearchModel(QAbstractTableModel):
         self._ormProperties = None
         self._flagsCache = {}
         self._queryBuilder = querybuilder
+        if query is None:
+            query = self._queryBuilder.getQuery(self._session)
+        self._query = query
         self._headerNameCache = {}
         if not len(self._columns):
             self._columns = self._buildDefaultColumns()
         self._columnName2Index = self._buildReversedColumnLookup(columns)
         self._dirty = True
+    
+    def getQuery(self):
+        return self._query
+    
+    def setQuery(self, query):
+        self._query = query
+        self._dirty = True
+        self.perform()
+    
+    query = property(getQuery, setQuery)
     
     @property
     def mapper(self):
@@ -111,6 +124,7 @@ class SAOrmSearchModel(QAbstractTableModel):
         if role in (Qt.DisplayRole, Qt.EditRole):
             #print self._resultCache[index.row()]
             #value = self._resultCache[index.row()].__getattribute__(columnName)
+            #return QVariant("Test")
             value = self.extractValue(index, columnName)
             #print value
 #            if self._queriedObject.__name__ == 'Gruppe':
@@ -176,13 +190,23 @@ class SAOrmSearchModel(QAbstractTableModel):
     
     
     def perform(self):
+        
         if not self._dirty:
             return
         #self.beginResetModel()
         #print "%s : I actually perform" % self._queriedObject
         #print self._session.get_bind(self._queriedObject)
         i = 0
-        for obj in self._session.query(self._queriedObject).all():
-            self._resultCache[i] = obj
+        
+        self.beginResetModel()
+        
+        self._resultCache.clear()
+        for obj in self._query.all():
+            
+            if isinstance(obj, NamedTuple):
+                self._resultCache[i] = obj[0]
+            else:
+                self._resultCache[i] = obj
             i += 1
         self._dirty = False
+        self.endResetModel()

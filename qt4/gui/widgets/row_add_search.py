@@ -119,6 +119,7 @@ class SearchRow(QObject):
 class RowAddSearch(QWidget):
     
     rowAdded = pyqtSignal(int)
+    queryChanged = pyqtSignal(object)
     
     def __init__(self, builderBackend=None, parent=None):
         QWidget.__init__(self, parent)
@@ -281,9 +282,9 @@ class RowAddSearch(QWidget):
                             'matches': self.extractValueOfWidget(row.matchesInput)
                             })
         
-        self._builder.buildQuery(clauses)
-#        print "removeRow RowCount: %s" % self.layout().rowCount()
-        #del row
+        query = self._builder.buildQuery(clauses)
+        self.queryChanged.emit(query)
+        return query
     
     def extractValueOfWidget(self, widget):
         if isinstance(widget, QCheckBox):

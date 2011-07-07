@@ -5,13 +5,14 @@ Created on 26.06.2011
 '''
 
 from sqlalchemy.orm import joinedload, joinedload_all, object_mapper, \
-    RelationshipProperty, ColumnProperty, aliased
+    RelationshipProperty, ColumnProperty, aliased, contains_eager
 
 
 from ems.util import GenClause   #@UnresolvedImport
 from ems.thirdparty.odict import OrderedDict
 
 from sqlalchemy.util import symbol
+from sqlalchemy.sql.expression import and_, or_
 
 class PathClauseList(object):
     def __init__(self, conjunction, initialClauses=[]):
@@ -193,10 +194,8 @@ class SAQueryBuilder(object):
         joinNames = aliases.keys()
         joinNames.sort()
         
-        selectedClasses = self._getSelectedClasses(propertySelection, aliases,
-                                                   joinNames)
-        
-        query = session.query(*selectedClasses)
+        query = session.query(self._ormObj.__class__)
+
         for joinName in joinNames:
             parentClass = None
             split = joinName.split('.')
@@ -209,50 +208,69 @@ class SAQueryBuilder(object):
             else:
                 parentClass = self._ormObj.__class__
                 propertyName = joinName
-                #print aliases[joinName]
-                #print dir(parentClass)
-                #print self._ormObj
-                #print "(%s, %s)" % (aliases[joinName], parentClass.__dict__[propertyName])
                 query = query.outerjoin((aliases[joinName],parentClass.__dict__[propertyName]))
-            
-            #print "%s %s.%s" % (joinName, parentClass,propertyName)
-        
         
         query = self._addFilter(query, filter, aliases)
-            
-        #print self.propertyNamesDecorated
+        containsEagers = self._getContainsEagers(propertySelection, aliases,
+                                                joinNames)            
         
-        
-#        for join in joins:
-#            joinloads.append(joinedload_all(join))
-#        else:
-#            for joinName in self.joinNames:
-#                joinloads.append(joinedload_all(joinName))
-        #query = query.options(*joinloads)
-        print str(query).replace('LEFT OUTER JOIN', '\nLEFT OUTER JOIN')
+        if len(containsEagers):
+            query = query.options(*containsEagers)
+        #print str(query).replace('LEFT OUTER JOIN', '\nLEFT OUTER JOIN')
         return query
     
     
-    def _getSelectedClasses(self, propertyNames, aliases, joinNames):
+    def _getContainsEagers(self, propertyNames, aliases, joinNames):
         selectedClasses = [self._ormObj.__class__]
-        for joinName in joinNames:
-            selectedClasses.append(aliases[joinName])
-        return selectedClasses
+        neededJoins = []
+        for propertyName in propertyNames:
+            property = self.properties[propertyName]
+            if isinstance(property, RelationshipProperty):
+                if propertyName not in neededJoins:
+                    neededJoins.append(propertyName)
+            elif isinstance(property, ColumnProperty):
+                split = propertyName.split('.')
+                if len(split) > 2:
+                    joinName = ".".join(split[:-1])
+                    if joinName not in neededJoins:
+                        neededJoins.append(joinName)
+                    
+            
+        containsEagers = []
+
+        for neededJoin in neededJoins:
+            containsEagers.append(contains_eager(neededJoin, alias=aliases[neededJoin]))
+            
+        return containsEagers
+        
     
     def _addFilter(self, query, filter, aliases):
         #print filter
         if isinstance(filter, PathClauseList):
-            #raise NotImplementedError("Or und And kommt noch")
-            #filterPropertyNames = self._extractPropertyNamesFromClauseList(filter, [])
-            pass
+            saClauseList = self._convertPathClauseList(filter, aliases)
+            query = query.filter(saClauseList)
         if isinstance(filter, PathClause):
             clause = self._convertPathClause(filter, aliases)
             
             query = query.filter(clause)
         
         return query
+    
+    def _convertPathClauseList(self, clauseList, aliases, parentClause=None):
+        if isinstance(clauseList, PathClauseList):
+            if clauseList.conjunction == "AND":
+                saClause = and_()
+            elif clauseList.conjunction == 'OR':
+                saClause = or_()
+            for clause in clauseList.clauses:
+                if isinstance(clause, PathClause):
+                    saClause.append(self._convertPathClause(clause, aliases))
+                elif isinstance(clause, PathClauseList):
+                    saClause.append(self._convertPathClauseList(clause, aliases, saClause))
+            return saClause
+                    
     def _convertPathClause(self, clause, aliases):
-        print clause
+        
         property = self.properties[clause.left]
         if isinstance(property, ColumnProperty):
             split = clause.left.split('.')
@@ -263,6 +281,7 @@ class SAQueryBuilder(object):
                 propName = split[-1:][0]
                 method = self._translateOperator(clause.operator)
                 return aliases[parentName].__getattr__(propName).__getattr__(method)(clause.right)
+            
         if isinstance(property, RelationshipProperty):
             split = clause.left.split('.')
 #            print type(clause.right)

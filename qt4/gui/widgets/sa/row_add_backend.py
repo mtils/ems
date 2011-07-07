@@ -4,29 +4,39 @@ Created on 26.06.2011
 
 @author: michi
 '''
-from PyQt4.QtCore import QVariant, QString, Qt
+from PyQt4.QtCore import QVariant, QString, Qt, pyqtSignal, QObject
 from PyQt4.QtGui import QSpinBox, QDoubleSpinBox, QLineEdit
 
 from sqlalchemy import and_, or_
 from sqlalchemy.orm import RelationshipProperty, ColumnProperty
+from sqlalchemy.orm.query import Query
 from sqlalchemy.types import AbstractType, String, Integer, Float, Boolean
 
 from ems.qt4.gui.widgets.row_add_search import BuilderBackend #@UnresolvedImport
 from ems.model.sa.orm.querybuilder import SAQueryBuilder, PathClause, AndList, OrList #@UnresolvedImport
+from ems.qt4.util import variant_to_pyobject #@UnresolvedImport
 
 class SABuilderBackend(BuilderBackend):
-    def __init__(self, ormObj, mapper):
+    
+    
+    
+    def __init__(self, ormObj, mapper, parent=None):
         self._ormObj = ormObj
         self._mapper = mapper
         self._decorators = {}
         self._queryBuilder = SAQueryBuilder(ormObj)
         self._orderedProperties = []
         self._shownPropertiesByClassName = {}
+        self._queryListeners = []
     
     @property
     def queryBuilder(self):
         
         return self._queryBuilder
+    
+    def addQueryListener(self, listener):
+        
+        self._queryListeners.append(listener)
     
     def populateFieldInput(self, fieldInput):
         
@@ -156,7 +166,7 @@ class SABuilderBackend(BuilderBackend):
             pc = PathClause(field)
             if clause['value'] is not None:
                 pc = self.buildPathClause(field, clause['operator'],
-                                          clause['value'],
+                                          variant_to_pyobject(QVariant(clause['value'])),
                                           clause['matches'])
                 pathClauses.append(pc)
                 conjunctions.append(clause['conjunction'])
@@ -188,9 +198,8 @@ class SABuilderBackend(BuilderBackend):
         elif len(pathClauses) == 1:
             filter = pathClauses[0]
         
+        return self._queryBuilder.getQuery(self._mapper.session, filter=filter)
         
-            
-        query = self._queryBuilder.getQuery(self._mapper.session, filter=filter)
             
     def buildPathClause(self, field, operator, value, matches):
         pc = PathClause(field)
