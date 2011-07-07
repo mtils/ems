@@ -17,16 +17,19 @@ class SAOrmSearchModel(QAbstractTableModel):
         self._queriedObject = queriedObject
         self._resultCache = {}
         self._columns = columns
+        if not len(self._columns):
+            self._columns = self.possibleColumns
         self._mapper = None
         self._ormProperties = None
         self._flagsCache = {}
         self._queryBuilder = querybuilder
         if query is None:
-            query = self._queryBuilder.getQuery(self._session)
+            query = self._queryBuilder.getQuery(self._session,
+                                                propertySelection=self._columns)
         self._query = query
         self._headerNameCache = {}
-        if not len(self._columns):
-            self._columns = self._buildDefaultColumns()
+        self._defaultColumns = []
+        
         self._columnName2Index = self._buildReversedColumnLookup(columns)
         self._dirty = True
     
@@ -57,8 +60,13 @@ class SAOrmSearchModel(QAbstractTableModel):
                 #self._ormProperties.append(property)
         return self._ormProperties
     
-    
-    def _buildDefaultColumns(self):
+    @property
+    def possibleColumns(self):
+        if not len(self._defaultColumns):
+            self._defaultColumns = self.__buildDefaultColumns()
+        return self._defaultColumns
+        
+    def __buildDefaultColumns(self):
         columns = []
         for property in self.ormProperties.keys():
             columns.append(property)
@@ -71,6 +79,16 @@ class SAOrmSearchModel(QAbstractTableModel):
             reversed[str(column)] = i
             i += 1
         return reversed
+    
+    def getColumns(self):
+        return self._columns
+    
+    def setColumns(self, cols):
+        self._columns = cols
+        self._dirty = True
+        self.perform()
+    
+    columns = property(getColumns, setColumns)
     
     @property
     def session(self):

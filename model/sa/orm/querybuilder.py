@@ -118,6 +118,14 @@ class SAQueryBuilder(object):
             pathStack.pop()
         return self._propertyNamesDecorated
     
+    def _addJoinPath(self, joins, joinPath):
+        pathName = []
+        for pathPart in joinPath.split('.'):
+            pathName.append(pathPart)
+            path = ".".join(pathName)
+            if path not in joins:
+                joins.append(path)
+            
     def _calculateJoinNames(self, propertyNames, filter):
         joins = []
         filterPropertyNames = []
@@ -128,36 +136,38 @@ class SAQueryBuilder(object):
             filterPropertyNames = [filter.left]
         
         
+        
         for propertyName in filterPropertyNames:
             property = self.properties[propertyName]
             if isinstance(property, RelationshipProperty):
 #                print "%s is RelationShip" % propertyName
-                if propertyName not in joins:
-                    joins.append(propertyName)
+                self._addJoinPath(joins, propertyName)
             else:
 #                print "%s is Column" % propertyName
                 split = propertyName.split('.')
                 if len(split):
                     parentName = ".".join(split[:-1])
                     if parentName in self.joinNames:
-                        if parentName not in joins:
-                            joins.append(parentName)
+                        self._addJoinPath(joins, parentName)
+                        #if parentName not in joins:
+                        #    joins.append(parentName)
                 else:
                     parentName = None
                 
                 #print self.properties[propertyName]
                 #print "prop: %s parent: %s" % (propertyName, parentName)
+        
         for propertyName in propertyNames:
             property = self.properties[propertyName]
             if isinstance(property, RelationshipProperty):
-                if propertyName not in joins:
-                    joins.append(propertyName)
+                self._addJoinPath(joins, propertyName)
             else:
                 split = propertyName.split('.')
                 if len(split) > 1:
                     parentName = ".".join(split[:-1])
-                    if parentName not in joins:
-                        joins.append(parentName)
+                    self._addJoinPath(joins, parentName)
+#                    if parentName not in joins:
+#                        joins.append(parentName)
             #print split
             
         #print joins
@@ -189,7 +199,8 @@ class SAQueryBuilder(object):
         if not len(propertySelection):
             propertySelection = self.propertyNamesDecorated
         
-        uniqueJoinNames = self._calculateJoinNames(propertySelection, filter) 
+        uniqueJoinNames = self._calculateJoinNames(propertySelection, filter)
+        print uniqueJoinNames
         aliases = self._buildJoinAliases(uniqueJoinNames)
         joinNames = aliases.keys()
         joinNames.sort()
@@ -216,7 +227,7 @@ class SAQueryBuilder(object):
         
         if len(containsEagers):
             query = query.options(*containsEagers)
-        #print str(query).replace('LEFT OUTER JOIN', '\nLEFT OUTER JOIN')
+        print str(query).replace('LEFT OUTER JOIN', '\nLEFT OUTER JOIN')
         return query
     
     

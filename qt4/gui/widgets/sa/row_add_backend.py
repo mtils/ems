@@ -151,7 +151,7 @@ class SABuilderBackend(BuilderBackend):
         newWidget = self._mapper.getWidget(class_(), propertyKey)
         searchRow.replaceValueInput(newWidget)
     
-    def buildQuery(self, clauses):
+    def buildQuery(self, clauses, **kwargs):
         
         crit = self._queryBuilder.propertyName2Class['zustand.baujahrklasseId'].baujahrklasseId == 15
         #print type(crit)
@@ -198,7 +198,7 @@ class SABuilderBackend(BuilderBackend):
         elif len(pathClauses) == 1:
             filter = pathClauses[0]
         
-        return self._queryBuilder.getQuery(self._mapper.session, filter=filter)
+        return self._queryBuilder.getQuery(self._mapper.session, filter=filter, **kwargs)
         
             
     def buildPathClause(self, field, operator, value, matches):

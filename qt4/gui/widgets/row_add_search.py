@@ -270,7 +270,7 @@ class RowAddSearch(QWidget):
         
         self._repopulateRows()
     
-    def buildQuery(self):
+    def buildQuery(self,**kwargs):
         #print "buildQuery called"
         clauses = []
         for row in self._rows:
@@ -282,7 +282,7 @@ class RowAddSearch(QWidget):
                             'matches': self.extractValueOfWidget(row.matchesInput)
                             })
         
-        query = self._builder.buildQuery(clauses)
+        query = self._builder.buildQuery(clauses,**kwargs)
         self.queryChanged.emit(query)
         return query
     
