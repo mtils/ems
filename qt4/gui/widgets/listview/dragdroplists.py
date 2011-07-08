@@ -9,9 +9,15 @@ from PyQt4.QtGui import QWidget, QListWidgetItem
 from dragdroplists_ui import Ui_ListDragSelection #@UnresolvedImport
 
 class DragDropLists(QWidget, Ui_ListDragSelection):
+    
+    choosedItemsChanged = pyqtSignal()
+    
     def __init__(self, parent=None):
         QWidget.__init__(self, parent)
         self.setupUi()
+        
+        self._blockChoosedSignal = False
+        
         self.connect(self.addAllInput,
                      SIGNAL("clicked()"),
                      self,
@@ -24,18 +30,69 @@ class DragDropLists(QWidget, Ui_ListDragSelection):
         
         self.connect(self.availableView.model(),
                      SIGNAL('rowsInserted(QModelIndex,int,int)'),
-                     self.onAvailableDataChanged)
+                     self.onAvailableItemsInserted)
         
         self.connect(self.availableView.model(),
                      SIGNAL('rowsMoved(QModelIndex,int,int,QModelIndex,int)'),
-                     self.onAvailableDataChanged)
+                     self.onAvailableItemsMoved)
         
-        self.connect(self.availableView.model(),
+        self.connect(self.choosedView.model(),
                      SIGNAL('rowsRemoved(QModelIndex,int,int)'),
-                     self.onAvailableDataChanged)
+                     self.onAvailableItemsRemoved)
+        
+        self.connect(self.choosedView.model(),
+                     SIGNAL('rowsInserted(QModelIndex,int,int)'),
+                     self.onChoosedItemsInserted)
+        
+        self.connect(self.choosedView.model(),
+                     SIGNAL('rowsMoved(QModelIndex,int,int,QModelIndex,int)'),
+                     self.onChoosedItemsMoved)
+        
+        self.connect(self.choosedView.model(),
+                     SIGNAL('rowsRemoved(QModelIndex,int,int)'),
+                     self.onChoosedItemsRemoved)
+        
+        self.connect(self, SIGNAL('choosedItemsChanged()'),
+                     self.onChoosedItemsChangedSignal)
     
-    def onAvailableDataChanged(self, *args):
-        print "Ich werde aufgerufen"
+    def onAvailableItemsChanged(self, *args):
+        pass
+#        print "onAvailableItemsChanged"
+    
+    def onAvailableItemsInserted(self, *args):
+        pass
+#        print "onAvailableItemsInserted"
+    
+    def onAvailableItemsMoved(self, *args):
+        pass
+#        print "onAvailableItemsMoved"
+    
+    def onAvailableItemsRemoved(self, *args):
+        pass
+#        print "onAvailableItemsRemoved"
+    
+    def onChoosedItemsChanged(self, *args):
+#        print "onChoosedItemsChanged"
+        self.choosedItemsChangedEmit()
+    
+    def onChoosedItemsInserted(self, *args):
+#        print "onChoosedItemsInserted"
+        self.choosedItemsChangedEmit()
+    
+    def onChoosedItemsMoved(self, *args):
+#        print "onChoosedItemsMoved"
+        self.choosedItemsChangedEmit()
+    
+    def onChoosedItemsRemoved(self, *args):
+#        print "onChoosedItemsRemoved"
+        self.choosedItemsChangedEmit()
+    
+    def choosedItemsChangedEmit(self):
+        if not self._blockChoosedSignal:
+            self.choosedItemsChanged.emit()
+    
+    def onChoosedItemsChangedSignal(self):
+        print "choosedItemsChanged emitted"
         
     def setupUi(self):
         Ui_ListDragSelection.setupUi(self, self)
@@ -43,16 +100,16 @@ class DragDropLists(QWidget, Ui_ListDragSelection):
     @pyqtSlot()
     def unChooseAll(self):
 #        print "unChooseAll triggered"
-#        print self.choosedItemView.count()
-        for index in range(self.choosedItemView.count()):
-            self.availableView.addItem(QListWidgetItem(self.choosedItemView.item(index)))
+#        print self.choosedView.count()
+        for index in range(self.choosedView.count()):
+            self.availableView.addItem(QListWidgetItem(self.choosedView.item(index)))
         
-        self.choosedItemView.clear()
+        self.choosedView.clear()
     
     @pyqtSlot()
     def chooseAll(self):
         for index in range(self.availableView.count()):
-            self.choosedItemView.addItem(QListWidgetItem(self.availableView.item(index)))
+            self.choosedView.addItem(QListWidgetItem(self.availableView.item(index)))
         
         self.availableView.clear()
     
@@ -71,7 +128,9 @@ class DragDropLists(QWidget, Ui_ListDragSelection):
             item.setData(Qt.UserRole, QVariant(userData))
         if font is not None:
             item.setFont(font)
-        self.choosedItemView.addItem(item)
+        self._blockChoosedSignal = True
+        self.choosedView.addItem(item)
+        self._blockChoosedSignal = False
     
     def addAvailableEntries(self, listOfTextsOrTuples):
         for entry in listOfTextsOrTuples:
@@ -92,7 +151,7 @@ class DragDropLists(QWidget, Ui_ListDragSelection):
                 self.addChoosedEntry(entry)
     
     def setChoosedEntries(self, listOfTextsOrTuples):
-        self.choosedItemView.clear()
+        self.choosedView.clear()
         self.addChoosedEntries(listOfTextsOrTuples)
         
 if __name__ == '__main__':
@@ -100,8 +159,10 @@ if __name__ == '__main__':
     
     app = QApplication([])
     w = DragDropLists()
-    w.addAvailableEntry("text")
-    w.choosedItemView.addItem("Und jetzt auch noch rechts")
+        
+    for i in range(12):
+        w.addAvailableEntry("L Eintrag %s" % i)
+        w.addChoosedEntry("R Eintrag %s" % i)
     w.show()
     
     app.exec_()
