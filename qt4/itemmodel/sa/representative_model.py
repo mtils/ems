@@ -97,11 +97,15 @@ class RepresentativeModel(QAbstractListModel):
             criteria = None
             if len(self._fullTextCriteria):
                 fulltextCols = self.fulltextColumns
+                
                 if fulltextCols is not None:
                     if len(fulltextCols) > 1:
                         criteria = or_()
                         for col in fulltextCols:
-                            criteria.append(col[0].like(unicode(self._fullTextCriteria))+"%")
+                            try:
+                                criteria.append(col[0].like(unicode(self._fullTextCriteria))+"%")
+                            except TypeError:
+                                criteria.append(col.like(unicode(self._fullTextCriteria))+"%")
                         
                     else:
                         criteria = fulltextCols[0].like(unicode(self._fullTextCriteria)+"%")

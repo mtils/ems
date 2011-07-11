@@ -1,4 +1,6 @@
 import os
+import mimetypes
+
 from ems.converter.inputreader import InputReader
 from ems.converter.outputwriter import OutputWriter
 from ems.converter.tag import Tag
@@ -30,6 +32,17 @@ class Converter(object):
         self._variables = {}
         self._ignoredTopLevelTags = {}
         self.writeMode = Converter.replace
+    
+    def getReaderForFileName(self, filename):
+        mimeType = mimetypes.guess_type(filename) 
+#        print mimeType[0]
+#        print mimetypes.guess_extension(mimeType[0])
+        for reader in self.plugins[self.reader]:
+            mimeTypes = self.plugins[self.reader][reader].getSupportedMimeTypes()
+            for mType in mimeTypes:
+                if mimeType[0] == str(mType):  
+                    return self.plugins[self.reader][reader]
+        
 
     def setVar(self,n,v):
         self._variables[n] = v
@@ -111,6 +124,14 @@ class Converter(object):
             for mimeType in self.plugins[type][reader].getSupportedMimeTypes():
                 mimeTypes.append(mimeType)
         return mimeTypes
+    
+    def getExtensions(self, type):
+        mimeTypes = self.getMimeTypes(type)
+        extensions = []
+        for mimeType in mimeTypes:
+            for ext in mimetypes.guess_all_extensions(str(mimeType)):
+                extensions.append(ext)
+        return extensions
     
     def setInputUri(self,uri):
         self.__inputUri = uri

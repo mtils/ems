@@ -1,6 +1,22 @@
 
 import mimetypes
 
+
+mimeTypeNames = {
+                 'application/vnd.ms-excel':'Excel Datei',
+                 'application/excel': "Excel Datei",
+                 'application/x-excel': "Excel Datei",
+                 'application/x-msexcel': "Excel Datei",
+                 'text/x-comma-separated-values': 'CSV Datei',
+                 'text/csv': 'CSV Datei',
+                 'text/xml': 'XML Datei',
+                 'application/x-dbase': 'dBASE Datei',
+                 'application/dbase': 'dBASE Datei',
+                 'application/dbf': 'dBASE Datei',
+                 'application/x-dbf': 'dBASE Datei',
+                 'zz-application/zz-winassoc-dbf': 'dBASE Datei'
+                 }
+
 class MimeType(object):
     '''
     classdocs
@@ -79,6 +95,8 @@ class MimeTypeDB(object):
     mimetypesByIdentifier = {}
     mimeTypesBySuffix = {}
     mimeTypesObject = None
+    
+    
     
     @staticmethod
     def get(identifier=None,suffix=None):
