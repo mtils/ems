@@ -375,8 +375,9 @@ class SAQueryBuilder(object):
                         
                         pathStack.append(prop.key)
                         self._joinNameClasses[joinName] = classType
-                        self._extractPropertiesAndJoins(classType(), pathStack,
-                                                       alreadyAddedClasses,
-                                                       recursionCounter)
+                        if classType not in alreadyAddedClasses:
+                            self._extractPropertiesAndJoins(classType(), pathStack,
+                                                           alreadyAddedClasses,
+                                                           recursionCounter)
                         
                         pathStack.pop()
