@@ -165,19 +165,24 @@ class SAOrmSearchModel(QAbstractTableModel):
             return QVariant()
         if orientation == Qt.Horizontal:
             columnName = unicode(self.getPropertyNameByIndex(section))
-            if not self._headerNameCache.has_key(columnName):
-                fieldName = columnName.split('.')[-1:][0]
-                #print "%s %s" % (columnName, columnName.split('.')[-1:][0])
-                try:
-                    dec = self._queryBuilder.propertyName2Class[columnName].__ormDecorator__()
-                    name = dec.getPropertyFriendlyName(fieldName)
-                    
-                except KeyError:
-                    name = fieldName
-                self._headerNameCache[columnName] = QString.fromUtf8(name)
+            name = self.getPropertyFriendlyName(columnName)
 
-            return QVariant(self._headerNameCache[columnName])
+            return QVariant(name)
         return QVariant(int(section + 1))
+    
+    def getPropertyFriendlyName(self, propertyPath):
+        if not self._headerNameCache.has_key(propertyPath):
+            fieldName = propertyPath.split('.')[-1:][0]
+            #print "%s %s" % (columnName, columnName.split('.')[-1:][0])
+            try:
+                dec = self._queryBuilder.propertyName2Class[propertyPath].__ormDecorator__()
+                name = dec.getPropertyFriendlyName(fieldName)
+                
+            except KeyError:
+                name = fieldName
+            self._headerNameCache[propertyPath] = QString.fromUtf8(name)
+            
+        return self._headerNameCache[propertyPath]
     
     def isPrimaryKey(self, index):
         self._flagsCache

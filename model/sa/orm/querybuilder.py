@@ -200,7 +200,7 @@ class SAQueryBuilder(object):
             propertySelection = self.propertyNamesDecorated
         
         uniqueJoinNames = self._calculateJoinNames(propertySelection, filter)
-        print uniqueJoinNames
+#        print uniqueJoinNames
         aliases = self._buildJoinAliases(uniqueJoinNames)
         joinNames = aliases.keys()
         joinNames.sort()
@@ -227,7 +227,7 @@ class SAQueryBuilder(object):
         
         if len(containsEagers):
             query = query.options(*containsEagers)
-        print str(query).replace('LEFT OUTER JOIN', '\nLEFT OUTER JOIN')
+#        print str(query).replace('LEFT OUTER JOIN', '\nLEFT OUTER JOIN')
         return query
     
     
