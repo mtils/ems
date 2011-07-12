@@ -46,6 +46,7 @@ class TableHHeaderContextMenu(QMenu):
         self._columnSelectionWidget = DragDropLists.toDialog(srcWidgetMode=DragDropLists.Tree,
                                    srcWidgetIsReadOnly=True,
                                    parent = self.parent())
+        self._columnSelectionWidget.setWindowTitle(self.trUtf8("Spalten auswählen"))
         depth = 0
         for col in self.model.possibleColumns:
             depth = len(col.split('.')) - 1
