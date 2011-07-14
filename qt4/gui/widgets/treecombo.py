@@ -20,6 +20,7 @@ class TreeComboBox(QComboBox):
         self.setModel(self.itemView.model())
         self.setView(self.itemView)
         self._flatItemTree = {}
+        self.initialExpand = True
     
     def value(self):
         item = self.itemView.currentItem()

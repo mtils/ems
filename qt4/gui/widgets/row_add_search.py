@@ -45,7 +45,7 @@ class SearchRow(QObject):
         self.conjunctionButton = None
                     
         self.fieldInput = TreeComboBox()
-        self.fieldInput.setMinimumWidth(150)
+        self.fieldInput.setMinimumWidth(200)
         self.operatorInput = QComboBox()
         self.operatorInput.setMinimumContentsLength(12)
         self.valueStack = QStackedWidget()
