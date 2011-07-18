@@ -71,7 +71,8 @@ class DBDump(InputReader):
         if nodeTest == '..':
             if stackLength > 1:
                 return self.__elementStack[stackLength-2]
-            return None    
+            return None
+        
     def getType(self):
         return self.file
     

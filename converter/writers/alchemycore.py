@@ -17,7 +17,7 @@ class AlchemyCore(OutputWriter):
     '''
     classdocs
     '''
-    
+    commaMask = "<#|.|#>"
     
     def notify(self,eventType):
         if eventType == self.startProcess:
@@ -113,12 +113,14 @@ class AlchemyCore(OutputWriter):
                 columns = self.metaData.tables[tableName].c
             except KeyError,e:
                 raise SchemaItemNotFoundException(str(e))
+            
+        values = params['values'].replace("\,",self.commaMask) 
         
-        values = params['values'].split(',')
+        values = values.split(',')
         valueDict = {}
         i=0
         for col in columns:
-            valueDict[str(col)] = values[i]
+            valueDict[str(col)] = values[i].replace(self.commaMask,',')
             i+=1
         self.__insertQueue.append(valueDict)
         
