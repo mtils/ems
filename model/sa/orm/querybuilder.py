@@ -320,6 +320,8 @@ class SAQueryBuilder(object):
     
     @property
     def properties(self):
+        if not len(self._properties):
+            self._extractPropertiesAndJoins(self._ormObj)
         return self._properties 
     
     def getJoinNames(self):

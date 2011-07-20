@@ -7,16 +7,17 @@ from PyQt4.QtCore import Qt, QSize, QRect
 from PyQt4.QtGui import QHeaderView, QAction, QTableView
 
 class ParamAction(QAction):
-    def triggerWithParams(self, model, row):
+    def triggerWithParams(self, model, row, additionalParams={}):
         self.trigger()
         
 class ActionVHeaderView(QHeaderView):
     
-    def __init__(self, iconSize=16, parent=None):
+    def __init__(self, iconSize=16, parent=None, additionalParams={}):
         if not isinstance(parent, QTableView):
             raise TypeError("Parent has to be QTableView")
         super(ActionVHeaderView, self).__init__(Qt.Vertical, parent)
         self._actions = []
+        self._additionalParams = additionalParams
         self.margin = 4
         if isinstance(iconSize, QSize):
             self.setIconSize(iconSize)
@@ -29,7 +30,8 @@ class ActionVHeaderView(QHeaderView):
         if action is not None:
             if isinstance(action, ParamAction):
                 action.triggerWithParams(self.parent().model(),
-                                         self.parent().rowAt(event.y()))
+                                         self.parent().rowAt(event.y()),
+                                         self._additionalParams)
             else:
                 action.trigger()
     

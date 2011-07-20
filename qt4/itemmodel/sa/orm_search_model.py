@@ -3,6 +3,8 @@ Created on 14.06.2011
 
 @author: michi
 '''
+import datetime
+
 from PyQt4.QtCore import QAbstractTableModel, QModelIndex, Qt, QVariant, QString
 
 from sqlalchemy.orm import object_mapper, ColumnProperty, RelationshipProperty
@@ -151,10 +153,16 @@ class SAOrmSearchModel(QAbstractTableModel):
                 return QVariant(unicode(value))
             elif hasattr(value.__class__,'__ormDecorator__'):
                 return QVariant(value.__class__.__ormDecorator__().getReprasentiveString(value))
+            elif isinstance(value, datetime.datetime):
+                return QVariant(value.strftime("%c"))
             return QVariant(value)
         if role == qt4.ColumnNameRole:
             return QVariant(unicode(self._queryBuilder.currentColumnList[index.column()]))
         return QVariant()
+    
+    def getObject(self, row):
+        if self._resultCache.has_key(row):
+            return self._resultCache[row]
     
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if role == Qt.TextAlignmentRole:

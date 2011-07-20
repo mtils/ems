@@ -40,6 +40,9 @@ class DisplayedRowsListener(QObject):
             rect = self._itemView.rect()
             topVisibleRow = self._itemView.indexAt(rect.topLeft()).row()
             bottomVisibleRow = self._itemView.indexAt(rect.bottomLeft()).row()
+            if bottomVisibleRow == -1:
+                bottomVisibleRow = (self.parent().rowCount()-1)
+            #print "top: %s bottom: %s" % (topVisibleRow, bottomVisibleRow)
             if self._lastTopVisibleRow == topVisibleRow and\
                 self._lastBottomVisibleRow == bottomVisibleRow:
                 return
