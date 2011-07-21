@@ -28,6 +28,8 @@ class SAOrmSearchModel(QAbstractTableModel):
         if query is None:
             query = self._queryBuilder.getQuery(self._session,
                                                 propertySelection=self._columns)
+        else:
+            self._queryBuilder.propertyNames
         self._query = query
         self._headerNameCache = {}
         self._defaultColumns = []
