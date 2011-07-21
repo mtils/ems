@@ -65,6 +65,7 @@ class BaseStrategy(QObject):
         if colInfo is not None:
             if colInfo.has_key('unit'):
                 spinbox.setSuffix(self.trUtf8(colInfo['unit']))
+        spinbox.setMaximum(10000)
         
     
     def setDoubleSpinBoxOptions(self, spinbox, rProperty, colType=None):
@@ -76,7 +77,7 @@ class BaseStrategy(QObject):
         if colInfo is not None:
             if colInfo.has_key('unit'):
                 spinbox.setSuffix(self.trUtf8(u" %s" % colInfo['unit']))
-        
+        spinbox.setMaximum(10000.0)
         pass
     
     def setAbstractSliderOptions(self, spinbox, rProperty, colType=None):
