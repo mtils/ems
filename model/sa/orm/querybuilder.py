@@ -129,6 +129,9 @@ class SAQueryBuilder(object):
     def _calculateJoinNames(self, propertyNames, filter):
         joins = []
         filterPropertyNames = []
+        if not len(self._properties):
+            self._extractPropertiesAndJoins(self._ormObj)
+            
         if isinstance(filter, PathClauseList):
             #raise NotImplementedError("Or und And kommt noch")
             filterPropertyNames = self._extractPropertyNamesFromClauseList(filter, [])
@@ -343,6 +346,10 @@ class SAQueryBuilder(object):
                                         alreadyAddedClasses=[],
                                         recursionCounter = -1):
         recursionCounter += 1
+        if recursionCounter == 0:
+            pathStack = []
+            alreadyAddedClasses = []
+
         if recursionCounter > 100:
             raise StopIteration()
         

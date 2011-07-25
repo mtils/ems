@@ -3,7 +3,7 @@ Created on 20.06.2011
 
 @author: michi
 '''
-from PyQt4.QtCore import QVariant
+from PyQt4.QtCore import QVariant, pyqtSignal
 from PyQt4.QtGui import QColor
 
 def variant_to_pyobject(qvariant=None): 
@@ -42,4 +42,10 @@ def variant_to_pyobject(qvariant=None):
     else: 
         value = qvariant.toPyObject() 
    
-    return value 
+    return value
+
+def hassig(obj, signalName):
+    if hasattr(obj.__class__, signalName):
+        if isinstance(obj.__class__.__dict__[signalName], pyqtSignal):
+            return True
+    return False

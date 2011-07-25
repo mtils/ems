@@ -25,11 +25,16 @@ class SAOrmSearchModel(QAbstractTableModel):
         self._ormProperties = None
         self._flagsCache = {}
         self._queryBuilder = querybuilder
-        if query is None:
-            query = self._queryBuilder.getQuery(self._session,
-                                                propertySelection=self._columns)
-        else:
-            self._queryBuilder.propertyNames
+        try:
+            if query is None:
+                query = self._queryBuilder.getQuery(self._session,
+                                                    propertySelection=self._columns)
+            else:
+                self._queryBuilder.propertyNames
+        except KeyError, e:
+            print e
+            print "Mein Objekt: %s" % self._queriedObject
+            raise e
         self._query = query
         self._headerNameCache = {}
         self._defaultColumns = []
@@ -137,6 +142,7 @@ class SAOrmSearchModel(QAbstractTableModel):
             
     
     def data(self, index, role=Qt.DisplayRole):
+        #return QVariant()
         self.perform()
         columnName = self.getPropertyNameByIndex(index.column())
         #return QVariant()
@@ -227,7 +233,7 @@ class SAOrmSearchModel(QAbstractTableModel):
         if not self._dirty:
             return
         #self.beginResetModel()
-        #print "%s : I actually perform" % self._queriedObject
+        print "%s : I actually perform" % self._queriedObject
         #print self._session.get_bind(self._queriedObject)
         i = 0
         
