@@ -44,12 +44,10 @@ class DialogableWidget(QWidget):
     @pyqtSlot()
     def accept(self):
         self.accepted.emit()
-        print "parent accept called"
     
     @pyqtSlot()
     def reject(self):
         self.rejected.emit()
-        print "parent reject called"
     
     @classmethod
     def toDialog(cls, *args, **kwargs):

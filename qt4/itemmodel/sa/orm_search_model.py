@@ -13,9 +13,11 @@ from ems import qt4
 from ems.thirdparty.odict import OrderedDict
 
 class SAOrmSearchModel(QAbstractTableModel):
-    def __init__(self,session, queriedObject, querybuilder, query=None, columns = []):
+    def __init__(self,session, queriedObject, querybuilder, query=None, columns = [],
+                 dataListener=None):
         super(SAOrmSearchModel, self).__init__()
         self._session = session
+        self.__dataListener = dataListener
         self._queriedObject = queriedObject
         self._resultCache = {}
         self._columns = columns
@@ -140,9 +142,21 @@ class SAOrmSearchModel(QAbstractTableModel):
             pathStack.pop(0)
             return self._extractValue(nextObj, pathStack)
             
+    def getDataListener(self):
+        return self.__dataListener
+    
+    def setDataListener(self, dataListener):
+        self.__dataListener = dataListener
+    
+    def delDataListener(self):
+        self.__dataListener = None
+        
+    dataListener = property(getDataListener,setDataListener,delDataListener)
     
     def data(self, index, role=Qt.DisplayRole):
         #return QVariant()
+        if self.__dataListener is not None:
+            self.__dataListener.data(index, role)
         self.perform()
         columnName = self.getPropertyNameByIndex(index.column())
         #return QVariant()
