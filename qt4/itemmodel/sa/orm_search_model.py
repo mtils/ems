@@ -233,7 +233,7 @@ class SAOrmSearchModel(QAbstractTableModel):
         if not self._dirty:
             return
         #self.beginResetModel()
-        print "%s : I actually perform" % self._queriedObject
+        #print "%s : I actually perform" % self._queriedObject
         #print self._session.get_bind(self._queriedObject)
         i = 0
         
