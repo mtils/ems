@@ -39,6 +39,9 @@ class DialogableWidget(QWidget):
         while QApplication.instance().processEvents():
             pass
         return self._result
+    
+    def _dialogInitFinished(self):
+        pass
         
     
     @pyqtSlot()
@@ -52,11 +55,13 @@ class DialogableWidget(QWidget):
     @classmethod
     def toDialog(cls, *args, **kwargs):
         dlg = cls.__new__(cls, *args, **kwargs)
+        dlg._isDialog = True
         dlg.__init__(*args, **kwargs)
         
         dlg.setWindowFlags(Qt.Dialog)
 
         dlg.buttonBox = DialogableWidget._addButtonBox2Dialog(dlg)
+        
         dlg.buttonBox.setStandardButtons(QDialogButtonBox.Apply |\
                                          QDialogButtonBox.Cancel)
         dlg.acceptButton = dlg.buttonBox.button(QDialogButtonBox.Apply)
@@ -71,7 +76,7 @@ class DialogableWidget(QWidget):
         
         dlg.connect(dlg.rejectButton, SIGNAL('clicked()'),
                     dlg, SLOT('reject()'))
-        
+        dlg._dialogInitFinished()
         
         return dlg
     

@@ -312,6 +312,10 @@ class RowAddSearch(QWidget):
             return widget.value()
         if hasattr(widget, 'text') and callable(widget.text):
             return widget.text()
+    
+    def getConfig(self):
+        for row in self._rows:
+            print row
         
 
 if __name__ == "__main__":
