@@ -8,7 +8,7 @@ import sys
 from PyQt4.QtCore import QObject, QVariant, SIGNAL, SLOT, pyqtSignal, pyqtSlot, \
     Qt, QString
 from PyQt4.QtGui import QWidget, QComboBox, QCheckBox, QLineEdit, QGridLayout, \
-    QPushButton, QTreeWidgetItem, QStackedWidget
+    QPushButton, QTreeWidgetItem, QStackedWidget, QIcon
 
 from ems.qt4.gui.widgets.treecombo import TreeComboBox #@UnresolvedImport
 from ems.qt4.gui.widgets.bigcombo import BigComboBox #@UnresolvedImport
@@ -113,7 +113,7 @@ class SearchRow(QObject):
         print "Destructor called"
     
     def delete(self):
-        print "delete()"
+        pass
     
 
 class RowAddSearch(QWidget):
@@ -121,7 +121,8 @@ class RowAddSearch(QWidget):
     rowAdded = pyqtSignal(int)
     queryChanged = pyqtSignal(object)
     
-    def __init__(self, builderBackend=None, parent=None):
+    def __init__(self, builderBackend=None, parent=None,
+                 buttonFactory=None):
         QWidget.__init__(self, parent)
         if builderBackend is None:
             builderBackend = BuilderBackend()
@@ -130,7 +131,9 @@ class RowAddSearch(QWidget):
         
         self._rows = []
         self._addRowButton = None
+        self._buttonFactory = buttonFactory
         self.setupUi()
+        
         #self.setStyleSheet("background-color: #fff")
         
     
@@ -145,7 +148,11 @@ class RowAddSearch(QWidget):
     
     def getAddRowButton(self):
         if self._addRowButton is None:
-            self._addRowButton = QPushButton("+",self)
+            if self._buttonFactory is None:
+                self._addRowButton = QPushButton("+",self)
+            else:
+                self._addRowButton = self._buttonFactory('add')
+                
             self.connect(self._addRowButton, SIGNAL("clicked()"),
                          self, SLOT('addRow()'))
         return self._addRowButton
@@ -169,7 +176,13 @@ class RowAddSearch(QWidget):
         return widget
     
     def getRemoveButton(self):
-        return QPushButton("-")
+        if self._buttonFactory is None:
+            button = QPushButton("-",self)
+        else:
+            button = self._buttonFactory('remove')
+            
+        return button
+    
 
         
     @pyqtSlot()
