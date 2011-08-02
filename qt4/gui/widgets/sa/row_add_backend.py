@@ -48,6 +48,8 @@ class SABuilderBackend(BuilderBackend):
 #            print property
             i += 1
         
+        fieldInput.itemView.expandAll()
+        
     
     @property
     def shownPropertiesByClassName(self):
@@ -107,9 +109,9 @@ class SABuilderBackend(BuilderBackend):
         except KeyError:
             return fieldName
     
-    def onFieldInputCurrentItemChanged(self, searchRow, item):
-        self.refillOperatorCombo(searchRow, str(item.data(1,Qt.DisplayRole).toString()))
-        self.displayValueWidget(searchRow, str(item.data(1,Qt.DisplayRole).toString()))
+    def onFieldInputCurrentFieldChanged(self, searchRow, field):
+        self.refillOperatorCombo(searchRow, field)
+        self.displayValueWidget(searchRow, field)
         
     def refillOperatorCombo(self, searchRow, currentProperty):
         #print "refill: %s" % currentProperty

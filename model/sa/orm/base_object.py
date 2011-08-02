@@ -19,3 +19,8 @@ class OrmBaseObject(object):
         if not hasattr(cls, '__decoratorObj__') or cls.__decoratorObj__ is None:
             cls.__decoratorObj__ = OrmDecorator(cls)
         return cls.__decoratorObj__
+    
+    def __serialize__(self):
+        return ""
+        
+        

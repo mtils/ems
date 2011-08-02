@@ -4,15 +4,16 @@ Created on 23.06.2011
 @author: michi
 '''
 import sys
-
+import time
 from PyQt4.QtCore import QObject, QVariant, SIGNAL, SLOT, pyqtSignal, pyqtSlot, \
-    Qt, QString
+    Qt, QString, QTimer
 from PyQt4.QtGui import QWidget, QComboBox, QCheckBox, QLineEdit, QGridLayout, \
-    QPushButton, QTreeWidgetItem, QStackedWidget, QIcon
+    QPushButton, QTreeWidgetItem, QStackedWidget, QIcon, QSpinBox, QDoubleSpinBox
 
 from ems.qt4.gui.widgets.treecombo import TreeComboBox #@UnresolvedImport
 from ems.qt4.gui.widgets.bigcombo import BigComboBox #@UnresolvedImport
 from ems.qt4.util import variant_to_pyobject #@UnresolvedImport
+from ems.model.sa.orm.base_object import OrmBaseObject #@UnresolvedImport
 
 class BuilderBackend(QObject):
     def setSearchWidget(self, widget):
@@ -25,7 +26,7 @@ class BuilderBackend(QObject):
     def rowAdded(self, row):
         pass
     
-    def onFieldInputCurrentItemChanged(self, searchRow, item):
+    def onFieldInputCurrentFieldChanged(self, searchRow, item):
         pass
     
     def buildQuery(self, criterias):
@@ -78,15 +79,8 @@ class SearchRow(QObject):
     
     @pyqtSlot(int)
     def onFieldInputCurrentIndexChanged(self, index):
-        currentItem = self.fieldInput.itemView.currentItem()
-        if currentItem is None:
-            comboText = self.fieldInput.itemData(index, Qt.DisplayRole).toString()
-            foundedItems = self.fieldInput.itemView.findItems(comboText,Qt.MatchExactly,0)
-            if len(foundedItems):
-                currentItem = foundedItems[0]
-                self._builder.onFieldInputCurrentItemChanged(self, currentItem)
-        else:
-            self._builder.onFieldInputCurrentItemChanged(self, currentItem)
+        field = unicode(self.fieldInput.itemData(index).toString())
+        self._builder.onFieldInputCurrentFieldChanged(self, field)
         
     def reset(self):
         self.fieldInput.setCurrentIndex(0)
@@ -120,6 +114,9 @@ class RowAddSearch(QWidget):
     
     rowAdded = pyqtSignal(int)
     queryChanged = pyqtSignal(object)
+    
+    modelObjectPrefix = '{{|'
+    modelObjectSuffix = '|}}'
     
     def __init__(self, builderBackend=None, parent=None,
                  buttonFactory=None):
@@ -262,7 +259,8 @@ class RowAddSearch(QWidget):
             
             layout.addWidget(self.addRowButton, i+1,0)
     
-    def removeRow(self, idx):
+    @pyqtSlot()
+    def removeRow(self, idx=0):
         if len(self._rows) < 2:
             return
         row = self._rows[idx]
@@ -287,6 +285,7 @@ class RowAddSearch(QWidget):
         #print "buildQuery called"
         clauses = []
         for row in self._rows:
+            
             clauses.append({
                             'conjunction': self.extractValueOfWidget(row.conjunctionButton),
                             'field': self.extractValueOfWidget(row.fieldInput),
@@ -303,7 +302,7 @@ class RowAddSearch(QWidget):
         if isinstance(widget, QCheckBox):
             return widget.isChecked()
         if isinstance(widget, TreeComboBox):
-            return widget.value()
+            return variant_to_pyobject(widget.value())
         if isinstance(widget, BigComboBox):
             return variant_to_pyobject(widget.value())
         if isinstance(widget, QComboBox):
@@ -313,9 +312,80 @@ class RowAddSearch(QWidget):
         if hasattr(widget, 'text') and callable(widget.text):
             return widget.text()
     
+    def setValueOfWidget(self, widget, value):
+        if value is None:
+            return
+        if isinstance(widget, QCheckBox) and isinstance(value, bool):
+            widget.setChecked(value)
+            return
+        if isinstance(widget, TreeComboBox):
+            widget.setValue(value)
+            return
+        if isinstance(widget, BigComboBox) and isinstance(value, basestring):
+            #widget.setEditText(value)
+            return
+        if isinstance(widget, QComboBox):
+            index = widget.findText(value)
+            widget.setCurrentIndex(index)
+            return
+        if hasattr(widget, 'setValue') and callable(widget.setValue):
+            widget.setValue(value)
+            return
+        if hasattr(widget, 'setText') and callable(widget.setText) and isinstance(value, basestring):
+            widget.setText(QString.fromUtf8(value))
+            return
+    
     def getConfig(self):
+        config = []
         for row in self._rows:
-            print row
+            value = self.extractValueOfWidget(row.valueInput)
+            if isinstance(value, QString):
+                value = unicode(value)
+            if isinstance(value, OrmBaseObject):
+                value = value.__ormDecorator__().getReprasentiveString(value)
+            config.append({
+                            'conjunction': self.extractValueOfWidget(row.conjunctionButton),
+                            'field': unicode(self.extractValueOfWidget(row.fieldInput)),
+                            'operator': self.extractValueOfWidget(row.operatorInput),
+                            'value': value,
+                            'matches': self.extractValueOfWidget(row.matchesInput)
+                            })
+        return config
+    
+    def clear(self):
+        timeBetween = 150
+        for i in range(len(self._rows)):
+            nextTime = i*timeBetween
+            QTimer.singleShot(nextTime, self, SLOT('removeRow()'))
+        return nextTime
+    
+    def setConfigValues(self, config):
+        msecs = self.clear()
+        QTimer.singleShot(msecs, self, SLOT("_applyCurrentConfig()"))
+        self._currentConfig = config
+        
+    @pyqtSlot()
+    def _applyCurrentConfig(self):
+        i = 0
+        c = self._currentConfig
+        print c
+        for row in c:
+            if i > 0:
+                self.addRow()
+            if isinstance(self._rows[i].conjunctionButton, QComboBox):
+                index = self._rows[i].conjunctionButton.findData(QVariant(row['conjunction']))
+                self._rows[i].conjunctionButton.setCurrentIndex(index)
+            
+            if isinstance(self._rows[i].fieldInput, TreeComboBox):
+                self._rows[i].fieldInput.setValue(row['field'])
+            
+            if isinstance(self._rows[i].operatorInput, QComboBox):
+                index = self._rows[i].operatorInput.findData(QVariant(row['operator']))
+                self._rows[i].operatorInput.setCurrentIndex(index)
+            
+            self.setValueOfWidget(self._rows[i].valueInput, row['value'])
+            
+            i += 1
         
 
 if __name__ == "__main__":
