@@ -368,7 +368,6 @@ class RowAddSearch(QWidget):
     def _applyCurrentConfig(self):
         i = 0
         c = self._currentConfig
-        print c
         for row in c:
             if i > 0:
                 self.addRow()
