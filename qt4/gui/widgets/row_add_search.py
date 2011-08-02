@@ -385,6 +385,12 @@ class RowAddSearch(QWidget):
             
             self.setValueOfWidget(self._rows[i].valueInput, row['value'])
             
+            if isinstance(self._rows[i].matchesInput, QCheckBox) and isinstance(row['matches'], bool):
+                self._rows[i].matchesInput.setChecked(row['matches'])
+            else:
+                self._rows[i].matchesInput.setChecked(True)
+                
+            
             i += 1
         
 
