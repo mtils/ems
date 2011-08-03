@@ -144,6 +144,10 @@ class RepresentativeModel(QAbstractListModel):
             if value.lower().startswith(search):
                 indexes.append(self.index(row))
         return indexes
+    
+    def forceReset(self):
+        self._dirty = True
+        self.perform()
         
         
 class RepresentativeModelMatch(RepresentativeModel):
