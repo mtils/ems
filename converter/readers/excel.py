@@ -6,6 +6,7 @@ Created on 24.10.2010
 
 from ems.converter.inputreader import InputReader
 from ems.core.mimetype import MimeTypeDB
+from lib.ems.core.mimetype import MimeType
 
 #from dbfpy.dbf import *
 
@@ -25,7 +26,11 @@ class Excel(InputReader):
     def getSupportedMimeTypes(self):
         if not len(self.supportedMimeTypes):
             self.supportedMimeTypes = []
-            self.supportedMimeTypes.append(MimeTypeDB.get(suffix='.xls'))
+            try:
+                self.supportedMimeTypes.append(MimeTypeDB.get(suffix='.xls'))
+            except KeyError:
+                self.supportedMimeTypes.append(MimeType('application/ms-excel',['.xls',]))
+                
         return self.supportedMimeTypes
     
     def getFieldNames(self):

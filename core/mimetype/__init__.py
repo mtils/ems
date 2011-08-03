@@ -27,7 +27,10 @@ class MimeType(object):
         Constructor
         '''
         self.identifier = identifier
-        self.__suffixes = []
+        if suffixes is None:
+            self.__suffixes = []
+        else:
+            self.__suffixes = suffixes
 
     def setMediaType(self,type):
         if type in ('text','image','video','audio','application','multipart','message','model','example'):

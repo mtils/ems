@@ -11,6 +11,7 @@ from ems.converter.inputreader import InputReader,DataCorruptException,\
     DataNotFoundException, XPathNotImplementedError
 from ems.core.mimetype import MimeTypeDB
 from dbfpy.dbf import *
+from lib.ems.core.mimetype import MimeType
 
 class CSVReader(InputReader):
     '''
@@ -74,7 +75,11 @@ class CSVReader(InputReader):
     def getSupportedMimeTypes(self):
         if not len(self.supportedMimeTypes):
             self.supportedMimeTypes = []
-            self.supportedMimeTypes.append(MimeTypeDB.get(suffix='.csv'))
+            try:
+                self.supportedMimeTypes.append(MimeTypeDB.get(suffix='.csv'))
+            except Exception:
+                self.supportedMimeTypes.append(MimeType('text/csv',['.csv',]))
+                pass
         return self.supportedMimeTypes
     
     def getFieldNames(self):

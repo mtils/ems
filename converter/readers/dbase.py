@@ -9,6 +9,7 @@ from ems.converter.inputreader import InputReader,DataCorruptException,\
     DataNotFoundException, XPathNotImplementedError
 from ems.core.mimetype import MimeTypeDB
 from dbfpy.dbf import *
+from lib.ems.core.mimetype import MimeType
 
 class DBase(InputReader):
     '''
@@ -66,7 +67,10 @@ class DBase(InputReader):
     def getSupportedMimeTypes(self):
         if not len(self.supportedMimeTypes):
             self.supportedMimeTypes = []
-            self.supportedMimeTypes.append(MimeTypeDB.get(suffix='.dbf'))
+            try:
+                self.supportedMimeTypes.append(MimeTypeDB.get(suffix='.dbf'))
+            except KeyError:
+                self.supportedMimeTypes.append(MimeType('application/x-dbase',['.dbf',]))
         return self.supportedMimeTypes
     
     def getFieldNames(self):

@@ -7,6 +7,7 @@ from xml.etree import ElementTree as et
 
 from ems.converter.inputreader import InputReader
 from ems.core.mimetype import MimeTypeDB
+from lib.ems.core.mimetype import MimeType
 
 
 
@@ -121,7 +122,10 @@ class DBDump(InputReader):
     def getSupportedMimeTypes(self):
         if not len(self.supportedMimeTypes):
             self.supportedMimeTypes = []
-            self.supportedMimeTypes.append(MimeTypeDB.get(suffix='.xml'))
+            try:
+                self.supportedMimeTypes.append(MimeTypeDB.get(suffix='.xml'))
+            except KeyError:
+                self.supportedMimeTypes.append(MimeType('text/xml',['.xml',]))
         return self.supportedMimeTypes
     
     def getFieldNames(self):

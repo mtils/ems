@@ -34,14 +34,36 @@ class Converter(object):
         self.writeMode = Converter.replace
     
     def getReaderForFileName(self, filename):
-        mimeType = mimetypes.guess_type(filename) 
-#        print mimeType[0]
-#        print mimetypes.guess_extension(mimeType[0])
-        for reader in self.plugins[self.reader]:
-            mimeTypes = self.plugins[self.reader][reader].getSupportedMimeTypes()
-            for mType in mimeTypes:
-                if mimeType[0] == str(mType):  
-                    return self.plugins[self.reader][reader]
+        mimeTypeFound = False
+        mimeType = mimetypes.guess_type(filename)
+        if mimeType[0] is not None and mimeType[1] is not None:
+            mimeTypeFound = True
+        #print mimetypes.guess_extension(mimeType[0])
+        
+            
+        
+        
+        if mimeTypeFound:
+            print "mimeType found"
+            for reader in self.plugins[self.reader]:
+                mimeTypes = self.plugins[self.reader][reader].getSupportedMimeTypes()
+                for mType in mimeTypes:
+                    print "%s %s" % (mType, mType.suffixes)
+                    if mimeType[0] == str(mType):  
+                        return self.plugins[self.reader][reader]
+        try:
+            extension = ".%s" % unicode(filename).split('.')[-1:][0]
+            print "File: %s %s" % (filename, extension)
+            for reader in self.plugins[self.reader]:
+                mimeTypes = self.plugins[self.reader][reader].getSupportedMimeTypes()
+                for mType in mimeTypes:
+                    if extension in mType.suffixes:
+                        print self.plugins[self.reader][reader]
+                        return self.plugins[self.reader][reader]
+        except StopIteration, e:
+            print e
+        
+        raise NotImplementedError("Keinen passenden Importer zu Datei %s gefunden" % filename) 
         
 
     def setVar(self,n,v):
@@ -122,7 +144,10 @@ class Converter(object):
         mimeTypes = []
         for reader in self.plugins[type]:
             for mimeType in self.plugins[type][reader].getSupportedMimeTypes():
-                mimeTypes.append(mimeType)
+                try:
+                    mimeTypes.append(mimeType)
+                except TypeError:
+                    pass 
         return mimeTypes
     
     def getExtensions(self, type):
@@ -130,7 +155,10 @@ class Converter(object):
         extensions = []
         for mimeType in mimeTypes:
             for ext in mimetypes.guess_all_extensions(str(mimeType)):
-                extensions.append(ext)
+                try:
+                    extensions.append(ext)
+                except TypeError:
+                    pass
         return extensions
     
     def setInputUri(self,uri):
