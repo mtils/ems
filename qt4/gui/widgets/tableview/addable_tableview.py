@@ -18,7 +18,8 @@ class HeaderEventFilter(QObject):
         return False
 class AddableHeader(QHeaderView):
     def __init__(self, addIcon, removeIcon, parent=None,
-                 hMargin=5, vMargin=2, defaultWidth=32):
+                 hMargin=5, vMargin=2, defaultWidth=32,
+                 buttonIconSize=QSize(22,22)):
         QHeaderView.__init__(self, Qt.Vertical, parent)
         self.hMargin = hMargin
         self.vMargin = vMargin
@@ -37,6 +38,7 @@ class AddableHeader(QHeaderView):
                                 'widthHalf':0,
                                 'heightHalf':0
                                 }
+        self.buttonIconSize = buttonIconSize
     
     def paintEvent(self, event):
         result = super(AddableHeader, self).paintEvent(event)
@@ -58,7 +60,9 @@ class AddableHeader(QHeaderView):
         opt.initFrom(self)
         opt.rect = addImageSectionRect
         opt.features = QStyleOptionButton.None
+        opt.iconSize = self.buttonIconSize
         opt.state = QStyle.State_Enabled
+        #opt.text = "H"
         opt.icon = self.addIcon
         
         self.style().drawControl(QStyle.CE_PushButton, opt, painter)
@@ -97,6 +101,7 @@ class AddableHeader(QHeaderView):
         opt.features = QStyleOptionButton.None
         opt.state = QStyle.State_Enabled
         opt.icon = self.removeIcon
+        opt.iconSize = self.buttonIconSize
         
         self.style().drawControl(QStyle.CE_PushButton, opt, painter)
         
