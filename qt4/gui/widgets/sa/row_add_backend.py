@@ -12,11 +12,11 @@ from sqlalchemy.orm import RelationshipProperty, ColumnProperty
 from sqlalchemy.orm.query import Query
 from sqlalchemy.types import AbstractType, String, Integer, Float, Boolean
 
-from ems.qt4.gui.widgets.row_add_search import BuilderBackend #@UnresolvedImport
+from ems.qt4.gui.widgets.tableview.querybuilder_tableview import RowBuilderBackend #@UnresolvedImport
 from ems.model.sa.orm.querybuilder import SAQueryBuilder, PathClause, AndList, OrList #@UnresolvedImport
 from ems.qt4.util import variant_to_pyobject #@UnresolvedImport
 
-class SABuilderBackend(BuilderBackend):
+class SABuilderBackend(RowBuilderBackend):
     
     
     
@@ -28,6 +28,41 @@ class SABuilderBackend(BuilderBackend):
         self._orderedProperties = []
         self._shownPropertiesByClassName = {}
         self._queryListeners = []
+        self._fieldPathNames = {}
+        self._operatorTranslation = {'LIKE':u'enthält',
+                                     'BEFORE':u'ist alpabetisch vor',
+                                     'AFTER':u'ist alpabetisch nach'}
+        self._loadFieldPathNames()
+        RowBuilderBackend.__init__(self, parent)
+    
+    def getDisplayedOperatorText(self, data):
+        try:
+            return self._operatorTranslation[unicode(data.toString())]
+        except KeyError:
+            return unicode(data.toString())
+    
+    def _loadFieldPathNames(self):
+        for property in self.orderedProperties:
+            stack = property[0].split('.')
+            translatedStack = []
+            currentStack = []
+            for node in stack:
+                currentStack.append(node)
+                friendlyName = self.getFieldFriendlyName(u".".join(currentStack))
+                translatedStack.append(friendlyName)
+            self._fieldPathNames[property[0]] =  u" > ".join(translatedStack)
+            
+            
+    def getDisplayedFieldText(self, data):
+        #if not len()
+        fieldName = unicode(data.toString())
+        try:
+            return self._fieldPathNames[fieldName]
+        except KeyError:
+            return fieldName
+    
+    def getDisplayedValueText(self, property, value):
+        return value.toString()
     
     @property
     def queryBuilder(self):
@@ -47,6 +82,7 @@ class SABuilderBackend(BuilderBackend):
                                            property[0]))
 #            print property
             i += 1
+        
         
         fieldInput.itemView.expandAll()
         
@@ -113,8 +149,11 @@ class SABuilderBackend(BuilderBackend):
         self.refillOperatorCombo(searchRow, field)
         self.displayValueWidget(searchRow, field)
         
-    def refillOperatorCombo(self, searchRow, currentProperty):
+    def populateOperatorCombo(self, operatorInput, currentProperty):
         #print "refill: %s" % currentProperty
+        if not self._queryBuilder.properties.has_key(currentProperty):
+            operatorInput.clear()
+            return
         property = self._queryBuilder.properties[currentProperty]
         if isinstance(property, ColumnProperty):
             cols = property.columns
@@ -124,18 +163,21 @@ class SABuilderBackend(BuilderBackend):
                 if isinstance(colType, AbstractType):
                     type_ = col.type
                     if isinstance(type_,(Integer, Float)):
-                        searchRow.operatorInput.clear()
-                        searchRow.operatorInput.addItem('=',QVariant('='))
-                        searchRow.operatorInput.addItem('>',QVariant('>'))
-                        searchRow.operatorInput.addItem('>=',QVariant('>='))
-                        searchRow.operatorInput.addItem('<',QVariant('<'))
-                        searchRow.operatorInput.addItem('<=',QVariant('<='))
+                        operatorInput.clear()
+                        operatorInput.addItem('=',QVariant('='))
+                        operatorInput.addItem('>',QVariant('>'))
+                        operatorInput.addItem('>=',QVariant('>='))
+                        operatorInput.addItem('<',QVariant('<'))
+                        operatorInput.addItem('<=',QVariant('<='))
                     
                     if isinstance(type_,String):
-                        searchRow.operatorInput.clear()
-                        searchRow.operatorInput.addItem(QString.fromUtf8('enthält'),QVariant('LIKE'))
-                        searchRow.operatorInput.addItem(QString.fromUtf8('ist alphabetisch vor'),QVariant('BEFORE'))
-                        searchRow.operatorInput.addItem(QString.fromUtf8('ist alphabetisch nach'),QVariant('AFTER'))
+                        operatorInput.clear()
+                        operatorInput.addItem(QString.fromUtf8(self._operatorTranslation['LIKE']),
+                                              QVariant('LIKE'))
+                        operatorInput.addItem(QString.fromUtf8(self._operatorTranslation['BEFORE']),
+                                              QVariant('BEFORE'))
+                        operatorInput.addItem(QString.fromUtf8(self._operatorTranslation['AFTER']),
+                                              QVariant('AFTER'))
                 else:
                     raise TypeError("Could not determine Type of %s" % \
                                     property)
@@ -143,15 +185,13 @@ class SABuilderBackend(BuilderBackend):
                 raise NotImplementedError("ColumnProperties with more than " +
                                           "one Column are not supported")
         else:
-            searchRow.operatorInput.clear()
-            searchRow.operatorInput.addItem(QString.fromUtf8('ist'),QVariant('='))
+            operatorInput.clear()
+            operatorInput.addItem(QString.fromUtf8('='),QVariant('='))
             
-    def displayValueWidget(self, searchRow, currentProperty):
-#        print "displayValueWidget %s" % currentProperty
+    def getValueEditor(self, parent, currentProperty):
         propertyKey = currentProperty.split('.')[-1:][0]
         class_ = self._queryBuilder.propertyName2Class[currentProperty]
-        newWidget = self._mapper.getWidget(class_(), propertyKey)
-        searchRow.replaceValueInput(newWidget)
+        return self._mapper.getWidget(class_(), propertyKey)
     
     def buildQuery(self, clauses, **kwargs):
         

@@ -21,8 +21,7 @@ class BuilderBackend(QObject):
     
     def populateFieldInput(self, fieldInput):
         pass
-        
-    
+
     def rowAdded(self, row):
         pass
     

@@ -46,6 +46,24 @@ class GenClause(object):
         self.right = other
         return self
     
+#    def __getattr__(self, key):
+#        print "__getattr__(%s)" % key
+#        try:
+#            return super(GenClause, self).__getattr__(key)
+#        except AttributeError, e:
+#            return self
+#            if self.operator == key:
+#                return self.right
+#            raise e
+#    
+#    def __setattr__(self, key, val):
+#        print "__setattr__(%s, %s)" % (key, val)
+#        try:
+#            return super(GenClause, self).__setattr__(key, val)
+#        except AttributeError:
+#            self.operator = key
+#            self.right = val
+    
     def __str__(self):
         return "%s %s %s" % (self.left, self.operator, self.right)
     
@@ -79,14 +97,16 @@ def stringSimilarity(a,b, returnPercent=False):
     return current[n]
 
 if __name__ == '__main__':
-    tests = (
-             ("Östliche Rheinbrückenstraße","Östliche Rheinbrückenstr."),
-             ("Östliche Rheinbrückenstraße","Östliche Rheinbrückenstraße"),
-             ("Östliche Rheinbrückenstraße","Rheinbrückenstr."),
-             ("Östliche Rheinbrückenstraße","Östl. Rheinbrückenstr."),
-             ("Östliche Rheinbrückenstraße","Marienweg"),
-             ("Hauptstraße","Hauptstr."),
-             )
-    for test in tests:
-        print "%s (%s) %s:" % (test[0], len(test[0]), test[1])
-        print "%s %s%%" % (stringSimilarity(*test), stringSimilarity(*test, returnPercent=True))
+#    tests = (
+#             ("Östliche Rheinbrückenstraße","Östliche Rheinbrückenstr."),
+#             ("Östliche Rheinbrückenstraße","Östliche Rheinbrückenstraße"),
+#             ("Östliche Rheinbrückenstraße","Rheinbrückenstr."),
+#             ("Östliche Rheinbrückenstraße","Östl. Rheinbrückenstr."),
+#             ("Östliche Rheinbrückenstraße","Marienweg"),
+#             ("Hauptstraße","Hauptstr."),
+#             )
+#    for test in tests:
+#        print "%s (%s) %s:" % (test[0], len(test[0]), test[1])
+#        print "%s %s%%" % (stringSimilarity(*test), stringSimilarity(*test, returnPercent=True))
+    clause = GenClause('oma.name').like == 'Pups'
+    print clause

@@ -23,6 +23,24 @@ class BaseStrategy(QObject):
     def setMapper(self, mapper):
         self._mapper = mapper
     
+    def getValueString(self, obj, property, colInfo=None):
+        pass
+    
+    def getPrefix(self, obj, property, colInfo=None):
+        pass
+    
+    def getSuffix(self, obj, property, colType=None):
+        if colType is None:
+            colType = self.extractType(rProperty)
+        
+        colInfo = self.getColInfos(rProperty)
+        if colInfo is not None:
+            if colInfo.has_key('unit'):
+    
+    def getNumberFormat(self, obj, property, colInfo=None):
+        pass
+    
+    
     mapper = property(getMapper, setMapper)
     
     def getWidget(self, prototype, property):
