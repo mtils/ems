@@ -195,6 +195,7 @@ class ValueDelegate(QStyledItemDelegate):
 class QueryBuilderTableView(AddableTableView):
     def __init__(self, addIcon, removeIcon, builderBackend, parent=None):
         AddableTableView.__init__(self, addIcon, removeIcon, parent)
+        self.builderBackend = builderBackend
         self.setModel(QueryBuilderModel(self))
         self.verticalHeader().addRowButtonClicked.connect(self.model().appendRow)
         self.verticalHeader().removeRowButtonClicked.connect(self.model().removeRow)
@@ -206,4 +207,7 @@ class QueryBuilderTableView(AddableTableView):
         self.itemDelegate().insertColumnDelegate(2,operatorDelegate)
         valueDelegate = ValueDelegate(builderBackend, self.model())
         self.itemDelegate().insertColumnDelegate(3,valueDelegate)
+    
+    def buildQuery(self, *args, **kwargs):
+        return self.builderBackend.buildQuery(self.model().clauses,*args, **kwargs)
     

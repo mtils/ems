@@ -206,7 +206,7 @@ class SABuilderBackend(RowBuilderBackend):
     
     def buildQuery(self, clauses, **kwargs):
         
-        crit = self._queryBuilder.propertyName2Class['zustand.baujahrklasseId'].baujahrklasseId == 15
+        #crit = self._queryBuilder.propertyName2Class['zustand.baujahrklasseId'].baujahrklasseId == 15
         #print type(crit)
         #print query.filter(crit)
         #print query
@@ -215,14 +215,15 @@ class SABuilderBackend(RowBuilderBackend):
         conjunctions = []
         
         for clause in clauses:
-            field = unicode(clause['field'])
+            field = unicode(clause.column.toString())
             pc = PathClause(field)
-            if clause['value'] is not None:
-                pc = self.buildPathClause(field, clause['operator'],
-                                          variant_to_pyobject(QVariant(clause['value'])),
-                                          clause['matches'])
+            if not clause.value.isNull():
+                pc = self.buildPathClause(variant_to_pyobject(clause.column),
+                                          variant_to_pyobject(clause.operator),
+                                          variant_to_pyobject(clause.value),
+                                          variant_to_pyobject(clause.matches))
                 pathClauses.append(pc)
-                conjunctions.append(clause['conjunction'])
+                conjunctions.append(clause.conjunction)
                 #value = unicode(clause['value'])
             #print "%s %s" % (field, value)
         filter=None
@@ -250,6 +251,8 @@ class SABuilderBackend(RowBuilderBackend):
             filter = booleanClauses[len(booleanClauses)-1]
         elif len(pathClauses) == 1:
             filter = pathClauses[0]
+        else:
+            filter = None
         
         return self._queryBuilder.getQuery(self._mapper.session, filter=filter, **kwargs)
         

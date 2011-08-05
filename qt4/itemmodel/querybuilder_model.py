@@ -80,7 +80,7 @@ class QueryBuilderModel(QAbstractItemModel):
         del self._clauses[row]
         self.endResetModel()
     
-    def getClauses(self):
+    def getClausesAsDicts(self):
         clauses = []
         for clause in self._clauses:
             clauseDict = {}
@@ -89,4 +89,10 @@ class QueryBuilderModel(QAbstractItemModel):
             clauses.append(clauseDict)
         return clauses
     
+    def getClauses(self):
+        return self._clauses
+    
     clauses = property(getClauses)
+    
+    def setClausesAsDicts(self):
+        pass
