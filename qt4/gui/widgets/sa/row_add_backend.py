@@ -15,6 +15,7 @@ from sqlalchemy.types import AbstractType, String, Integer, Float, Boolean
 from ems.qt4.gui.widgets.tableview.querybuilder_tableview import RowBuilderBackend #@UnresolvedImport
 from ems.model.sa.orm.querybuilder import SAQueryBuilder, PathClause, AndList, OrList #@UnresolvedImport
 from ems.qt4.util import variant_to_pyobject #@UnresolvedImport
+from lib.ems.model.sa.orm import base_object
 
 class SABuilderBackend(RowBuilderBackend):
     
@@ -62,6 +63,13 @@ class SABuilderBackend(RowBuilderBackend):
             return fieldName
     
     def getDisplayedValueText(self, property, value):
+        if property:
+            cls = self._queryBuilder.propertyName2Class[property]
+            if hasattr(cls,'__ormDecorator__'):
+                dec = cls.__ormDecorator__()
+                return QString.fromUtf8(dec.valueToFormattedString(property.split('.')[-1:][0],
+                                                 variant_to_pyobject(value)))
+            
         return value.toString()
     
     @property
@@ -190,8 +198,11 @@ class SABuilderBackend(RowBuilderBackend):
             
     def getValueEditor(self, parent, currentProperty):
         propertyKey = currentProperty.split('.')[-1:][0]
-        class_ = self._queryBuilder.propertyName2Class[currentProperty]
-        return self._mapper.getWidget(class_(), propertyKey)
+        try:
+            class_ = self._queryBuilder.propertyName2Class[currentProperty]
+            return self._mapper.getWidget(class_(), propertyKey)
+        except KeyError:
+            return QLineEdit(parent)
     
     def buildQuery(self, clauses, **kwargs):
         

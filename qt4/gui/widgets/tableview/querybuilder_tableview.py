@@ -55,7 +55,6 @@ class FieldSelectDelegate(QStyledItemDelegate):
         QStyledItemDelegate.paint(self, painter, option, index)
     
     def createEditor(self, parent, option, index):
-        
         editor = TreeComboBox(parent)
         self.builderBackend.populateFieldInput(editor)
         return editor
@@ -184,7 +183,6 @@ class ValueDelegate(QStyledItemDelegate):
             return widget.text()
     
     def setModelData(self, editor, model, index):
-        print "setModelData %s " % editor
         model.setData(index, QVariant(self.extractValueOfWidget(editor)))
     
     def setEditorData(self, editor, index):
@@ -208,4 +206,4 @@ class QueryBuilderTableView(AddableTableView):
         self.itemDelegate().insertColumnDelegate(2,operatorDelegate)
         valueDelegate = ValueDelegate(builderBackend, self.model())
         self.itemDelegate().insertColumnDelegate(3,valueDelegate)
-        
+    

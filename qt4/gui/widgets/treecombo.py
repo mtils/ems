@@ -4,7 +4,7 @@ Created on 27.06.2011
 @author: michi
 '''
 from PyQt4.QtCore import QVariant, Qt, pyqtSlot, QTimer, SLOT, QString, \
-    QAbstractItemModel, QModelIndex, pyqtSignal
+    QAbstractItemModel, QModelIndex, pyqtSignal, QPoint, QObject, QEvent
 from PyQt4.QtGui import QComboBox, QTreeWidget, QTreeWidgetItem, \
     QTreeWidgetItemIterator, QStyledItemDelegate, QWidget, QVBoxLayout
 from ems.qt4.util import variant_to_pyobject
@@ -25,30 +25,41 @@ class TreeWidgetIterator(object):
             raise StopIteration
         return item
 
-class TreePopupDelegate(QStyledItemDelegate):
-    def setModelData(self, editor, model, index):
-        #print model.data(index)
-        return super(TreePopupDelegate, self).setModelData(editor, model, index)
-        
-    def setEditorData(self, editor, index):
-        #print index
-        return super(TreePopupDelegate, self).setEditorData(editor, index)
+
+class ViewPortEventFilter(QObject):
+    def __init__(self, parent=None):
+        QObject.__init__(self, parent)
     
-    def paint(self, painter, option, index):
-        super(TreePopupDelegate, self).paint(painter, option, index)
+    def eventFilter(self, obj, event):
+        #print "EventFilter"
+        if event.type() == QEvent.MouseButtonPress:
+            return True
+        return False
+
+class CustomTreeWidgetViewPort(QWidget):
+    def __init__(self, parent=None):
+        super(CustomTreeWidgetViewPort, self).__init__(parent)
     
-    def createEditor(self, parent, option, index):
-        #print "createEditor"
-        return super(TreePopupDelegate, self).createEditor(parent, option, index)
-    
-    def editorEvent(self, event, model, option, index):
-        #print "editorEvent %s %s %s %s" % (event, model, option, index)
-        return super(TreePopupDelegate, self).editorEvent(event, model, option, index)
+    def mousePressEvent(self, event):
+        print "Ich bin dat"
+
 
 class CustomTreeWidget(QTreeWidget):
+    
+    itemSelected = pyqtSignal(QTreeWidgetItem)
     closed = pyqtSignal()
+    
     def __init__(self, parent=None):
         super(CustomTreeWidget, self).__init__(parent)
+        #self.setViewport(CustomTreeWidgetViewPort(self))
+        #print self.viewport().parent()
+        #print self.viewport().installEventFilter(ViewPortEventFilter(self.viewport()))
+    
+    def preShow(self):
+        #print "preShowCalled"
+        pass
+        #self.grabKeyboard()
+        #self.viewport().grabMouse()
         
     def mousePressEvent(self, event):
         result = super(CustomTreeWidget, self).mousePressEvent(event)
@@ -56,15 +67,25 @@ class CustomTreeWidget(QTreeWidget):
             self.close()
         return result
     
+    def mouseReleaseEvent(self, event):
+        pass#print "Ich bin dat"
+    
     def keyPressEvent(self, event):
         result = super(CustomTreeWidget, self).keyPressEvent(event)
+        
         if event.key() in(Qt.Key_Escape, Qt.Key_Return, Qt.Key_Enter):
             self.close()
         return result
     
     def close(self):
         result = super(CustomTreeWidget, self).close()
+#        item = self.currentItem().text(0)
+#        if isinstance(item, QTreeWidgetItem):
+#            self.itemSelected.emit(item)
         self.closed.emit()
+#        self.releaseMouse()
+#        self.releaseKeyboard()
+        return None
         return result
         
 
@@ -75,6 +96,7 @@ class FlatTreeModel(QAbstractItemModel):
         self.pathSeparator = u' > '
         
     def data(self, index, role=Qt.DisplayRole):
+#        print "data r:%s c:%s" % (index.row(), index.column())
         row = index.row()
         col = index.column()
         if not index.isValid() or \
@@ -89,12 +111,14 @@ class FlatTreeModel(QAbstractItemModel):
         return QVariant()
     
     def append(self, treeWidgetItem):
+        self.beginResetModel()
         nextIndex = len(self._items)
         treeWidgetItem.flatIndex = nextIndex
         self._items[nextIndex] = {}
         name = self.buildDisplayedName(treeWidgetItem)
         self._items[nextIndex][0] = QVariant(QString.fromUtf8(name))
         self._items[nextIndex][1] = QVariant(treeWidgetItem.text(1))
+        self.endResetModel()
     
     
     def buildDisplayedName(self, item ):
@@ -132,37 +156,28 @@ class TreeComboBox(QComboBox):
         self.itemView.setColumnCount(1)
         self.itemView.setHeaderHidden(True)
         self.itemView.setWindowFlags(Qt.Popup)
-        #self.setModel(self.itemView.model())
         self.flatModel = FlatTreeModel(self)
         self.setModel(self.flatModel)
-        #self.setView(self.itemView)
-        self.itemView.expandAll()
         self._flatItemTree = {}
         self.initialExpand = True
         self.__nextCurrentIndex = None
         self.__currentText = ''
+        
         self.itemView.currentItemChanged.connect(self.onCurrentItemChanged)
-        self.itemView.itemActivated.connect(self.onItemActivated)
         self.itemView.closed.connect(self.hidePopup)
-        #self.setItemDelegate(TreePopupDelegate(self))
-#        print self.itemDelegate()
-    
+        
+    @pyqtSlot()
+    def hidePopup(self):
+        #print "hidePopup"
+        super(TreeComboBox, self).hidePopup()
+        
     def onCurrentItemChanged(self, cur, prev):
         self.setCurrentIndex(cur.flatIndex)
         #print "onCurrentItemChanged %s %s" % (cur.text(0), cur.flatIndex)
     
-    def onItemActivated(self, item, col):
-        print "onItemActivated %s %s" % (item.text(0), item.flatIndex)
     
     def value(self):
         return self.itemData(self.currentIndex(), Qt.UserRole)
-    
-    @pyqtSlot()
-    def _setCurrentIndex(self):
-        if self.__nextCurrentIndex is not None:
-            self.setCurrentIndex(self.__nextCurrentIndex)
-            #self.setEditText(QString.fromUtf8(self.__currentText))
-        self.__nextCurrentIndex = None
     
     def setValue(self, value):
         for i in range(self.count()):
@@ -182,41 +197,27 @@ class TreeComboBox(QComboBox):
             self._flatItemTree[depth] = newItem
             self.flatModel.append(newItem)
             
-    def keyPressEvent(self, event):
-        return super(TreeComboBox, self).keyPressEvent(event)
-#        if event.key() in (Qt.Key_Up, Qt.Key_Down):
-#            return
-#            item = self.itemView.currentItem()
-#            if item is None:
-#                item = self.itemView.topLevelItem(0)
-#            if event.key() == Qt.Key_Up:
-#                targetItem = self.itemView.itemAbove(item)
-#                if targetItem is None:
-#                    return
-#                print "Key up pressed currentItem: %s" % targetItem.data(1,Qt.DisplayRole).toString()
-#                self.itemView.setCurrentItem(targetItem)
-#                return
-#            if event.key() == Qt.Key_Down:
-#                targetItem = self.itemView.itemBelow(item)
-#                if targetItem is None:
-#                    return
-#                print "Key down pressed currentItem: %s" % targetItem.data(1,Qt.DisplayRole).toString()
-#                self.itemView.setCurrentItem(targetItem)
-#                return
-                
-                #self.setEditText(targetItem.data(0,Qt.DisplayRole).toString())
-        
-        if event.key() == Qt.Key_Space:
-            self.showPopup()
-            return
-        
-        return super(TreeComboBox, self).keyPressEvent(event)
+#    def keyPressEvent(self, event):
+#        return super(TreeComboBox, self).keyPressEvent(event)
+#   
+#    def mousePressEvent(self, event):
+#        print "TreeWidget:mousePressEvent"
+#        super(TreeComboBox, self).mousePressEvent(event)
+#    
+#    def mouseReleaseEvent(self, event):
+#        print "TreeWidget:mouseReleaseEvent"
+#        super(TreeComboBox, self).mouseReleaseEvent(event)
     
     def showPopup(self):
+        super(TreeComboBox, self).showPopup()
         self.itemView.expandAll()
-        self.itemView.move(self.parent().mapToGlobal(self.pos()))
+        pos = QPoint(self.pos())
+        pos.setY(pos.y()+self.height())
+        #pos.setX(pos.x()-200)
+        self.itemView.move(self.parent().mapToGlobal(pos))
         self.itemView.setMinimumWidth(self.width())
         self.itemView.setMaximumWidth(self.width())
+        self.itemView.preShow()
         self.itemView.show()
 
 if __name__ == '__main__':

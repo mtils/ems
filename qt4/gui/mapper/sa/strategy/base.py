@@ -16,6 +16,7 @@ class BaseStrategy(QObject):
     def __init__(self, parent=None):
         QObject.__init__(self, parent)
         self._mapper = None
+        self._rProperties = {}
     
     def getMapper(self):
         return self._mapper
@@ -24,19 +25,28 @@ class BaseStrategy(QObject):
         self._mapper = mapper
     
     def getValueString(self, obj, property, colInfo=None):
+        return "" % (self.getValuePrefix(obj, property, colInfo),
+                     )
+    
+    def formatValue(self, obj, property, colInfo=None):
         pass
     
-    def getPrefix(self, obj, property, colInfo=None):
-        pass
+    def getValueFormatString(self, obj, property, colInfo=None):
+        return "%s"
     
-    def getSuffix(self, obj, property, colType=None):
+    def getValuePrefix(self, obj, property, colInfo=None):
+        return u""
+    
+    def getValueSuffix(self, instance, property, colType=None):
+        rProperty = self.getRProperty(instance, property)
         if colType is None:
             colType = self.extractType(rProperty)
         
         colInfo = self.getColInfos(rProperty)
         if colInfo is not None:
             if colInfo.has_key('unit'):
-                pass
+                return u" %s" % colInfo['unit']
+            
     def getNumberFormat(self, obj, property, colInfo=None):
         pass
     
@@ -44,6 +54,7 @@ class BaseStrategy(QObject):
     mapper = property(getMapper, setMapper)
     
     def getWidget(self, prototype, property):
+        
         objMapper = object_mapper(prototype)
         rProperty = objMapper.get_property(property)
         try:
@@ -132,8 +143,25 @@ class BaseStrategy(QObject):
                                           "one Column are not supported")
         else:
             raise TypeError("BaseStrategy can only handle ColumnProperties")
+    
+    @staticmethod
+    def buildObjectHash(obj):
+        return obj.__module__ + "." + obj.__class__.__name__
+    
+    @staticmethod
+    def buildPropertyHash(obj, propertyName):
+        return BaseStrategy.buildObjectHash(obj) + '.' + propertyName
+    
+    def getRProperty(self, instance, propertyName):
+        objHash = self.buildPropertyHash(instance, propertyName)
+        if not self._rProperties.has_key(objHash):
+            saMapper = object_mapper(instance)
+            self._rProperties[objHash] = saMapper.get_property(propertyName)
 
+        return self._rProperties[objHash]    
+    
     def map(self, widget, prototype, property):
+        print "%s %s" % (property,type(property))
         objMapper = object_mapper(prototype)
         rProperty = objMapper.get_property(property)
         colType = self.extractType(rProperty)

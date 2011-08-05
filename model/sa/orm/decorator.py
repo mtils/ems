@@ -6,10 +6,22 @@ Created on 20.06.2011
 
 from sqlalchemy.orm import object_mapper
 
+
 class OrmDecorator(object):
     def __init__(self, cls):
         self._class = cls
         self._shownProperties = []
+        self._objectMapper = None
+        self._valueFormatOptions = {}
+        self._rProperties = {}
+        self._colInfos = {}
+    
+    def getObjectMapper(self):
+        if self._objectMapper is None:
+            self._objectMapper = object_mapper(self._class())
+        return self._objectMapper
+        
+    objectMapper = property(getObjectMapper)
     
     def getReprasentiveString(self, obj, view='default'):
         if hasattr(self._class,'__reprasentive_column__'):
@@ -27,7 +39,7 @@ class OrmDecorator(object):
             if self._class.__propertyFriendlyNames__.has_key(notDottedProperty):
                 return self._class.__propertyFriendlyNames__[notDottedProperty]
             else:
-                print notDottedProperty
+#                print notDottedProperty
                 print self._class.__propertyFriendlyNames__
         return propertyName
     
@@ -36,8 +48,7 @@ class OrmDecorator(object):
             if hasattr(self._class,'__shownProperties__'):
                 self._shownProperties = self._class.__shownProperties__
             else:
-                mapper = object_mapper(self._class())
-                for prop in mapper.iterate_properties:
+                for prop in self.objectMapper.iterate_properties:
                     self._shownProperties.append(prop.key)
         
         return self._shownProperties
@@ -54,4 +65,49 @@ class OrmDecorator(object):
     
     def getFullTextQuery(self, session, text):
         return None
+    
+    def valueToFormattedString(self, propertyName, value):
+        if hasattr(value, '__ormDecorator__'):
+            dec = value.__ormDecorator__()
+            return dec.getReprasentiveString(value)
+        formatOption = self.getValueFormatOption(propertyName)
+        newString = "%s%s%s" % (unicode(formatOption['prefix']),
+                                unicode(formatOption['textFormat']).format((value)),
+                                unicode(formatOption['suffix'])
+                                )
+        return newString
+    
+    def getValueFormatOption(self, propertyName):
+        prefix = u''
+        suffix = u''
+        textFormat = u'{0}'
+        
+        try:
+            colInfo = self.getColInfo(propertyName)
+            if colInfo.has_key('unit'):
+                suffix = " " + unicode(colInfo['unit'])
+        except AttributeError:
+            pass
+        
+        
+        return {
+                'prefix':prefix,
+                'suffix':suffix,
+                'textFormat':textFormat
+                }
+    
+    def getColInfo(self, propertyName):
+        if not self._colInfos.has_key(propertyName):
+            cols = self.getRProperty(propertyName).columns
+            if len(cols) == 1:
+                col = cols[0]
+            self._colInfos[propertyName] = col.info
+        return self._colInfos[propertyName]
+    
+    def getRProperty(self, propertyName):
+        if not self._rProperties.has_key(propertyName):
+            self._rProperties[propertyName] = self.objectMapper.\
+                get_property(propertyName)
+
+        return self._rProperties[propertyName]
         

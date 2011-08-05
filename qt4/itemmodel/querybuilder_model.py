@@ -22,7 +22,7 @@ class QueryBuilderRow(object):
 class QueryBuilderModel(QAbstractItemModel):
     def __init__(self, parent=None):
         QAbstractItemModel.__init__(self, parent)
-        self._returnedCols = ['conjunction','column','operator','value','matches']
+        self._returnedCols = ['conjunction','column','operator','value']#,'matches']
         self._clauses = []
     
     def rowCount(self, parent=QModelIndex()):
@@ -79,3 +79,14 @@ class QueryBuilderModel(QAbstractItemModel):
         self.beginResetModel()
         del self._clauses[row]
         self.endResetModel()
+    
+    def getClauses(self):
+        clauses = []
+        for clause in self._clauses:
+            clauseDict = {}
+            for att in ('conjunction','column','operator','value','matches'):
+                clauseDict[att] = variant_to_pyobject(clause.__getattribute__(att))
+            clauses.append(clauseDict)
+        return clauses
+    
+    clauses = property(getClauses)
