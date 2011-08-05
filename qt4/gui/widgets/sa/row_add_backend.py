@@ -92,7 +92,7 @@ class SABuilderBackend(RowBuilderBackend):
             i += 1
         
         
-        fieldInput.itemView.expandAll()
+        fieldInput.itemTreeView.expandAll()
         
     
     @property

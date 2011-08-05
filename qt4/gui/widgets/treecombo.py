@@ -63,12 +63,14 @@ class CustomTreeWidget(QTreeWidget):
         
     def mousePressEvent(self, event):
         result = super(CustomTreeWidget, self).mousePressEvent(event)
+        #return result
         if event.button() == Qt.LeftButton:
             self.close()
         return result
     
-    def mouseReleaseEvent(self, event):
+    def mouseReleaseEvent_(self, event):
         pass#print "Ich bin dat"
+        
     
     def keyPressEvent(self, event):
         result = super(CustomTreeWidget, self).keyPressEvent(event)
@@ -77,7 +79,7 @@ class CustomTreeWidget(QTreeWidget):
             self.close()
         return result
     
-    def close(self):
+    def close_(self):
         result = super(CustomTreeWidget, self).close()
 #        item = self.currentItem().text(0)
 #        if isinstance(item, QTreeWidgetItem):
@@ -152,19 +154,22 @@ class FlatTreeModel(QAbstractItemModel):
 class TreeComboBox(QComboBox):
     def __init__(self, parent=None):
         super(TreeComboBox, self).__init__(parent)
-        self.itemView = CustomTreeWidget()
-        self.itemView.setColumnCount(1)
-        self.itemView.setHeaderHidden(True)
-        self.itemView.setWindowFlags(Qt.Popup)
+        self.itemTreeView = CustomTreeWidget(self)
+        self.itemTreeView.setColumnCount(1)
+        self.itemTreeView.setHeaderHidden(True)
+        self.itemTreeView.setWindowFlags(Qt.Popup)
+        #self.setView(self.itemTreeView)
+        #self.setModel(self.view())
         self.flatModel = FlatTreeModel(self)
         self.setModel(self.flatModel)
         self._flatItemTree = {}
         self.initialExpand = True
         self.__nextCurrentIndex = None
         self.__currentText = ''
+        #print self.itemView
         
-        self.itemView.currentItemChanged.connect(self.onCurrentItemChanged)
-        self.itemView.closed.connect(self.hidePopup)
+        self.itemTreeView.currentItemChanged.connect(self.onCurrentItemChanged)
+        self.itemTreeView.closed.connect(self.hidePopup)
         
     @pyqtSlot()
     def hidePopup(self):
@@ -189,7 +194,7 @@ class TreeComboBox(QComboBox):
         self._flatItemTree[depth] = QTreeWidgetItem(texts)
         
         if depth == 0:
-            self.itemView.addTopLevelItem(self._flatItemTree[depth])
+            self.itemTreeView.addTopLevelItem(self._flatItemTree[depth])
             self.flatModel.append(self._flatItemTree[depth])
         else:
             newItem = QTreeWidgetItem(texts)
@@ -209,16 +214,15 @@ class TreeComboBox(QComboBox):
 #        super(TreeComboBox, self).mouseReleaseEvent(event)
     
     def showPopup(self):
-        super(TreeComboBox, self).showPopup()
-        self.itemView.expandAll()
+        self.itemTreeView.expandAll()
         pos = QPoint(self.pos())
         pos.setY(pos.y()+self.height())
         #pos.setX(pos.x()-200)
-        self.itemView.move(self.parent().mapToGlobal(pos))
-        self.itemView.setMinimumWidth(self.width())
-        self.itemView.setMaximumWidth(self.width())
-        self.itemView.preShow()
-        self.itemView.show()
+        self.itemTreeView.move(self.parent().mapToGlobal(pos))
+        self.itemTreeView.setMinimumWidth(self.width())
+        self.itemTreeView.setMaximumWidth(self.width())
+        self.itemTreeView.preShow()
+        self.itemTreeView.show()
 
 if __name__ == '__main__':
     import sys
