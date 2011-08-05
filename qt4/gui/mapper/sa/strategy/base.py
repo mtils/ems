@@ -36,7 +36,7 @@ class BaseStrategy(QObject):
         colInfo = self.getColInfos(rProperty)
         if colInfo is not None:
             if colInfo.has_key('unit'):
-    
+                pass
     def getNumberFormat(self, obj, property, colInfo=None):
         pass
     
