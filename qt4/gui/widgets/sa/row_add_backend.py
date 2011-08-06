@@ -204,7 +204,7 @@ class SABuilderBackend(RowBuilderBackend):
         except KeyError:
             return QLineEdit(parent)
     
-    def buildQuery(self, clauses, **kwargs):
+    def buildFilter(self, clauses):
         
         #crit = self._queryBuilder.propertyName2Class['zustand.baujahrklasseId'].baujahrklasseId == 15
         #print type(crit)
@@ -223,7 +223,10 @@ class SABuilderBackend(RowBuilderBackend):
                                           variant_to_pyobject(clause.value),
                                           variant_to_pyobject(clause.matches))
                 pathClauses.append(pc)
-                conjunctions.append(clause.conjunction)
+                if not clause.conjunction.isNull():
+                    conjunctions.append(variant_to_pyobject(clause.conjunction))
+                else:
+                    conjunctions.append('AND')
                 #value = unicode(clause['value'])
             #print "%s %s" % (field, value)
         filter=None
@@ -253,8 +256,8 @@ class SABuilderBackend(RowBuilderBackend):
             filter = pathClauses[0]
         else:
             filter = None
-        
-        return self._queryBuilder.getQuery(self._mapper.session, filter=filter, **kwargs)
+        return filter
+        #return self._queryBuilder.getQuery(self._mapper.session, filter=filter, **kwargs)
         
             
     def buildPathClause(self, field, operator, value, matches):

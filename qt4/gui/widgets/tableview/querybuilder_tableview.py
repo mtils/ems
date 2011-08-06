@@ -208,6 +208,6 @@ class QueryBuilderTableView(AddableTableView):
         valueDelegate = ValueDelegate(builderBackend, self.model())
         self.itemDelegate().insertColumnDelegate(3,valueDelegate)
     
-    def buildQuery(self, *args, **kwargs):
-        return self.builderBackend.buildQuery(self.model().clauses,*args, **kwargs)
+    def buildFilter(self, *args, **kwargs):
+        return self.builderBackend.buildFilter(self.model().clauses,*args, **kwargs)
     

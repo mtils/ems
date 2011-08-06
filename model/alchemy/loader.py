@@ -180,7 +180,7 @@ class AlchemyLoader(object):
     def getSessionMaker(self, handle='default'):
         if not self.__sessionMakers.has_key(handle):
             self.__sessionMakers[handle] = \
-                sessionmaker(bind=self.getEngine(handle))
+                sessionmaker(bind=self.getEngine(handle), autoflush=False)
             self._applyConfigurators(handle, "sessionMakerAboutToLoad")
             self._applyConfigurators(handle, "sessionMakerLoaded")
         return self.__sessionMakers[handle]

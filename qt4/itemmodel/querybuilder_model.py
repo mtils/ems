@@ -16,7 +16,14 @@ class QueryBuilderRow(object):
         self.column = QVariant('')
         self.operator = QVariant('=')
         self.value = QVariant('NULL')
-        self.matches = QVariant(True) 
+        self.matches = QVariant(True)
+    
+    def __str__(self):
+        return "%s %s %s %s %s" % (variant_to_pyobject(self.conjunction),
+                                   variant_to_pyobject(self.column),
+                                   variant_to_pyobject(self.operator),
+                                   variant_to_pyobject(self.value),
+                                   variant_to_pyobject(self.matches))
         
 
 class QueryBuilderModel(QAbstractItemModel):
@@ -94,5 +101,20 @@ class QueryBuilderModel(QAbstractItemModel):
     
     clauses = property(getClauses)
     
-    def setClausesAsDicts(self):
-        pass
+    def setClausesAsDicts(self, clausesDicts):
+        self.beginResetModel()
+        clauses = []
+        for clauseDict in clausesDicts:
+            clause = QueryBuilderRow()
+            if clauseDict.has_key('field'):
+                clause.column = QVariant(clauseDict['field'])
+            for att in ('conjunction','column','operator','value','matches'):
+                if clauseDict.has_key(att):
+                    clause.__setattr__(att, QVariant(clauseDict[att]))
+                    #clauseDict[att] = variant_to_pyobject(clause.__getattribute__(att))
+            clauses.append(clause)
+#        for row in clauses:
+#            print row
+        self._clauses = clauses
+        self.endResetModel()
+        #return clauses

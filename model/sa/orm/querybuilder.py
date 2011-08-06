@@ -195,9 +195,7 @@ class SAQueryBuilder(object):
             
         return propertyNames
     
-    def getQuery(self, session, propertySelection=[], joins=[], filter=None):
-        
-        #print "getQuery called"
+    def getQuery(self, session, propertySelection=[], appendOptions=None, filter=None):
         
         if not len(propertySelection):
             propertySelection = self.propertyNamesDecorated
@@ -229,30 +227,52 @@ class SAQueryBuilder(object):
                                                 joinNames)            
         
         if len(containsEagers):
+            if appendOptions is not None:
+                for option in appendOptions:
+                    containsEagers.append(option)
             query = query.options(*containsEagers)
 #        print str(query).replace('LEFT OUTER JOIN', '\nLEFT OUTER JOIN')
         return query
     
     
     def _getContainsEagers(self, propertyNames, aliases, joinNames):
-        selectedClasses = [self._ormObj.__class__]
         neededJoins = []
+#        print "PropertyNames:"
         for propertyName in propertyNames:
+#            print propertyName
             property = self.properties[propertyName]
             if isinstance(property, RelationshipProperty):
-                if propertyName not in neededJoins:
-                    neededJoins.append(propertyName)
-            elif isinstance(property, ColumnProperty):
+                #print "Relationship: %s" % propertyName
                 split = propertyName.split('.')
-                if len(split) > 2:
-                    joinName = ".".join(split[:-1])
-                    if joinName not in neededJoins:
-                        neededJoins.append(joinName)
+                stack = []
+                for part in split:
+                    stack.append(part)
+                    stackedProperty = u".".join(stack)
+                    #print "Einzeln: %s" % stackedProperty 
+                    if stackedProperty not in neededJoins:
+                        neededJoins.append(stackedProperty)
+                        #print "I add %s" % stackedProperty
+                        
+            elif isinstance(property, ColumnProperty):
+#                print "ColumnProperty: %s" % propertyName
+                split = propertyName.split('.')
+                if len(split) > 1:
+                    joinSplit = split[:-1] 
+                    #print "joinName of Property: %s" % joinName
+                    stack = []
+                    for part in joinSplit:
+                        stack.append(part)
+                        stackedProperty = u".".join(stack)
+                        if stackedProperty not in neededJoins:
+                            neededJoins.append(stackedProperty)
+#                    if joinName not in neededJoins:
+#                        neededJoins.append(joinName)
                     
             
         containsEagers = []
-
+#        print "neededJoins:"
         for neededJoin in neededJoins:
+#            print neededJoin
             containsEagers.append(contains_eager(neededJoin, alias=aliases[neededJoin]))
             
         return containsEagers

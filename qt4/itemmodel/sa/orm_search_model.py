@@ -13,8 +13,10 @@ from ems import qt4
 from ems.thirdparty.odict import OrderedDict
 
 class SAOrmSearchModel(QAbstractTableModel):
-    def __init__(self,session, queriedObject, querybuilder, query=None, columns = [],
-                 dataListener=None):
+    def __init__(self,session, queriedObject, querybuilder, filter=None,
+                 columns = [],
+                 dataListener=None,
+                 appendOptions = None):
         super(SAOrmSearchModel, self).__init__()
         self._session = session
         self.__dataListener = dataListener
@@ -23,21 +25,21 @@ class SAOrmSearchModel(QAbstractTableModel):
         self._columns = columns
         if not len(self._columns):
             self._columns = self.possibleColumns
+        self._appendOptions = appendOptions
         self._mapper = None
         self._ormProperties = None
         self._flagsCache = {}
         self._queryBuilder = querybuilder
+        self._filter = filter
+        
         try:
-            if query is None:
-                query = self._queryBuilder.getQuery(self._session,
-                                                    propertySelection=self._columns)
-            else:
-                self._queryBuilder.propertyNames
+            self._queryBuilder.propertyNames
         except KeyError, e:
             print e
             print "Mein Objekt: %s" % self._queriedObject
-            raise e
-        self._query = query
+            raise e    
+        
+        self._query = None
         self._headerNameCache = {}
         self._defaultColumns = []
         
@@ -48,11 +50,23 @@ class SAOrmSearchModel(QAbstractTableModel):
         return self._query
     
     def setQuery(self, query):
+        #TODO: Dirty Fix wegen eagerload, welches nicht beim Setzen der Columns ausgefuehrt wird
+        raise NotImplementedError("This feature has been throwed out")
         self._query = query
         self._dirty = True
         self.perform()
     
     query = property(getQuery, setQuery)
+    
+    def getFilter(self):
+        return self._filter
+    
+    def setFilter(self, filter):
+        self._filter = filter
+        self._dirty = True
+        self.perform()
+    
+    filter = property(getFilter, setFilter)
     
     @property
     def mapper(self):
@@ -254,7 +268,11 @@ class SAOrmSearchModel(QAbstractTableModel):
         self.beginResetModel()
         
         self._resultCache.clear()
-        for obj in self._query.all():
+        query = self._queryBuilder.getQuery(self._session,
+                                            propertySelection=self._columns,
+                                            filter=self._filter,
+                                            appendOptions=self._appendOptions)
+        for obj in query.all():
             
             if isinstance(obj, NamedTuple):
                 self._resultCache[i] = obj[0]
