@@ -46,6 +46,10 @@ class SAOrmSearchModel(QAbstractTableModel):
         self._columnName2Index = self._buildReversedColumnLookup(columns)
         self._dirty = True
     
+    @property
+    def queryBuilder(self):
+        return self._queryBuilder
+    
     def getQuery(self):
         return self._query
     
