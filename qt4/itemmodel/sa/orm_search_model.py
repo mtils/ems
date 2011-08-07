@@ -273,6 +273,9 @@ class SAOrmSearchModel(QAbstractTableModel):
     def isDataChanged(self):
         return self._session.dirty
     
+    def forceReset(self):
+        self._dirty = True
+        self.perform()
     
     def perform(self):
         
