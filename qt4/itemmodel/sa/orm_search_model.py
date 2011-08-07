@@ -22,6 +22,8 @@ class SAOrmSearchModel(QAbstractTableModel):
         self.__dataListener = dataListener
         self._queriedObject = queriedObject
         self._resultCache = {}
+        self._objectCache = {}
+        self._headerCache = {}
         self._columns = columns
         if not len(self._columns):
             self._columns = self.possibleColumns
@@ -31,6 +33,7 @@ class SAOrmSearchModel(QAbstractTableModel):
         self._flagsCache = {}
         self._queryBuilder = querybuilder
         self._filter = filter
+        self._askCount = 0
         
         try:
             self._queryBuilder.propertyNames
@@ -125,7 +128,7 @@ class SAOrmSearchModel(QAbstractTableModel):
     
     def rowCount(self, index=QModelIndex()):
         self.perform()
-        return len(self._resultCache)
+        return len(self._objectCache)
     
     def columnCount(self, index=QModelIndex()):
         self.perform()
@@ -139,7 +142,8 @@ class SAOrmSearchModel(QAbstractTableModel):
     
     def extractValue(self, index, propertyName):
         
-        currentObj = self._resultCache[index.row()]
+        currentObj = self._objectCache[index.row()]
+        
         if hasattr(currentObj, propertyName):
             return currentObj.__getattribute__(propertyName)
         else:
@@ -173,38 +177,48 @@ class SAOrmSearchModel(QAbstractTableModel):
     
     def data(self, index, role=Qt.DisplayRole):
         #return QVariant()
+        self._askCount += 1
         if self.__dataListener is not None:
             self.__dataListener.data(index, role)
         self.perform()
-        columnName = self.getPropertyNameByIndex(index.column())
-        #return QVariant()
+        
         if not index.isValid() or \
            not (0 <= index.row() < self.rowCount()):
             return QVariant()
+        
         if role in (Qt.DisplayRole, Qt.EditRole):
-            #print self._resultCache[index.row()]
-            #value = self._resultCache[index.row()].__getattribute__(columnName)
-            #return QVariant("Test")
+            if self._resultCache[index.row()].has_key(index.column()):
+#                print "cacheHit %s" % self._askCount
+                return self._resultCache[index.row()][index.column()]
+            
+            columnName = self.getPropertyNameByIndex(index.column())
             value = self.extractValue(index, columnName)
-            #print value
-#            if self._queriedObject.__name__ == 'Gruppe':
-#                print "row:%s col:%s role:%s value:%s" % (index.row(), index.column(), role, value)
+            
             if isinstance(value, basestring):
-                return QVariant(unicode(value))
+                self._resultCache[index.row()][index.column()] = QVariant(unicode(value)) 
+                return self._resultCache[index.row()][index.column()]
             elif hasattr(value.__class__,'__ormDecorator__'):
-                return QVariant(value.__class__.__ormDecorator__().getReprasentiveString(value))
+                self._resultCache[index.row()][index.column()] = \
+                    QVariant(value.__class__.__ormDecorator__().getReprasentiveString(value))
+                return self._resultCache[index.row()][index.column()]
             elif isinstance(value, datetime.datetime):
-                return QVariant(value.strftime("%c"))
-            return QVariant(value)
+                self._resultCache[index.row()][index.column()] = \
+                    QVariant(value.strftime("%c")) 
+                return self._resultCache[index.row()][index.column()]
+            self._resultCache[index.row()][index.column()] = QVariant(value) 
+            return self._resultCache[index.row()][index.column()]
+        
         if role == qt4.ColumnNameRole:
+#            print "columnNameRole"
             return QVariant(unicode(self._queryBuilder.currentColumnList[index.column()]))
         return QVariant()
     
     def getObject(self, row):
-        if self._resultCache.has_key(row):
-            return self._resultCache[row]
+        if self._objectCache.has_key(row):
+            return self._objectCache[row]
     
     def headerData(self, section, orientation, role=Qt.DisplayRole):
+        #print "headerData"
         if role == Qt.TextAlignmentRole:
             if orientation == Qt.Horizontal:
                 return QVariant(int(Qt.AlignLeft|Qt.AlignVCenter))
@@ -272,6 +286,9 @@ class SAOrmSearchModel(QAbstractTableModel):
         self.beginResetModel()
         
         self._resultCache.clear()
+        self._objectCache.clear()
+        self._headerCache.clear()
+        self._askCount = 0
         query = self._queryBuilder.getQuery(self._session,
                                             propertySelection=self._columns,
                                             filter=self._filter,
@@ -279,9 +296,11 @@ class SAOrmSearchModel(QAbstractTableModel):
         for obj in query.all():
             
             if isinstance(obj, NamedTuple):
-                self._resultCache[i] = obj[0]
+                self._objectCache[i] = obj[0]
             else:
-                self._resultCache[i] = obj
+                self._objectCache[i] = obj
+            #Create ResultCache Structure
+            self._resultCache[i] = {}
             i += 1
         self._dirty = False
         self.endResetModel()
