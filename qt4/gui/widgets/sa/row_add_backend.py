@@ -218,15 +218,17 @@ class SABuilderBackend(RowBuilderBackend):
             field = unicode(clause.column.toString())
             pc = PathClause(field)
             if not clause.value.isNull():
-                pc = self.buildPathClause(variant_to_pyobject(clause.column),
-                                          variant_to_pyobject(clause.operator),
-                                          variant_to_pyobject(clause.value),
-                                          variant_to_pyobject(clause.matches))
-                pathClauses.append(pc)
-                if not clause.conjunction.isNull():
-                    conjunctions.append(variant_to_pyobject(clause.conjunction))
-                else:
-                    conjunctions.append('AND')
+                col = variant_to_pyobject(clause.column)
+                if isinstance(col, basestring) and len(col):
+                    pc = self.buildPathClause(col,
+                                              variant_to_pyobject(clause.operator),
+                                              variant_to_pyobject(clause.value),
+                                              variant_to_pyobject(clause.matches))
+                    pathClauses.append(pc)
+                    if not clause.conjunction.isNull():
+                        conjunctions.append(variant_to_pyobject(clause.conjunction))
+                    else:
+                        conjunctions.append('AND')
                 #value = unicode(clause['value'])
             #print "%s %s" % (field, value)
         filter=None

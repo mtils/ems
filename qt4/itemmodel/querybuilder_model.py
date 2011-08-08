@@ -7,6 +7,8 @@ Created on 04.08.2011
 from PyQt4.QtCore import QAbstractItemModel, QModelIndex, Qt, QVariant, \
     pyqtSlot
 
+from PyQt4.QtGui import QColor, QBrush
+
 from ems.qt4.util import variant_to_pyobject #@UnresolvedImport
 
 class QueryBuilderRow(object):
@@ -17,6 +19,9 @@ class QueryBuilderRow(object):
         self.operator = QVariant('=')
         self.value = QVariant('NULL')
         self.matches = QVariant(True)
+    
+    def isValid(self):
+        return (len(self.column.toString()) > 0)
     
     def __str__(self):
         return "%s %s %s %s %s" % (variant_to_pyobject(self.conjunction),
@@ -46,7 +51,19 @@ class QueryBuilderModel(QAbstractItemModel):
            not (0 <= index.row() < self.rowCount()):
             return QVariant()
         colName = self._returnedCols[index.column()]
+        #print role
+        
+        if role in (Qt.BackgroundRole, Qt.ToolTipRole):
+            valid = self._clauses[index.row()].isValid()
+            if role == Qt.BackgroundRole:
+                if not valid:
+                    return QBrush(QColor(255,211,123))
+            if role == Qt.ToolTipRole:
+                if not valid:
+                    return QVariant("Diese Zeile ist nicht valide")
+                
         if role == Qt.DisplayRole:
+            #print self._clauses[index.row()].isValid()
             return self._clauses[index.row()].__getattribute__(colName)
         
         return QVariant()
@@ -57,6 +74,9 @@ class QueryBuilderModel(QAbstractItemModel):
         #print "setData called %s = %s" % (colName, value.toString())
         
         return False
+    
+    def validateRow(self, row):
+        pass
     
     def parent(self, index):
         return QModelIndex()
@@ -106,8 +126,11 @@ class QueryBuilderModel(QAbstractItemModel):
         clauses = []
         for clauseDict in clausesDicts:
             clause = QueryBuilderRow()
+#            if clauseDict.has_key('field') and len(clauseDict['field']):
             if clauseDict.has_key('field'):
                 clause.column = QVariant(clauseDict['field'])
+#            else:
+#                continue
             for att in ('conjunction','column','operator','value','matches'):
                 if clauseDict.has_key(att):
                     clause.__setattr__(att, QVariant(clauseDict[att]))
