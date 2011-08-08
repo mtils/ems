@@ -305,7 +305,7 @@ class SAQueryBuilder(object):
                     try:
                         saClause.append(self._convertPathClause(clause, aliases))
                     except:
-                         print "Cannot convert PathClause %s" % clause
+                        print "Cannot convert PathClause %s" % clause
                          
                 elif isinstance(clause, PathClauseList):
                     saClause.append(self._convertPathClauseList(clause, aliases, saClause))
