@@ -13,6 +13,7 @@ from ems.thirdparty.odict import OrderedDict
 
 from sqlalchemy.util import symbol
 from sqlalchemy.sql.expression import and_, or_
+from lib.ems.model.sa.orm.base_object import OrmBaseObject
 
 class PathClauseList(object):
     def __init__(self, conjunction, initialClauses=[]):
@@ -283,10 +284,13 @@ class SAQueryBuilder(object):
         if isinstance(filter, PathClauseList):
             saClauseList = self._convertPathClauseList(filter, aliases)
             query = query.filter(saClauseList)
-        if isinstance(filter, PathClause):
-            clause = self._convertPathClause(filter, aliases)
             
-            query = query.filter(clause)
+        if isinstance(filter, PathClause):
+            try:
+                clause = self._convertPathClause(filter, aliases)
+                query = query.filter(clause)
+            except:
+                print "Cannot convert PathClause %s" % clause
         
         return query
     
@@ -298,7 +302,11 @@ class SAQueryBuilder(object):
                 saClause = or_()
             for clause in clauseList.clauses:
                 if isinstance(clause, PathClause):
-                    saClause.append(self._convertPathClause(clause, aliases))
+                    try:
+                        saClause.append(self._convertPathClause(clause, aliases))
+                    except:
+                         print "Cannot convert PathClause %s" % clause
+                         
                 elif isinstance(clause, PathClauseList):
                     saClause.append(self._convertPathClauseList(clause, aliases, saClause))
             return saClause
@@ -318,12 +326,16 @@ class SAQueryBuilder(object):
             
         if isinstance(property, RelationshipProperty):
             split = clause.left.split('.')
+#            print clause
+#            if not isinstance(clause.right, OrmBaseObject):
+#                return
 #            print type(clause.right)
             if len(split) < 2:
                 return self._ormObj.__class__.__dict__[clause.left].__eq__(clause.right)
             else:
                 parentName = ".".join(split[:-1])
                 propName = split[-1:][0]
+                
                 return aliases[parentName].__getattr__(propName).__eq__(clause.right)
     
     def _translateOperator(self, operator):
