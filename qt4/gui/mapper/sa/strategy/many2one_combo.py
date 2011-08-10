@@ -98,10 +98,13 @@ class Many2OneComboStrategy(BaseStrategy):
         objMapper = object_mapper(prototype)
         rProperty = objMapper.get_property(property)
         class_ = self.getRemoteClass(rProperty)
-        
+        if query is None:
+            query = self.mapper.session.query(class_)
+            
         fk = self.getForeignKey(rProperty)
         
         orderByCol = class_.__ormDecorator__().getDefaultOrderByProperty(prototype)
+        
         if orderByCol is not None:
             query = query.order_by(class_.__dict__[orderByCol])
         
