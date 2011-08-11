@@ -110,10 +110,10 @@ class Many2OneComboStrategy(BaseStrategy):
         
         if not matchModel:
             model = RepresentativeModel(self.mapper.session, class_, fk,
-                                        query)
+                                        query, nullEntry="Auswahl...")
         else:
             model = RepresentativeModelMatch(self.mapper.session, class_, fk,
-                                        query)
+                                        query, nullEntry="")
         return model
 
         

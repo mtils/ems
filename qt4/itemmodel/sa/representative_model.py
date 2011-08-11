@@ -12,7 +12,8 @@ from sqlalchemy import String, or_, and_
 from ems import qt4
 
 class RepresentativeModel(QAbstractListModel):
-    def __init__(self,session, queriedObject, fkColumn, query=None, nullEntry=""):
+    def __init__(self,session, queriedObject, fkColumn, query=None,
+                 nullEntry=""):
         super(RepresentativeModel, self).__init__()
         self._fkColumn = fkColumn
         self._session = session
@@ -21,9 +22,9 @@ class RepresentativeModel(QAbstractListModel):
         self._dirty = True
         self._fullTextCriteria = ""
         self._fullTextColumns = None
-        self._nullEntry = nullEntry
         self.hardLimit = 250
         self.returnHtml = False
+        self._nullEntry = nullEntry
         
         if query is None:
             query = self._session.query(self._queriedObject)
@@ -33,8 +34,6 @@ class RepresentativeModel(QAbstractListModel):
     
     def rowCount(self, index=QModelIndex()):
         self.perform()
-        if self._nullEntry:
-            return len(self._resultCache) + 1
         return len(self._resultCache)
     
     @property
@@ -64,7 +63,10 @@ class RepresentativeModel(QAbstractListModel):
            not (0 <= index.row() < self.rowCount()):
             return QVariant()
         if role in (Qt.DisplayRole, Qt.EditRole):
-            value = self._resultCache[index.row()].__ormDecorator__().getReprasentiveString(self._resultCache[index.row()])
+            if self._nullEntry and index.row() == 0:
+                value = self._nullEntry
+            else:
+                value = self._resultCache[index.row()].__ormDecorator__().getReprasentiveString(self._resultCache[index.row()])
 #            if self._queriedObject.__name__ == 'Gruppe':
 #                print "row:%s col:%s role:%s value:%s" % (index.row(), index.column(), role, value)
             if not self.returnHtml or role == Qt.EditRole:
@@ -89,6 +91,8 @@ class RepresentativeModel(QAbstractListModel):
         if role == qt4.ColumnNameRole:
             return QVariant(unicode(self._queryBuilder.currentColumnList[index.column()]))
         if role == qt4.ForeignKeysRole:
+            if self._nullEntry and index.row() == 0:
+                return QVariant()
             return QVariant(self._resultCache[index.row()].__getattribute__(self._fkColumn))
         return QVariant()
     
@@ -130,6 +134,10 @@ class RepresentativeModel(QAbstractListModel):
             #query = self._query.filter(criteria)
         else:
             query = self._query
+        
+        if self._nullEntry:
+            self._resultCache[0] = None
+            i = 1
         
         for obj in query[0:self.hardLimit]:
             self._resultCache[i] = obj
