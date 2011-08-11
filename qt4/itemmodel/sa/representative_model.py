@@ -150,10 +150,11 @@ class RepresentativeModel(QAbstractListModel):
         search = unicode(value.toString()).lower()
         indexes = []
         for row in self._resultCache:
-            value = unicode(self._resultCache[row].__ormDecorator__().\
-                            getReprasentiveString(self._resultCache[row]))
-            if value.lower().startswith(search):
-                indexes.append(self.index(row))
+            if self._resultCache[row] is not None:
+                value = unicode(self._resultCache[row].__ormDecorator__().\
+                                getReprasentiveString(self._resultCache[row]))
+                if value.lower().startswith(search):
+                    indexes.append(self.index(row))
         return indexes
     
     def forceReset(self):
