@@ -12,7 +12,7 @@ from sqlalchemy import String, or_, and_
 from ems import qt4
 
 class RepresentativeModel(QAbstractListModel):
-    def __init__(self,session, queriedObject, fkColumn, query=None):
+    def __init__(self,session, queriedObject, fkColumn, query=None, nullEntry=""):
         super(RepresentativeModel, self).__init__()
         self._fkColumn = fkColumn
         self._session = session
@@ -21,6 +21,7 @@ class RepresentativeModel(QAbstractListModel):
         self._dirty = True
         self._fullTextCriteria = ""
         self._fullTextColumns = None
+        self._nullEntry = nullEntry
         self.hardLimit = 250
         self.returnHtml = False
         
@@ -32,6 +33,8 @@ class RepresentativeModel(QAbstractListModel):
     
     def rowCount(self, index=QModelIndex()):
         self.perform()
+        if self._nullEntry:
+            return len(self._resultCache) + 1
         return len(self._resultCache)
     
     @property

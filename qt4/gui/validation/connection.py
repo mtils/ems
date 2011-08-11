@@ -3,8 +3,8 @@ Created on 10.08.2011
 
 @author: michi
 '''
-from PyQt4.QtCore import QObject, pyqtSignal, pyqtSlot
-from PyQt4.QtGui import QValidator
+from PyQt4.QtCore import QObject, pyqtSignal, pyqtSlot, SIGNAL, SLOT, QString
+from PyQt4.QtGui import QValidator, QDoubleSpinBox
 
 class ValidatorConnection(QObject):
     
@@ -69,3 +69,52 @@ class LineEditConnection(ValidatorConnection):
     def __init__(self, validator, widget, changeListener=None):
         ValidatorConnection.__init__(self, validator, widget, changeListener=changeListener)
         self.widget.setValidator(self.validator)
+
+class AbstractSpinBoxConnection(ValidatorConnection):
+    
+    emptyValueText = u'Nichts'
+    
+    def __init__(self, validator, widget, changeListener=None, emptyValue=None):
+        ValidatorConnection.__init__(self, validator, widget, changeListener=changeListener)
+        
+        self._emptyValue = emptyValue
+        #widget.valueChanged.connect(self.onValueChanged)
+        widget.setMinimum(self.emptyValue)
+        widget.setMaximum(validator.maximum)
+        
+        if isinstance(widget, QDoubleSpinBox):
+            widget.setDecimals(validator.decimals)
+        
+        #if self.validator.notEmpty:
+        self.widget.setSpecialValueText(self.trUtf8(self.emptyValueText))
+        
+        self.widget.valueChanged.connect(self.onValueChanged)
+        
+    
+    def getEmptyValue(self):
+        if self._emptyValue is not None:
+            return self._emptyValue
+        if isinstance(self.widget, QDoubleSpinBox):
+            return self.validator.minimum - 0.1
+        return self.validator.minimum - 1
+    
+    def setEmptyValue(self, val):
+        self._emptyValue = val
+    
+    def delEmptyValue(self):
+        self._emptyValue = None
+    
+    emptyValue = property(getEmptyValue, setEmptyValue, delEmptyValue)
+    
+    def onValueChanged(self, value):
+        if value < self.validator.minimum:
+            self.validator.validate(QString(""), 0)
+        else:
+            cleanText = self.widget.cleanText()
+            self.validator.validate(cleanText, (len(cleanText)-1))
+            #print cleanText, type(cleanText), (len(cleanText)-1)
+            
+        
+        
+        #self.widget.setValidator(self.validator)
+

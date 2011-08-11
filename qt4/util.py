@@ -3,12 +3,14 @@ Created on 20.06.2011
 
 @author: michi
 '''
+import datetime
+
 from PyQt4.QtCore import QVariant, pyqtSignal
 from PyQt4.QtGui import QColor
 
 def variant_to_pyobject(qvariant=None): 
     """Try to convert a QVariant to a python object as good as possible""" 
-    import datetime 
+     
     if not qvariant: 
         return None 
     if qvariant.isNull(): 
