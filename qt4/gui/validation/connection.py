@@ -5,7 +5,7 @@ Created on 10.08.2011
 '''
 from PyQt4.QtCore import QObject, pyqtSignal, pyqtSlot, SIGNAL, SLOT, QString,\
     Qt
-from PyQt4.QtGui import QValidator, QDoubleSpinBox
+from PyQt4.QtGui import QValidator, QDoubleSpinBox, QAbstractButton
 from lib.ems.qt4.util import variant_to_pyobject
 
 class ValidatorConnection(QObject):
@@ -57,6 +57,8 @@ class ValidatorConnection(QObject):
             self._onAcceptable()
             if hasattr(self.__changeListener,'onAcceptable'):
                 self.__changeListener.onAcceptable()
+            else:
+                print self.__changeListener
         elif state == QValidator.Intermediate:
             self._onIntermediate()
             if hasattr(self.__changeListener,'onIntermediate'):
@@ -126,3 +128,32 @@ class ComboBoxConnection(ValidatorConnection):
         itemData = variant_to_pyobject(self.widget.itemData(index, Qt.UserRole))
         self.validator.validate(itemData)
         #print "ComboBoxCon: {0} {1}".format(index, itemData)
+
+class ButtonGroupConnection(ValidatorConnection):
+    def __init__(self, validator, widget, changeListener=None,
+                 dataProperty='data'):
+        ValidatorConnection.__init__(self, validator, widget, changeListener=changeListener)
+        self.dataProperty = dataProperty
+        noDataPropertyCount = 0
+        
+        for button in widget.buttons():
+            propertyNames = []
+            for qtName in button.dynamicPropertyNames():
+                propertyNames.append(str(qtName))
+                
+            if not self.dataProperty in propertyNames:
+                noDataPropertyCount += 1
+        if noDataPropertyCount > 1:
+            raise ValueError("I need a {0} property on every button minus " +
+                             "the 'no-selection' Button".format(dataProperty))
+        self.widget.buttonClicked.connect(self.onButtonClicked)
+        
+#        self.connect(self.widget, SIGNAL("buttonClicked(QAbstractButton)"),
+#                     self.onButtonClicked)#, SLOT('onButtonClicked(QAbstractButton)'))
+        
+        #self.validator.validationStateChanged.connect(self._onValidationStateChanged)
+        
+    @pyqtSlot("QAbstractButton")
+    def onButtonClicked(self, button):
+        self.validator.validate(variant_to_pyobject(button.property(self.dataProperty)))
+        

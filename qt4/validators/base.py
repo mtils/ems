@@ -188,4 +188,18 @@ class IsInstanceValidator(BaseValidator):
             return (QValidator.Acceptable, pos)
         return (QValidator.Intermediate, pos)
             
-            
+class IsInValidator(BaseValidator):
+    def __init__(self, listToTest, *args, **kwargs):
+        super(IsInValidator, self).__init__(*args, **kwargs)
+        self.listToTest = listToTest
+        
+    def _validate(self, input, pos=0):
+        if not self.notEmpty:
+            if input is None:
+#                print "Valid because empty"
+                return (QValidator.Acceptable, pos)
+        if input in self.listToTest:
+#            print "Valid because in list"
+            return (QValidator.Acceptable, pos)
+#        print "Intermediate because end of method"
+        return (QValidator.Intermediate, pos)
