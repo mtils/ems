@@ -3,8 +3,10 @@ Created on 10.08.2011
 
 @author: michi
 '''
-from PyQt4.QtCore import QObject, pyqtSignal, pyqtSlot, SIGNAL, SLOT, QString
+from PyQt4.QtCore import QObject, pyqtSignal, pyqtSlot, SIGNAL, SLOT, QString,\
+    Qt
 from PyQt4.QtGui import QValidator, QDoubleSpinBox
+from lib.ems.qt4.util import variant_to_pyobject
 
 class ValidatorConnection(QObject):
     
@@ -13,7 +15,8 @@ class ValidatorConnection(QObject):
     def __init__(self, validator, widget, changeListener=None):
         QObject.__init__(self, widget)
         self.__changeListener = changeListener
-        self.__changeListener.widgetValidator = self
+        if self.__changeListener is not None:
+            self.__changeListener.widgetValidator = self
         self.widget = widget
         self.__validationState = None
         self.validator = validator
@@ -114,7 +117,12 @@ class AbstractSpinBoxConnection(ValidatorConnection):
             self.validator.validate(cleanText, (len(cleanText)-1))
             #print cleanText, type(cleanText), (len(cleanText)-1)
             
-        
-        
-        #self.widget.setValidator(self.validator)
-
+class ComboBoxConnection(ValidatorConnection):
+    def __init__(self, validator, widget, changeListener=None):
+        ValidatorConnection.__init__(self, validator, widget, changeListener=changeListener)
+        self.widget.currentIndexChanged.connect(self.onCurrentIndexChanged)
+    
+    def onCurrentIndexChanged(self, index):
+        itemData = variant_to_pyobject(self.widget.itemData(index, Qt.UserRole))
+        self.validator.validate(itemData)
+        #print "ComboBoxCon: {0} {1}".format(index, itemData)

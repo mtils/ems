@@ -50,7 +50,7 @@ class BaseValidator(QValidator):
         else:
             raise TypeError("BaseValidator can only handle QString, float, int and bool")
     
-    def validate(self, input, pos):
+    def validate(self, input, pos=0):
         res = self._validate(input, pos)
         self._setValidationState(res[0])
         return res
@@ -175,3 +175,17 @@ class FloatValidator(IntValidator):
         #print "split: {0}".format(decimals)
         return self._minMaxTest(valInput, pos)
 
+class IsInstanceValidator(BaseValidator):
+    def __init__(self, class_, *args, **kwargs):
+        super(IsInstanceValidator, self).__init__(*args, **kwargs)
+        self.class_ = class_
+    
+    def _validate(self, input, pos=0):
+        if not self.notEmpty:
+            if input is None:
+                return (QValidator.Acceptable, pos)
+        if isinstance(input, self.class_):
+            return (QValidator.Acceptable, pos)
+        return (QValidator.Intermediate, pos)
+            
+            

@@ -8,19 +8,14 @@ from PyQt4.QtGui import QWidget, QLabel, QValidator
 
 class ValidationVisualizer(QObject):
     
-    initialColor = 'background: #fff'
-    acceptableStyleSheet = 'background: #bfffbf'
-    intermediateStyleSheet = 'background: #ffffc0'
-    invalidStyleSheet = 'background: #e86F6B'
-    
     STATE_PROPERTY = 'validationState'
     MANDATORY_PROPERTY = 'mandatory'
     STATE_ACCEPTABLE = 'Acceptable'
     STATE_INTERMEDIATE = 'Intermediate'
     STATE_INVALID = 'Invalid'
     
-    def __init__(self, widget, validator, helpBubbleText="", parent=None):
-        QObject.__init__(self, parent)
+    def __init__(self, validator, widget, helpBubbleText=""):
+        QObject.__init__(self, widget)
         self.widget = widget
         self.validator = validator
         self.widget.setProperty(ValidationVisualizer.STATE_PROPERTY,
