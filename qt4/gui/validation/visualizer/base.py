@@ -3,7 +3,7 @@ Created on 10.08.2011
 
 @author: michi
 '''
-from PyQt4.QtCore import QObject, QEvent, Qt, QPoint
+from PyQt4.QtCore import QObject, QEvent, Qt, QPoint, QVariant
 from PyQt4.QtGui import QWidget, QLabel, QValidator
 
 class ValidationVisualizer(QObject):
@@ -13,10 +13,18 @@ class ValidationVisualizer(QObject):
     intermediateStyleSheet = 'background: #ffffc0'
     invalidStyleSheet = 'background: #e86F6B'
     
+    STATE_PROPERTY = 'validationState'
+    MANDATORY_PROPERTY = 'mandatory'
+    STATE_ACCEPTABLE = 'Acceptable'
+    STATE_INTERMEDIATE = 'Intermediate'
+    STATE_INVALID = 'Invalid'
+    
     def __init__(self, widget, validator, helpBubbleText="", parent=None):
         QObject.__init__(self, parent)
         self.widget = widget
         self.validator = validator
+        self.widget.setProperty(ValidationVisualizer.STATE_PROPERTY,
+                                QVariant())
         self.widget.installEventFilter(self)
         self._helpBubbleText = helpBubbleText
         self.widgetValidator = None
@@ -50,12 +58,28 @@ class ValidationVisualizer(QObject):
             self._helpBubble.hide()
     
     def onAcceptable(self):
+        self.widget.setProperty(self.STATE_PROPERTY,
+                                QVariant(self.STATE_ACCEPTABLE))
+        self.widget.style().unpolish(self.widget)
+        self.widget.ensurePolished()
+        #print "Setted {0}".format(self.STATE_ACCEPTABLE)
         self.hideHelpBubble()
     
     def onIntermediate(self):
+        self.widget.setProperty(self.STATE_PROPERTY,
+                                QVariant(self.STATE_INTERMEDIATE))
+        self.widget.style().unpolish(self.widget)
+        self.widget.ensurePolished()
+        #print "Setted {0}".format(self.STATE_INTERMEDIATE)
         self.hideHelpBubble()
     
     def onInvalid(self):
+        self.widget.setProperty(self.STATE_PROPERTY,
+                                QVariant(self.STATE_INVALID))
+        #print "Setted {0}".format(self.STATE_INVALID)
+        self.widget.style().unpolish(self.widget)
+        self.widget.ensurePolished()
+        
         if self.widget.hasFocus():
             self.showHelpBubble()
     
