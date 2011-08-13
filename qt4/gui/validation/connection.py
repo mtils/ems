@@ -4,13 +4,15 @@ Created on 10.08.2011
 @author: michi
 '''
 from PyQt4.QtCore import QObject, pyqtSignal, pyqtSlot, SIGNAL, SLOT, QString,\
-    Qt
+    Qt, QDate, QTime, QDateTime, QVariant
 from PyQt4.QtGui import QValidator, QDoubleSpinBox, QAbstractButton
 from lib.ems.qt4.util import variant_to_pyobject
 
 class ValidatorConnection(QObject):
     
     isValidStateChanged = pyqtSignal(bool)
+    
+    ISNULL_PROPERTY = 'isEmpty'
     
     def __init__(self, validator, widget, changeListener=None):
         QObject.__init__(self, widget)
@@ -113,10 +115,12 @@ class AbstractSpinBoxConnection(ValidatorConnection):
     
     def onValueChanged(self, value):
         if value < self.validator.minimum:
-            self.validator.validate(QString(""), 0)
+            self.widget.setProperty(self.ISNULL_PROPERTY,QVariant(True))
+            self.validator.validate(QString(""), 0, self.widget)
         else:
             cleanText = self.widget.cleanText()
-            self.validator.validate(cleanText, (len(cleanText)-1))
+            self.widget.setProperty(self.ISNULL_PROPERTY,QVariant(False))
+            self.validator.validate(cleanText, (len(cleanText)-1), self.widget)
             #print cleanText, type(cleanText), (len(cleanText)-1)
             
 class ComboBoxConnection(ValidatorConnection):
@@ -126,7 +130,11 @@ class ComboBoxConnection(ValidatorConnection):
     
     def onCurrentIndexChanged(self, index):
         itemData = variant_to_pyobject(self.widget.itemData(index, Qt.UserRole))
-        self.validator.validate(itemData)
+        if itemData is None:
+            self.widget.setProperty(self.ISNULL_PROPERTY,QVariant(True))
+        else:
+            self.widget.setProperty(self.ISNULL_PROPERTY,QVariant(False))
+        self.validator.validate(itemData, qObject=self.widget)
         #print "ComboBoxCon: {0} {1}".format(index, itemData)
 
 class ButtonGroupConnection(ValidatorConnection):
@@ -155,5 +163,45 @@ class ButtonGroupConnection(ValidatorConnection):
         
     @pyqtSlot("QAbstractButton")
     def onButtonClicked(self, button):
-        self.validator.validate(variant_to_pyobject(button.property(self.dataProperty)))
+        nonChecked = True
+        for anyButton in self.widget.buttons():
+            if anyButton.isChecked():
+                nonChecked = False
         
+        
+        validateVal = variant_to_pyobject(button.property(self.dataProperty))
+        
+        if validateVal is None:
+            self.widget.setProperty(self.ISNULL_PROPERTY, QVariant(True))
+        else:
+            self.widget.setProperty(self.ISNULL_PROPERTY, QVariant(nonChecked))
+            
+        self.validator.validate(validateVal, qObject=self.widget)
+        
+class DateTimeEditConnection(ValidatorConnection):
+    def __init__(self, validator, widget, changeListener=None,
+                 emptyDateTime = -1):
+        super(DateTimeEditConnection, self).__init__(validator, widget,
+                                                 changeListener)
+        
+        if isinstance(emptyDateTime, QDateTime):
+            self.emptyDateTime = emptyDateTime
+        elif isinstance(emptyDateTime, int):
+            self.emptyDateTime = self.validator.minDateTime.addDays(emptyDateTime)
+        
+        #self.validator.minDate = self.emptyDateTime
+        #print self.emptyDateTime
+#        print self.emptyDateTime
+        self.widget.setMinimumDateTime(self.emptyDateTime)
+        self.widget.setMaximumDateTime(self.validator.maxDateTime)
+        self.widget.dateTimeChanged.connect(self.onDateTimeChanged)
+    
+    def onDateTimeChanged(self, dateTime):
+        if dateTime < self.validator.minDateTime:
+            self.widget.setProperty(self.ISNULL_PROPERTY, True)
+        else:
+            self.widget.setProperty(self.ISNULL_PROPERTY, False)
+            
+        self.validator.validate(dateTime, qObject=self.widget)
+        #print dateTime
+        #self.validator.validate(dateTime)

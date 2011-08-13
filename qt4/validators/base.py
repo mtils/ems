@@ -3,8 +3,11 @@ Created on 10.08.2011
 
 @author: michi
 '''
-from PyQt4.QtCore import pyqtSignal, QString
+import datetime
+
+from PyQt4.QtCore import pyqtSignal, QString, QDateTime, QDate, QTime, QObject
 from PyQt4.QtGui import QRegExpValidator, QIntValidator, QDoubleValidator, QValidator
+
 
 
 class BaseValidator(QValidator):
@@ -50,8 +53,18 @@ class BaseValidator(QValidator):
         else:
             raise TypeError("BaseValidator can only handle QString, float, int and bool")
     
-    def validate(self, input, pos=0):
+    def validate(self, input, pos=0, qObject=None):
+        
+        if isinstance(qObject, QObject):
+            if qObject.property('isEmpty').toBool():
+                if self.notEmpty:
+                    res = (QValidator.Intermediate, pos)
+                    self._setValidationState(res[0])
+                    print "Directly setted %s to isEmpty" % qObject
+                    return res
+                    
         res = self._validate(input, pos)
+        #print res, QValidator.Acceptable
         self._setValidationState(res[0])
         return res
 
@@ -203,3 +216,30 @@ class IsInValidator(BaseValidator):
             return (QValidator.Acceptable, pos)
 #        print "Intermediate because end of method"
         return (QValidator.Intermediate, pos)
+
+class DateTimeValidator(BaseValidator):
+    
+    absMinDateTime = QDateTime(QDate(1752,9,14),QTime(0,0))
+    absMaxDateTime = QDateTime(QDate(7999,12,31),QTime(23,59))
+    
+    def __init__(self, minDateTime=None, maxDateTime=None, *args, **kwargs):
+        super(DateTimeValidator, self).__init__(*args, **kwargs)
+
+        if minDateTime is None:
+            minDateTime = self.absMinDateTime
+        self.minDateTime = minDateTime
+        
+        if maxDateTime is None:
+            maxDateTime = self.absMaxDateTime
+        self.maxDateTime = maxDateTime
+        
+    
+    def _validate(self, input, pos=0):
+        if input >= self.minDateTime:
+            if input <= self.maxDateTime: 
+                return (QValidator.Acceptable, pos)
+            else:
+                return (QValidator.Intermediate, pos)
+        
+        return (QValidator.Intermediate, pos)
+        

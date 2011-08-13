@@ -23,7 +23,11 @@ class ValidationVisualizer(QObject):
                 raise TypeError("The widget parameter has to be QWidget " +
                                 "for QButtonGroup use QButtonGroupVisualizer")
             raise TypeError("The widget parameter has to be QWidget")
-        self.additionalWidgets = additionalWidgets
+        
+        if isinstance(additionalWidgets, QWidget):
+            self.additionalWidgets = [additionalWidgets]
+        else:
+            self.additionalWidgets = additionalWidgets
         self.widget = widget
         self.validator = validator
         self.widget.setProperty(ValidationVisualizer.STATE_PROPERTY,
@@ -108,7 +112,11 @@ class ButtonGroupVisualizer(ValidationVisualizer):
             raise TypeError("The buttonGroup parameter has to be QButtonGroup")
         self.buttonGroup = buttonGroup
         self.validator = validator
-        self.additionalWidgets = additionalWidgets
+        if isinstance(additionalWidgets, QWidget):
+            self.additionalWidgets = [additionalWidgets]
+        else:
+            self.additionalWidgets = additionalWidgets
+            
         for button in self.buttonGroup.buttons():
             button.setProperty(ValidationVisualizer.STATE_PROPERTY,
                                     QVariant())
