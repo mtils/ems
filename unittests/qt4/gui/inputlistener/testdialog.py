@@ -13,7 +13,7 @@ from PyQt4.QtGui import QWidget, QLabel, QLineEdit, QTextEdit, QComboBox, \
     QApplication, QFormLayout, QDataWidgetMapper, QPushButton, QItemDelegate,\
     QSpinBox, QDoubleSpinBox, QRegExpValidator, QValidator, QButtonGroup,\
     QVBoxLayout, QRadioButton, QDateTimeEdit, QDateEdit, QTimeEdit,\
-    QCheckBox
+    QCheckBox, QHBoxLayout, QGridLayout
     
 from ems.qt4.gui.widgets.dialogable import DialogableWidget #@UnresolvedImport
 from ems.qt4.validators.base import RegExpValidator, IntValidator, FloatValidator, IsInstanceValidator #@UnresolvedImport
@@ -29,20 +29,45 @@ from lib.ems.qt4.validators.base import DateTimeValidator, DateValidator,\
 from lib.ems.qt4.gui.validation.connection import DateTimeEditConnection,\
     DateEditConnection, TimeEditConnection, CheckBoxConnection
 from lib.ems.qt4.gui.inputlistener.standard import LineEditListener,\
-    SpinBoxListener, ComboBoxListener, ButtonGroupListener, DateTimeListener
+    SpinBoxListener, ComboBoxListener, ButtonGroupListener, DateTimeListener,\
+    CheckBoxListener
 
 
 
 utf8 = QString.fromUtf8
 
+class ListenerDisplayRow(QWidget):
+    def __init__(self, listener, parent=None):
+        super(ListenerDisplayRow, self).__init__(parent)
+        self.listener = listener
+        self.setLayout(QHBoxLayout(self))
+        
+        self.focusButton = self._getButton('F', 'hasFocus')
+        self.listener.hasFocusStateChanged.connect(self.focusButton.setChecked)
+        self.layout().addWidget(self.focusButton)
+        
+        self.hadFocusButton = self._getButton('HF', 'hadFocus')
+        self.listener.hadFocusStateChanged.connect(self.hadFocusButton.setChecked)
+        self.layout().addWidget(self.hadFocusButton)
+        
+        self.hasBeenEditedButton = self._getButton('E', 'hasBeenEdited')
+        self.listener.hasBeenEditedStateChanged.connect(self.hasBeenEditedButton.setChecked)
+        self.layout().addWidget(self.hasBeenEditedButton)
+        
+        self.dirtyButton = self._getButton('D', 'dirty')
+        self.listener.dirtyStateChanged.connect(self.dirtyButton.setChecked)
+        self.layout().addWidget(self.dirtyButton)
+        
+        
+    def _getButton(self, text, tooltip):
+        button = QPushButton(text, self)
+        button.setToolTip(tooltip)
+        button.setCheckable(True)
+        button.setFocusPolicy(Qt.NoFocus)
+        
+        return button
+        
 
-
-class ValidationGroup(QObject):
-    
-    isValidStateChanged = pyqtSignal(bool)
-    
-    def __init__(self, parent=None):
-        QObject.__init__(parent)
     
 styleSheet = """
 QComboBox[validationState="Acceptable"]:focus { background: #bfffbf }
@@ -79,34 +104,67 @@ QTimeEdit[validationState="Invalid"] { background: #e86F6B }
 class TestWindow(DialogableWidget):
     def __init__(self, parent=None):
         QWidget.__init__(self, parent)
+        self.listeners = []
         self.setupUi()
-        self.setupManualValidators()
+        self.addLastRow()
+        #self.setupManualValidators()
         self.setStyleSheet(styleSheet)
+        
+    
+    def addLastRow(self):
+        self.resetButton = QPushButton("Reset", self)
+        self.layout().addWidget(self.resetButton,self.layout().rowCount(),
+                                0,1,3)
+        
+        self.resetButton.clicked.connect(self.resetListeners)
+    
+    def resetListeners(self):
+        for listener in self.listeners:
+            listener.reset()
     
     def setupUi(self):
         self.setMinimumWidth(300)
         self.setMinimumHeight(200)
         
-        self.setLayout(QFormLayout(self))
+        self.setLayout(QGridLayout(self))
         
         self.qmLabel = QLabel(utf8("Fläche"), self)
         self.qmInput = QSpinBox(self)
         self.qmListener = SpinBoxListener(self.qmInput)
+        self.listeners.append(self.qmListener)
         self.qmInput.setSuffix(utf8(" m²"))
         self.qmInput.setObjectName(utf8("Fläche"))
-        self.layout().addRow(self.qmLabel, self.qmInput)
+        
+        self.alignment = Qt.AlignLeft | Qt.AlignVCenter
+        self.layout().addWidget(self.qmLabel,0,0,self.alignment)
+        self.layout().addWidget(self.qmInput,0,1,self.alignment)
+        self.layout().addWidget(ListenerDisplayRow(self.qmListener),0,2,
+                                self.alignment)
+        
         
         self.euroLabel = QLabel(utf8("Geld"), self)
         self.euroInput = QDoubleSpinBox(self)
         self.euroInput.setSuffix(utf8(" €"))
         self.euroInput.setObjectName(utf8('Geld'))
         self.euroListener = SpinBoxListener(self.euroInput)
-        self.layout().addRow(self.euroLabel, self.euroInput)
+        self.listeners.append(self.euroListener)
+        
+        
+        self.layout().addWidget(self.euroLabel,1,0,self.alignment)
+        self.layout().addWidget(self.euroInput,1,1,self.alignment)
+        self.layout().addWidget(ListenerDisplayRow(self.euroListener),1,2,
+                                self.alignment)
         
         self.nameLabel = QLabel(utf8("Name"))
         self.nameInput = QLineEdit(self)
         self.nameInput.setObjectName(utf8("Name"))
-        self.layout().addRow(self.nameLabel, self.nameInput)
+        self.nameListener = LineEditListener(self.nameInput)
+        self.listeners.append(self.nameListener)
+        
+        self.layout().addWidget(self.nameLabel,2, 0,self.alignment)
+        self.layout().addWidget(self.nameInput,2, 1,self.alignment)
+        self.layout().addWidget(ListenerDisplayRow(self.nameListener),2,2,
+                                self.alignment)
         
         self.anredeLabel = QLabel(utf8("Anrede"), self)
         self.anredeInput = QComboBox(self)
@@ -116,7 +174,12 @@ class TestWindow(DialogableWidget):
             self.anredeInput.addItem(utf8(anrede), QVariant(anrede))
         
         self.anredeListener = ComboBoxListener(self.anredeInput)
-        self.layout().addRow(self.anredeLabel, self.anredeInput)
+        self.listeners.append(self.anredeListener)
+        
+        self.layout().addWidget(self.anredeLabel, 3, 0,self.alignment)
+        self.layout().addWidget(self.anredeInput, 3, 1,self.alignment)
+        self.layout().addWidget(ListenerDisplayRow(self.anredeListener),3,2,
+                                self.alignment)
         
         self.radioButtonContainer = QWidget(self)
         self.radioButtonContainer.setLayout(QVBoxLayout())
@@ -136,6 +199,8 @@ class TestWindow(DialogableWidget):
             button.setProperty('data', QVariant(eingangPer))
         
         self.eingangPerListener = ButtonGroupListener(self.radioButtonGroup)
+        self.listeners.append(self.eingangPerListener)
+        
         button = QRadioButton('Sonstiges',r)
         layout.addWidget(button)
         self.radioButtonGroup.addButton(button)
@@ -144,15 +209,22 @@ class TestWindow(DialogableWidget):
         
         self.eingangPerLabel = QLabel("Eingang per", self)
         
-        self.layout().addRow(self.eingangPerLabel, self.radioButtonContainer)
+        self.layout().addWidget(self.eingangPerLabel,4,0,self.alignment)
+        self.layout().addWidget(self.radioButtonContainer,4,1,self.alignment)
+        self.layout().addWidget(ListenerDisplayRow(self.eingangPerListener),4,2,
+                                self.alignment)
         
         self.datetimeInput = QDateTimeEdit(self)
         self.datetimeInput.setCalendarPopup(True)
         self.datetimeLabel = QLabel('Datum/Zeit', self)
         self.datetimeInput.setObjectName("Datum/Zeit")
         self.datetimeListener = DateTimeListener(self.datetimeInput)
+        self.listeners.append(self.datetimeListener)
         
-        self.layout().addRow(self.datetimeLabel, self.datetimeInput)
+        self.layout().addWidget(self.datetimeLabel,5,0,self.alignment)
+        self.layout().addWidget(self.datetimeInput,5,1,self.alignment)
+        self.layout().addWidget(ListenerDisplayRow(self.datetimeListener),5,2,
+                                self.alignment)
         
         self.dateInput = QDateEdit(self)
         self.dateInput.setCalendarPopup(True)
@@ -160,76 +232,37 @@ class TestWindow(DialogableWidget):
         self.dateLabel = QLabel('Datum', self)
         
         self.dateListener = DateTimeListener(self.dateInput)
+        self.listeners.append(self.dateListener)
         
-        self.layout().addRow(self.dateLabel, self.dateInput)
+        self.layout().addWidget(self.dateLabel,6,0,self.alignment)
+        self.layout().addWidget(self.dateInput,6,1,self.alignment)
+        self.layout().addWidget(ListenerDisplayRow(self.dateListener),6,2,
+                                self.alignment)
+        
         
         self.timeInput = QTimeEdit(self)
         self.timeInput.setObjectName("Zeit")
 #        self.timeInput.setCalendarPopup(True)
         self.timeLabel = QLabel('Zeit', self)
         self.timeListener = DateTimeListener(self.timeInput)
+        self.listeners.append(self.timeListener)
         
-        self.layout().addRow(self.timeLabel, self.timeInput)
+        self.layout().addWidget(self.timeLabel,7,0,self.alignment)
+        self.layout().addWidget(self.timeInput,7,1,self.alignment)
+        self.layout().addWidget(ListenerDisplayRow(self.timeListener),7,2,
+                                self.alignment)
         
         self.checkedInput = QCheckBox(self)
+        self.checkedInput.setTristate(True)
         self.checkedLabel = QLabel(utf8("Geprüft"), self)
         self.checkedInput.setObjectName(utf8("Geprüft"))
-        self.layout().addRow(self.checkedLabel, self.checkedInput)
+        self.checkedListener = CheckBoxListener(self.checkedInput)
+        self.listeners.append(self.checkedListener)
         
-        
-    
-    def setupManualValidators(self):
-        #self.qmInput.setV
-        #self.nameInput.setValidator()
-        v = RegExpValidator(QRegExp("[a-zA-Z]+"),
-                                    notEmpty=False,
-                                    minLength=1,
-                                    maxLength=6,
-                                    parent=self.nameInput)
-        vv = ValidationVisualizer(v, self.nameInput,
-                                  additionalWidgets=(self.nameLabel,))
-        
-        self.nameVal = LineEditConnection(v, self.nameInput, changeListener=vv)
-        
-        self.nameListener = LineEditListener(self.nameInput)
-        v2 = IntValidator(-10,50, notEmpty=True)
-        
-        #v2 = IntValidator(notEmpty=True)
-        vv2 = ValidationVisualizer(v2, self.qmInput, additionalWidgets=(self.qmLabel,))
-        self.qmVal = AbstractSpinBoxConnection(v2, self.qmInput, changeListener=vv2)
-        #self.pasteBadText()
-        
-        v3 = FloatValidator(0.30,1.50,2,notEmpty=True)
-        
-        vv3 = ValidationVisualizer(v3, self.euroInput, additionalWidgets=(self.euroLabel,))
-        self.euroVal = AbstractSpinBoxConnection(v3, self.euroInput, changeListener=vv3)
-        
-        v4 = IsInstanceValidator(unicode, notEmpty=True)
-        vv4 = ValidationVisualizer(v4, self.anredeInput, additionalWidgets=(self.anredeLabel,))
-        self.anredeVal = ComboBoxConnection(v4, self.anredeInput, changeListener=vv4)
-        
-        v5 = IsInValidator(('POST','EMAIL','TELEFON','TELEFAX'), notEmpty=True)
-        vv5 = ButtonGroupVisualizer(v5, self.radioButtonGroup, additionalWidgets=(self.eingangPerLabel,))
-        self.radioVal = ButtonGroupConnection(v5, self.radioButtonGroup, changeListener=vv5) 
-        
-        
-        v6 = DateTimeValidator(QDateTime(QDate(1976,05,31),QTime(0,0)),notEmpty=True)
-        vv6 = ValidationVisualizer(v6, self.datetimeInput, additionalWidgets=(self.datetimeLabel))
-        self.datetimeVal = DateTimeEditConnection(v6, self.datetimeInput, changeListener=vv6)
-        
-        v7 = DateValidator(QDate(1976,05,31))
-        vv7 = ValidationVisualizer(v7, self.dateInput, additionalWidgets=self.dateLabel)
-        self.dateVal = DateEditConnection(v7, self.dateInput, changeListener=vv7)
-        
-        v8 = TimeValidator(QTime(14, 00), QTime(19, 00, 59), notEmpty=False)
-        vv8 = ValidationVisualizer(v8, self.timeInput, additionalWidgets=self.timeLabel)
-        self.dateVal = TimeEditConnection(v8, self.timeInput, changeListener=vv8)
-        
-        v9 = BoolValidator(notEmpty=False)
-        vv9 = ValidationVisualizer(v9, self.checkedInput, additionalWidgets=self.checkedLabel)
-        self.checkedVal = CheckBoxConnection(v9, self.checkedInput, changeListener=vv9)
-        
-#        self.pasteBadThings()
+        self.layout().addWidget(self.checkedLabel,8,0,self.alignment)
+        self.layout().addWidget(self.checkedInput,8,1,self.alignment)
+        self.layout().addWidget(ListenerDisplayRow(self.checkedListener),8,2,
+                                self.alignment)
         
     def pasteBadThings(self):
         self.nameInput.setText("dasdlkj89")

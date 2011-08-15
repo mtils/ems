@@ -50,8 +50,13 @@ class BaseValidator(QValidator):
             return (QValidator.Acceptable, pos)
         elif isinstance(input, bool):
             return (QValidator.Acceptable, pos)
+        elif input is None:
+            if self.notEmpty:
+                return (QValidator.Intermediate, pos)
+            return (QValidator.Acceptable, pos)
         else:
-            raise TypeError("BaseValidator can only handle QString, float, int and bool")
+            raise TypeError("BaseValidator can only handle QString, float, int and bool " +
+                            "not {0}".format(input))
     
     def validate(self, input, pos=0, qObject=None):
         
@@ -242,4 +247,62 @@ class DateTimeValidator(BaseValidator):
                 return (QValidator.Intermediate, pos)
         
         return (QValidator.Intermediate, pos)
+
+class DateValidator(BaseValidator):
+    
+    absMinDate = QDate(1752,9,14)
+    absMaxDate = QDate(7999,12,31)
+    
+    def __init__(self, minDate=None, maxDate=None, *args, **kwargs):
+        super(DateValidator, self).__init__(*args, **kwargs)
+
+        if minDate is None:
+            minDate = self.absMinDate
+        self.minDate = minDate
         
+        if maxDate is None:
+            maxDate = self.absMaxDate
+        self.maxDate = maxDate
+        
+    
+    def _validate(self, input, pos=0):
+        if input >= self.minDate:
+            if input <= self.maxDate: 
+                return (QValidator.Acceptable, pos)
+            else:
+                return (QValidator.Intermediate, pos)
+        
+        return (QValidator.Intermediate, pos)
+
+class TimeValidator(BaseValidator):
+    
+    def __init__(self, minTime=None, maxTime=None, *args, **kwargs):
+        super(TimeValidator, self).__init__(*args, **kwargs)
+
+        if minTime is None:
+            minTime = QTime(0,0)
+        self.minTime = minTime
+        
+        if maxTime is None:
+            maxTime = QTime(23,59,59)
+        self.maxTime = maxTime
+        
+    
+    def _validate(self, input, pos=0):
+        if input >= self.minTime:
+            if input <= self.maxTime: 
+                return (QValidator.Acceptable, pos)
+            else:
+                return (QValidator.Intermediate, pos)
+        
+        return (QValidator.Intermediate, pos)
+
+class BoolValidator(BaseValidator):
+    def __init__(self, notEmpty=False, requiresUserInteraction=False, 
+        parent=None):
+        BaseValidator.__init__(self, notEmpty=notEmpty,
+                               requiresUserInteraction=requiresUserInteraction,
+                               parent=parent)
+    
+#    def _validate(self, input, pos=0):
+#        return QValidator

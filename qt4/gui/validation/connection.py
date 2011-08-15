@@ -6,23 +6,39 @@ Created on 10.08.2011
 from PyQt4.QtCore import QObject, pyqtSignal, pyqtSlot, SIGNAL, SLOT, QString,\
     Qt, QDate, QTime, QDateTime, QVariant
 from PyQt4.QtGui import QValidator, QDoubleSpinBox, QAbstractButton
+
 from lib.ems.qt4.util import variant_to_pyobject
+from lib.ems.qt4.gui.inputlistener.standard import *
 
 class ValidatorConnection(QObject):
     
     isValidStateChanged = pyqtSignal(bool)
     
     ISNULL_PROPERTY = 'isEmpty'
+    ISDIRTY_PROPERTY = 'isDirty'
     
-    def __init__(self, validator, widget, changeListener=None):
+    def __init__(self, validator, widget, mandatory=False, inputListener=None,
+                 changeListener=None):
         QObject.__init__(self, widget)
         self.__changeListener = changeListener
+        self.widget = widget
+        self.validator = validator
+        
         if self.__changeListener is not None:
             self.__changeListener.widgetValidator = self
-        self.widget = widget
+        
+        if inputListener is None:
+            inputListener = self._loadInputListener()
+        self.inputListener = inputListener
+        
+        self.mandatory = mandatory
         self.__validationState = None
-        self.validator = validator
+        
         self.validator.validationStateChanged.connect(self._onValidationStateChanged)
+    
+    
+    def _loadInputListener(self):
+        raise NotImplementedError()
     
     def getChangeListener(self):
         return self.__changeListener
@@ -73,16 +89,21 @@ class ValidatorConnection(QObject):
             raise TypeError("Unknown ValidationState %s" % state)
     
 class LineEditConnection(ValidatorConnection):
-    def __init__(self, validator, widget, changeListener=None):
-        ValidatorConnection.__init__(self, validator, widget, changeListener=changeListener)
+    def __init__(self, *args, **kwargs):
+        ValidatorConnection.__init__(self, *args, **kwargs)
         self.widget.setValidator(self.validator)
+    
+    def _loadInputListener(self):
+        return LineEditListener(self.widget)
 
 class AbstractSpinBoxConnection(ValidatorConnection):
     
     emptyValueText = u'Nichts'
     
-    def __init__(self, validator, widget, changeListener=None, emptyValue=None):
-        ValidatorConnection.__init__(self, validator, widget, changeListener=changeListener)
+    def __init__(self, validator, widget, mandatory=False, inputListener=None,
+                  changeListener=None, emptyValue=None):
+        ValidatorConnection.__init__(self, validator, widget, mandatory,
+                                     inputListener,changeListener)
         
         self._emptyValue = emptyValue
         #widget.valueChanged.connect(self.onValueChanged)
@@ -97,6 +118,9 @@ class AbstractSpinBoxConnection(ValidatorConnection):
         
         self.widget.valueChanged.connect(self.onValueChanged)
         
+    
+    def _loadInputListener(self):
+        return SpinBoxListener(self.widget)
     
     def getEmptyValue(self):
         if self._emptyValue is not None:
@@ -124,9 +148,12 @@ class AbstractSpinBoxConnection(ValidatorConnection):
             #print cleanText, type(cleanText), (len(cleanText)-1)
             
 class ComboBoxConnection(ValidatorConnection):
-    def __init__(self, validator, widget, changeListener=None):
-        ValidatorConnection.__init__(self, validator, widget, changeListener=changeListener)
+    def __init__(self, *args, **kwargs):
+        ValidatorConnection.__init__(self, *args, **kwargs)
         self.widget.currentIndexChanged.connect(self.onCurrentIndexChanged)
+    
+    def _loadInputListener(self):
+        return ComboBoxListener(self.widget)
     
     def onCurrentIndexChanged(self, index):
         itemData = variant_to_pyobject(self.widget.itemData(index, Qt.UserRole))
@@ -138,9 +165,10 @@ class ComboBoxConnection(ValidatorConnection):
         #print "ComboBoxCon: {0} {1}".format(index, itemData)
 
 class ButtonGroupConnection(ValidatorConnection):
-    def __init__(self, validator, widget, changeListener=None,
-                 dataProperty='data'):
-        ValidatorConnection.__init__(self, validator, widget, changeListener=changeListener)
+    def __init__(self, validator, widget, mandatory=False, inputListener=None,
+                 changeListener=None, dataProperty='data'):
+        ValidatorConnection.__init__(self, validator, widget, mandatory,
+                                     inputListener,changeListener)
         self.dataProperty = dataProperty
         noDataPropertyCount = 0
         
@@ -161,6 +189,9 @@ class ButtonGroupConnection(ValidatorConnection):
         
         #self.validator.validationStateChanged.connect(self._onValidationStateChanged)
         
+    def _loadInputListener(self):
+        return ButtonGroupListener(self.widget)
+    
     @pyqtSlot("QAbstractButton")
     def onButtonClicked(self, button):
         nonChecked = True
@@ -179,10 +210,12 @@ class ButtonGroupConnection(ValidatorConnection):
         self.validator.validate(validateVal, qObject=self.widget)
         
 class DateTimeEditConnection(ValidatorConnection):
-    def __init__(self, validator, widget, changeListener=None,
-                 emptyDateTime = -1):
+    def __init__(self, validator, widget, mandatory=False, inputListener=None,
+                  changeListener=None, emptyDateTime = -1):
         super(DateTimeEditConnection, self).__init__(validator, widget,
-                                                 changeListener)
+                                                     mandatory,
+                                                     inputListener,
+                                                     changeListener)
         
         if isinstance(emptyDateTime, QDateTime):
             self.emptyDateTime = emptyDateTime
@@ -196,6 +229,9 @@ class DateTimeEditConnection(ValidatorConnection):
         self.widget.setMaximumDateTime(self.validator.maxDateTime)
         self.widget.dateTimeChanged.connect(self.onDateTimeChanged)
     
+    def _loadInputListener(self):
+        return DateTimeListener(self.widget)
+    
     def onDateTimeChanged(self, dateTime):
         if dateTime < self.validator.minDateTime:
             self.widget.setProperty(self.ISNULL_PROPERTY, True)
@@ -205,3 +241,87 @@ class DateTimeEditConnection(ValidatorConnection):
         self.validator.validate(dateTime, qObject=self.widget)
         #print dateTime
         #self.validator.validate(dateTime)
+
+class DateEditConnection(ValidatorConnection):
+    def __init__(self, validator, widget, mandatory=False, inputListener=None,
+                  changeListener=None, emptyDate = -1):
+        super(DateEditConnection, self).__init__(validator, widget, mandatory,
+                                                 inputListener, changeListener)
+        
+        if isinstance(emptyDate, QDate):
+            self.emptyDate = emptyDate
+        elif isinstance(emptyDate, int):
+            self.emptyDate = self.validator.minDate.addDays(emptyDate)
+        
+        #self.validator.minDate = self.emptyDateTime
+        #print self.emptyDateTime
+#        print self.emptyDateTime
+        self.widget.setMinimumDate(self.emptyDate)
+        self.widget.setMaximumDate(self.validator.maxDate)
+        self.widget.dateChanged.connect(self.onDateChanged)
+    
+    def _loadInputListener(self):
+        return DateTimeListener(self.widget)
+    
+    def onDateChanged(self, date):
+        if date < self.validator.minDate:
+            self.widget.setProperty(self.ISNULL_PROPERTY, True)
+        else:
+            self.widget.setProperty(self.ISNULL_PROPERTY, False)
+            
+        self.validator.validate(date, qObject=self.widget)
+        #print dateTime
+        #self.validator.validate(dateTime)
+
+class TimeEditConnection(ValidatorConnection):
+    def __init__(self, validator, widget, mandatory=False, inputListener=None, 
+                 changeListener=None, emptyTime = -1):
+        super(TimeEditConnection, self).__init__(validator, widget, mandatory,
+                                                 inputListener, changeListener)
+        
+        if isinstance(emptyTime, QTime):
+            self.emptyTime = emptyTime
+        elif isinstance(emptyTime, int):
+            self.emptyTime = self.validator.minTime.addSecs(emptyTime)
+        
+        #self.validator.minDate = self.emptyDateTime
+        #print self.emptyDateTime
+#        print self.emptyDateTime
+        self.widget.setMinimumTime(self.emptyTime)
+        self.widget.setMaximumTime(self.validator.maxTime)
+        self.widget.timeChanged.connect(self.onTimeChanged)
+        print self.widget.maximumTime()
+    
+    def _loadInputListener(self):
+        return DateTimeListener(self.widget)
+    
+    def onTimeChanged(self, time):
+        #print time
+        if time < self.validator.minTime:
+            self.widget.setProperty(self.ISNULL_PROPERTY, True)
+        else:
+            self.widget.setProperty(self.ISNULL_PROPERTY, False)
+            
+        self.validator.validate(time, qObject=self.widget)
+        #print dateTime
+
+class CheckBoxConnection(ValidatorConnection):
+    def __init__(self, validator, widget, mandatory=False, inputListener=None,
+                  changeListener=None):
+        ValidatorConnection.__init__(self, validator, widget, mandatory,
+                                     inputListener, changeListener)
+        if not self.validator.notEmpty:
+            self.widget.setTristate(True)
+        self.widget.stateChanged.connect(self.onStateChanged)
+    
+    def _loadInputListener(self):
+        return CheckBoxListener(self.widget)
+    
+    def onStateChanged(self, state):
+        if state == Qt.PartiallyChecked:
+            self.widget.setProperty(self.ISNULL_PROPERTY, True)
+            boolState = None 
+        else:
+            self.widget.setProperty(self.ISNULL_PROPERTY, False)
+            boolState = self.widget.isChecked()
+        self.validator.validate(boolState,qObject=self.widget)
