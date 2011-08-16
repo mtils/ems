@@ -36,6 +36,7 @@ class Converter(object):
     def getReaderForFileName(self, filename):
         mimeTypeFound = False
         mimeType = mimetypes.guess_type(filename)
+#        print mimeType
         if mimeType[0] is not None and mimeType[1] is not None:
             mimeTypeFound = True
         #print mimetypes.guess_extension(mimeType[0])
@@ -44,21 +45,24 @@ class Converter(object):
         
         
         if mimeTypeFound:
-            print "mimeType found"
+#            print "mimeType found"
             for reader in self.plugins[self.reader]:
                 mimeTypes = self.plugins[self.reader][reader].getSupportedMimeTypes()
                 for mType in mimeTypes:
-                    print "%s %s" % (mType, mType.suffixes)
+                    #print "%s %s" % (mType, mType.suffixes)
                     if mimeType[0] == str(mType):  
                         return self.plugins[self.reader][reader]
         try:
             extension = ".%s" % unicode(filename).split('.')[-1:][0]
-            print "File: %s %s" % (filename, extension)
+#            print "File: %s %s" % (filename, extension)
             for reader in self.plugins[self.reader]:
                 mimeTypes = self.plugins[self.reader][reader].getSupportedMimeTypes()
+                
                 for mType in mimeTypes:
-                    if extension in mType.suffixes:
-                        print self.plugins[self.reader][reader]
+#                    print mType
+                    if extension.lower() in mType.suffixes:
+#                        print extension
+#                        print self.plugins[self.reader][reader]
                         return self.plugins[self.reader][reader]
         except StopIteration, e:
             print e
@@ -184,10 +188,15 @@ class Converter(object):
         '''
         self.writeMode = writeMode
         if isinstance(reader, InputReader) and isinstance(writer, OutputWriter):
+#            print self.plugins[self.tag]['value-of'].parsedXPaths
             if os.path.exists(mappingFile):
                 xmlDict = self.getDictionaryOfMapping(open(mappingFile).read())
                 for preprocessor in self.plugins[self.preprocessor]:
                     preprocessor.notify(Plugin.startProcess)
+                  
+                for tag in self.plugins[self.tag]:
+                    self.plugins[self.tag][tag].notify(Plugin.startProcess)
+                    
                 self._applyPreProcessors(xmlDict)
                 reader.notify(Plugin.startProcess)
                 writer.notify(Plugin.startProcess)

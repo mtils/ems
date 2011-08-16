@@ -9,10 +9,13 @@ class ValueOf(Tag):
     '''
     classdocs
     '''
+    parsedXPaths = []
+    
     def interpret(self,xmlDict,inputReader,outputWriter):
         
         if xmlDict['attributes'].has_key('select'):
             select = xmlDict['attributes']['select']
+            #self.parsedXPaths.append(select)
             #variable
             if select.startswith('$'):
                 return self.converter.getVar(select[1:])
@@ -36,3 +39,8 @@ class ValueOf(Tag):
     
     def __str__(self):
         return "value-of"
+    
+    def notify(self,eventType):
+        if eventType == self.startProcess:
+#            print "startProcess"
+            self.parsedXPaths = []

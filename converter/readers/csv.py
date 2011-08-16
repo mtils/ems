@@ -18,14 +18,29 @@ class CSVReader(InputReader):
     classdocs
     '''
     defaultDelimiter = '\t'
+    delimiter = ","
+    escapeChar = ''
+    quoting = csv_o.QUOTE_ALL
+    quoteChar = None
+    fieldNames = None
+    offset = 0
+    
+    remapping = {}
+    
     
     def select(self,xpath):
         if xpath == '//':
             return self
         else:
+            if self.remapping.has_key(xpath):
+                xpath = self.remapping[xpath]
             if xpath in self.getReaderClass().fieldnames:
+#                print "xpath: %s" % xpath
                 if isinstance(self.currentRow[xpath], basestring):
                     return unicode(self.currentRow[xpath],"iso-8859-15")
+                if self.currentRow[xpath] is None:
+                    raise DataNotFoundException("%s not found in source"
+                                                % xpath,xpath)
                 return self.currentRow[xpath]
             else:
                 if re.match('^[a-zA-Z\-_]+$',xpath) is not None:
@@ -35,7 +50,18 @@ class CSVReader(InputReader):
     def getReaderClass(self):
         if self.readerClass == None:
             fp = open(self.source,"r")
-            self.readerClass = csv_o.DictReader(fp,delimiter=self.defaultDelimiter,quoting=csv_o.QUOTE_NONE)
+            if self.quoteChar is not None:
+                self.readerClass = csv_o.DictReader(fp,
+                                                    delimiter=self.delimiter,
+                                                    quoting=self.quoting,
+                                                    quotechar=self.quoteChar,
+                                                    fieldnames=self.fieldNames)
+            else:
+                self.readerClass = csv_o.DictReader(fp,
+                                                    delimiter=self.delimiter,
+                                                    quoting=csv_o.QUOTE_NONE,
+                                                    fieldnames=self.fieldNames)
+            
             #self.readerClass = Dbf(self.source,readOnly=True)
             self.currentIndex = -1
             self.set_charset('iso-8859-15')
@@ -65,6 +91,10 @@ class CSVReader(InputReader):
             if self._plugin is not None:
                 self._plugin.notifyProgress()
             self.currentIndex += 1
+            if self.currentIndex == 0:
+                if self.offset > 0:
+                    for i in range(self.offset):
+                        readerClass.next()
             self.currentRow = readerClass.next()
             if self.currentRow:
                 return self.currentRow
@@ -79,7 +109,6 @@ class CSVReader(InputReader):
                 self.supportedMimeTypes.append(MimeTypeDB.get(suffix='.csv'))
             except Exception:
                 self.supportedMimeTypes.append(MimeType('text/csv',['.csv',]))
-                pass
         return self.supportedMimeTypes
     
     def getFieldNames(self):
