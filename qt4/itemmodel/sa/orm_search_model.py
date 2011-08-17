@@ -5,9 +5,11 @@ Created on 14.06.2011
 '''
 import datetime
 
-from PyQt4.QtCore import QAbstractTableModel, QModelIndex, Qt, QVariant, QString
+from PyQt4.QtCore import QAbstractTableModel, QModelIndex, Qt, QVariant,\
+     QString, QDateTime
 
 from sqlalchemy.orm import object_mapper, ColumnProperty, RelationshipProperty
+from sqlalchemy.orm.collections import InstrumentedList
 from sqlalchemy.util import NamedTuple
 from ems import qt4
 from ems.thirdparty.odict import OrderedDict
@@ -150,8 +152,10 @@ class SAOrmSearchModel(QAbstractTableModel):
             if propertyName.find('.'):
                 stack = propertyName.split('.')
                 value = self._extractValue(currentObj, stack)
-                if value:
+                if value is not None:
                     return value
+#                else:
+#                    print propertyName,type(value)
                 
         return "*Nichts*"
     
@@ -163,6 +167,110 @@ class SAOrmSearchModel(QAbstractTableModel):
             nextObj = obj.__getattribute__(pathStack[0])
             pathStack.pop(0)
             return self._extractValue(nextObj, pathStack)
+    
+    def _preloadMultipleRowsResult(self, res, multiRowProperties):
+        i = 0
+        
+        nonMultiCols = []
+        multicols = []
+        if len(multiRowProperties) > 1:
+            raise NotImplementedError("At the moment I can only handle 1 1:n or m:n relation")
+        
+        for col in self.columns:
+            for mProp in multiRowProperties:
+                if col.startswith(mProp):
+                    multicols.append(col)
+                else:
+                    nonMultiCols.append(col)
+#        print nonMultiCols
+#        print '-----------'
+#        print multicols
+#        
+        #return
+        
+        for obj in res:
+#            print "Next Object %s----------------" % i
+            multipleRowsObjects = []
+            
+
+            self._resultCache[i] = {}
+            
+            for colName in nonMultiCols:
+                if hasattr(obj, colName):
+                    value = obj.__getattribute__(colName)
+                    self._resultCache[i][self._columns.index(colName)] = self._castToVariant(value)
+                    
+                    #print colName,value
+                else:
+                    if colName.find('.'):
+                        stack = colName.split('.')
+                        
+                        value = self._extractMultiValue(obj, stack)
+                        self._resultCache[i][self._columns.index(colName)] = self._castToVariant(value)
+#                        if isinstance(value, InstrumentedList):
+#                            print colName, type(value)
+#                            for ormObj in value:
+#                                print ormObj.name,self._extractMultiValue(ormObj,stack)
+#                                i2 += 1
+            self._objectCache[i] = obj
+            #Create ResultCache Structure
+            
+            
+            for joinName in multiRowProperties:
+                stack = joinName.split('.')
+                childs = self._extractMultiValue(obj, stack)
+                if isinstance(childs, InstrumentedList):
+                    childCount = 0
+                    for child in childs:
+                        if childCount > 0:
+                            i += 1
+                            self._objectCache[i] = obj
+                            self._resultCache[i] = {}
+                            
+                        for childCol in multicols:
+                            if childCol == joinName:
+                                childColName = ""
+                                value = child
+                            else:
+                                childColName = childCol.replace(joinName + '.',"")
+                                value = self._extractMultiValue(child, childColName.split('.'))
+                            self._resultCache[i][self._columns.index(childCol)] = self._castToVariant(value)
+#                            print "%childCol %s value: %s" % (childCol,value)
+#                        print "%s has %s Childs" % (obj.id,childCount)
+                        childCount += 1
+#                        print child
+                #print "joinStack: %s %s" % (stack, value)
+            i += 1
+            
+        
+        #print "%s Objekte mit 1:n %s" % (i, i2)
+#                        else:
+#                            print colName,type(value)
+#        else:
+#            print "%s has no %s" % (obj, pathStack[0])
+    
+    def _extractMultiValue(self, obj, pathStack):
+        
+        
+        if(hasattr(obj, pathStack[0])):
+#            print pathStack
+            if len(pathStack) < 2:
+                value = obj.__getattribute__(pathStack[0])
+#                if isinstance(value, InstrumentedList):
+#                    print value
+                return value
+            nextObj = obj.__getattribute__(pathStack[0])
+#            print "nextObj %s" % obj.__class__.__name__
+            pathStack.pop(0)
+#            if len(pathStack):
+#                if hasattr(nextObj, pathStack[0]):
+#                    next2Obj = nextObj.__getattribute__(pathStack[0])
+#                    if isinstance(next2Obj, InstrumentedList):
+#                        print "next2Obj %s" % pathStack
+            return self._extractMultiValue(nextObj, pathStack)
+        elif isinstance(obj, InstrumentedList):
+#            print "{0} is multiple".format(pathStack)
+            return obj
             
     def getDataListener(self):
         return self.__dataListener
@@ -174,6 +282,16 @@ class SAOrmSearchModel(QAbstractTableModel):
         self.__dataListener = None
         
     dataListener = property(getDataListener,setDataListener,delDataListener)
+    
+    def _castToVariant(self, value):
+        if isinstance(value, basestring):
+            return QVariant(unicode(value)) 
+        elif hasattr(value.__class__,'__ormDecorator__'):
+            return QVariant(value.__class__.__ormDecorator__().getReprasentiveString(value))
+        elif isinstance(value, datetime.datetime):
+            return QVariant(QDateTime(value.year, value.month, value.day,
+                                      value.hour, value.minute, value.second)) 
+        return QVariant(value)
     
     def data(self, index, role=Qt.DisplayRole):
         #return QVariant()
@@ -188,24 +306,17 @@ class SAOrmSearchModel(QAbstractTableModel):
         
         if role in (Qt.DisplayRole, Qt.EditRole):
             if self._resultCache[index.row()].has_key(index.column()):
-#                print "cacheHit %s" % self._askCount
+                #print "cacheHit %s" % self._askCount
                 return self._resultCache[index.row()][index.column()]
+#            else:
+#                print "no cacheHit %s" % self._askCount
             
             columnName = self.getPropertyNameByIndex(index.column())
+#            print "Hole %s" % columnName
             value = self.extractValue(index, columnName)
             
-            if isinstance(value, basestring):
-                self._resultCache[index.row()][index.column()] = QVariant(unicode(value)) 
-                return self._resultCache[index.row()][index.column()]
-            elif hasattr(value.__class__,'__ormDecorator__'):
-                self._resultCache[index.row()][index.column()] = \
-                    QVariant(value.__class__.__ormDecorator__().getReprasentiveString(value))
-                return self._resultCache[index.row()][index.column()]
-            elif isinstance(value, datetime.datetime):
-                self._resultCache[index.row()][index.column()] = \
-                    QVariant(value.strftime("%c")) 
-                return self._resultCache[index.row()][index.column()]
-            self._resultCache[index.row()][index.column()] = QVariant(value) 
+#            print columnName, value, type(value)
+            self._resultCache[index.row()][index.column()] = self._castToVariant(value)
             return self._resultCache[index.row()][index.column()]
         
         if role == qt4.ColumnNameRole:
@@ -296,14 +407,19 @@ class SAOrmSearchModel(QAbstractTableModel):
                                             propertySelection=self._columns,
                                             filter=self._filter,
                                             appendOptions=self._appendOptions)
-        for obj in query.all():
-            
-            if isinstance(obj, NamedTuple):
-                self._objectCache[i] = obj[0]
-            else:
+        
+        multipleRowsPerObject = self._queryBuilder.hasMultipleRowProperties(self._columns)
+        #Check if multiple Objects per row are requested (1:n,m:n,...)
+        if multipleRowsPerObject:
+            self._preloadMultipleRowsResult(query.all(), multipleRowsPerObject)
+        else:
+            for obj in query.all():
+    #            if isinstance(obj, NamedTuple):
+    #                self._objectCache[i] = obj[0]
+    #            else:
                 self._objectCache[i] = obj
-            #Create ResultCache Structure
-            self._resultCache[i] = {}
-            i += 1
+                #Create ResultCache Structure
+                self._resultCache[i] = {}
+                i += 1
         self._dirty = False
         self.endResetModel()

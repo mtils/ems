@@ -63,7 +63,7 @@ class PathClause(GenClause):
 
 class SAQueryBuilder(object):
     
-    def __init__(self, ormObj, filterJoins=()):
+    def __init__(self, ormObj, filterJoins=(), forceJoins=[]):
         self._ormObj = ormObj
         self._mapper = object_mapper(self._ormObj)
         self._propertyNames = []
@@ -73,6 +73,8 @@ class SAQueryBuilder(object):
         self._joinNameClasses = {}
         self._propertyNameClasses = {}
         self._filterJoins = filterJoins
+        self._multipleRowsProperties = []
+        self._forceJoins = forceJoins
     
     @property
     def ormObj(self):
@@ -198,6 +200,8 @@ class SAQueryBuilder(object):
     
     def getQuery(self, session, propertySelection=[], appendOptions=None, filter=None):
         
+#        self._multipleRowsProperties = []
+        
         if not len(propertySelection):
             propertySelection = self.propertyNamesDecorated
         
@@ -206,9 +210,9 @@ class SAQueryBuilder(object):
         aliases = self._buildJoinAliases(uniqueJoinNames)
         joinNames = aliases.keys()
         joinNames.sort()
-        
+        #print joinNames
         query = session.query(self._ormObj.__class__)
-
+        
         for joinName in joinNames:
             parentClass = None
             split = joinName.split('.')
@@ -232,7 +236,7 @@ class SAQueryBuilder(object):
                 for option in appendOptions:
                     containsEagers.append(option)
             query = query.options(*containsEagers)
-#        print str(query).replace('LEFT OUTER JOIN', '\nLEFT OUTER JOIN')
+        #print str(query).replace('LEFT OUTER JOIN', '\nLEFT OUTER JOIN')
         return query
     
     
@@ -273,7 +277,7 @@ class SAQueryBuilder(object):
         containsEagers = []
 #        print "neededJoins:"
         for neededJoin in neededJoins:
-#            print neededJoin
+#            print "NeededJoin %s" % neededJoin
             containsEagers.append(contains_eager(neededJoin, alias=aliases[neededJoin]))
             
         return containsEagers
@@ -374,6 +378,36 @@ class SAQueryBuilder(object):
     
     joinNameClasses = property(getJoinNameClasses)
     
+    def hasMultipleRowProperties(self, propertyNames):
+        checkedProperties = []
+        multipleRowProperties = []
+        for propertyName in propertyNames:
+            prop = self._properties[propertyName]
+            if isinstance(prop, RelationshipProperty):
+                if (prop.uselist) and (propertyName not in multipleRowProperties):
+                    multipleRowProperties.append(propertyName)
+                    return True
+#                print "%s is Rel" % propertyName
+            elif isinstance(prop, ColumnProperty):
+                propNameSplit = propertyName.split('.')
+                nodes = []
+                
+                for node in propNameSplit:
+                    nodes.append(node)
+                    joinName = '.'.join(nodes)
+#                    print joinName
+                    if joinName not in checkedProperties:
+                        parentProp = self._properties[joinName]
+                        if isinstance(parentProp, RelationshipProperty):
+                            if parentProp.uselist and (joinName not in multipleRowProperties):
+                                multipleRowProperties.append(joinName)
+#                            print "%s is Rel" % parentProp
+                        checkedProperties.append(joinName)
+#                #parentName = ".".join(propNameSplit[:-1])
+#                print "%s as parent %s" % 
+#                print "%s is Col" % propertyName
+        return multipleRowProperties
+    
     def _extractPropertiesAndJoins(self, obj, pathStack=[],
                                         alreadyAddedClasses=[],
                                         recursionCounter = -1):
@@ -399,13 +433,21 @@ class SAQueryBuilder(object):
                 self._propertyNameClasses[propertyName] = obj.__class__
                 
             elif isinstance(prop, RelationshipProperty):
-                if not prop.uselist:
+#                print prop
+                if len(pathStack):
+                    joinName = "%s.%s" % (".".join(pathStack), prop.key)
+                else:
+                    joinName = prop.key
+                #print joinName
+                
+                if not prop.uselist or (joinName in self._forceJoins):
+                    
+                    if prop.uselist:
+                        self._multipleRowsProperties.append(joinName)
+                        
                     classType = prop.mapper.class_
                     if classType is not self._ormObj.__class__:
-                        if len(pathStack):
-                            joinName = "%s.%s" % (".".join(pathStack), prop.key)
-                        else:
-                            joinName = prop.key
+                        
                         
                         if joinName not in self._joinNames:
                             self._joinNames.append(joinName)

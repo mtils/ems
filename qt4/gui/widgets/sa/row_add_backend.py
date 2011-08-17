@@ -21,11 +21,13 @@ class SABuilderBackend(RowBuilderBackend):
     
     
     
-    def __init__(self, ormObj, mapper, parent=None):
+    def __init__(self, ormObj, mapper, parent=None, queryBuilder=None):
         self._ormObj = ormObj
         self._mapper = mapper
         self._decorators = {}
-        self._queryBuilder = SAQueryBuilder(ormObj)
+        if queryBuilder is None:
+            queryBuilder = SAQueryBuilder(ormObj)
+        self._queryBuilder = queryBuilder
         self._orderedProperties = []
         self._shownPropertiesByClassName = {}
         self._queryListeners = []
