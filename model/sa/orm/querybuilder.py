@@ -386,7 +386,6 @@ class SAQueryBuilder(object):
             if isinstance(prop, RelationshipProperty):
                 if (prop.uselist) and (propertyName not in multipleRowProperties):
                     multipleRowProperties.append(propertyName)
-                    return True
 #                print "%s is Rel" % propertyName
             elif isinstance(prop, ColumnProperty):
                 propNameSplit = propertyName.split('.')
