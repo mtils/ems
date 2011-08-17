@@ -162,8 +162,9 @@ class SAQueryBuilder(object):
                 
                 #print self.properties[propertyName]
                 #print "prop: %s parent: %s" % (propertyName, parentName)
-        
+#        print self.properties.keys()
         for propertyName in propertyNames:
+            #print propertyName
             property = self.properties[propertyName]
             if isinstance(property, RelationshipProperty):
                 self._addJoinPath(joins, propertyName)

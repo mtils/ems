@@ -47,14 +47,15 @@ class SABuilderBackend(RowBuilderBackend):
     def _loadFieldPathNames(self):
         for property in self.orderedProperties:
             stack = property[0].split('.')
+            #print property[0]
             translatedStack = []
             currentStack = []
             for node in stack:
                 currentStack.append(node)
-                friendlyName = self.getFieldFriendlyName(u".".join(currentStack))
-                translatedStack.append(friendlyName)
+                friendlyName = self.getFieldFriendlyName(".".join(currentStack))
+                translatedStack.append(unicode(friendlyName))
             self._fieldPathNames[property[0]] =  u" > ".join(translatedStack)
-            
+#        print self._fieldPathNames
             
     def getDisplayedFieldText(self, data):
         #if not len()
