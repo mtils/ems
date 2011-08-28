@@ -1,3 +1,4 @@
+#coding=utf-8
 '''
 Created on 27.08.2011
 
@@ -7,13 +8,15 @@ import sys
 from PyQt4 import QtCore, QtGui
 from PyQt4.QtGui import QWidget, QHBoxLayout, QSpacerItem, QSizePolicy
 
+from ems.qt4.gui.widgets.dialogable import DialogableWidget
+
 if sys.platform.startswith('darwin'):
     rsrcPath = ":/images/mac"
 else:
     rsrcPath = ":/images/win"
 
-class BaseEditor(QtGui.QWidget):
-    def __init__(self, fileName=None, parent=None):
+class BaseEditor(DialogableWidget):
+    def __init__(self, text=None, parent=None):
         super(BaseEditor, self).__init__(parent)
 
         self.setWindowIcon(QtGui.QIcon(':/images/logo.png'))
@@ -29,8 +32,6 @@ class BaseEditor(QtGui.QWidget):
         self.setupEditActions()
         
         self.setupTextActions()
-        
-        
         
         self.textEdit.currentCharFormatChanged.connect(
                 self.currentCharFormatChanged)
@@ -64,6 +65,9 @@ class BaseEditor(QtGui.QWidget):
         self.textEdit.copyAvailable.connect(self.actionCopy.setEnabled)
         QtGui.QApplication.clipboard().dataChanged.connect(
                 self.clipboardDataChanged)
+        
+        if text:
+            self.textEdit.setHtml(text)
 
     
     def addToolBar(self, toolbar):
@@ -239,15 +243,15 @@ class BaseEditor(QtGui.QWidget):
 
         comboStyle = QtGui.QComboBox(tb)
         tb.addWidget(comboStyle)
-        comboStyle.addItem("Standard")
-        comboStyle.addItem("Bullet List (Disc)")
-        comboStyle.addItem("Bullet List (Circle)")
-        comboStyle.addItem("Bullet List (Square)")
-        comboStyle.addItem("Ordered List (Decimal)")
-        comboStyle.addItem("Ordered List (Alpha lower)")
-        comboStyle.addItem("Ordered List (Alpha upper)")
-        comboStyle.addItem("Ordered List (Roman lower)")
-        comboStyle.addItem("Ordered List (Roman upper)")
+        comboStyle.addItem(self.trUtf8("Standard"))
+        comboStyle.addItem(self.trUtf8("Ungeordnete Liste (Punkte)"))
+        comboStyle.addItem(self.trUtf8("Ungeordnete Liste (Kreise)"))
+        comboStyle.addItem(self.trUtf8("Ungeordnete Liste (Quadrate)"))
+        comboStyle.addItem(self.trUtf8("Geordnete Liste (Zahlen)"))
+        comboStyle.addItem(self.trUtf8("Geordnete Liste (Alphabetisch klein)"))
+        comboStyle.addItem(self.trUtf8("Geordnete Liste (Alphabetisch groß)"))
+        comboStyle.addItem(self.trUtf8("Geordnete Liste (Römisch klein)"))
+        comboStyle.addItem(self.trUtf8("Geordnete Liste (Römisch groß)"))
         comboStyle.activated.connect(self.textStyle)
 
         self.comboFont = QtGui.QFontComboBox(tb)
