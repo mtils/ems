@@ -5,6 +5,7 @@ Created on 27.08.2011
 '''
 import sys
 from PyQt4 import QtCore, QtGui
+from PyQt4.QtGui import QWidget, QHBoxLayout, QSpacerItem, QSizePolicy
 
 if sys.platform.startswith('darwin'):
     rsrcPath = ":/images/mac"
@@ -17,7 +18,10 @@ class BaseEditor(QtGui.QWidget):
 
         self.setWindowIcon(QtGui.QIcon(':/images/logo.png'))
         #self.setToolButtonStyle(QtCore.Qt.ToolButtonFollowStyle)
+        self.__currentToolbarIndex = 0
         self.setLayout(QtGui.QVBoxLayout(self))
+        self.layout().setSpacing(0)
+        self.toolBarContainers = []
         
         self.textEdit = QtGui.QTextEdit(self)
         self.layout().addWidget(self.textEdit)
@@ -33,7 +37,7 @@ class BaseEditor(QtGui.QWidget):
         self.textEdit.cursorPositionChanged.connect(self.cursorPositionChanged)
         #self.setCentralWidget(self.textEdit)
         self.textEdit.setFocus()
-        self.setCurrentFileName()
+        
         self.fontChanged(self.textEdit.font())
         self.colorChanged(self.textEdit.textColor())
         self.alignmentChanged(self.textEdit.alignment())
@@ -61,22 +65,24 @@ class BaseEditor(QtGui.QWidget):
         QtGui.QApplication.clipboard().dataChanged.connect(
                 self.clipboardDataChanged)
 
-        if fileName is None:
-            fileName = ':/example.html'
-
-        if not self.load(fileName):
-            self.fileNew()
     
     def addToolBar(self, toolbar):
-        
+        if len(self.toolBarContainers) <= self.__currentToolbarIndex:
+            toolBarContainer = QWidget(self)
+            toolBarContainer.setLayout(QHBoxLayout(toolBarContainer))
+            spacerItem = QSpacerItem(10,5,QSizePolicy.Expanding)
+            toolBarContainer.layout().addSpacerItem(spacerItem)
+            self.toolBarContainers.append(toolBarContainer)
+            self.layout().insertWidget(self.__currentToolbarIndex,
+                                       toolBarContainer)
         self.layout().insertWidget(self.layout().count()-1, toolbar)
+        
+        layout = self.toolBarContainers[self.__currentToolbarIndex].layout()
+        layout.insertWidget(layout.count()-1,toolbar)
     
-    def closeEvent(self, e):
-        if self.maybeSave():
-            e.accept()
-        else:
-            e.ignore()
-
+    def addToolBarBreak(self, area=None):
+        self.__currentToolbarIndex += 1
+    
     
     def setupEditActions(self):
         tb = QtGui.QToolBar(self)
@@ -227,7 +233,7 @@ class BaseEditor(QtGui.QWidget):
                 QtCore.Qt.TopToolBarArea | QtCore.Qt.BottomToolBarArea)
         tb.setWindowTitle("Format Actions")
         
-        #self.addToolBarBreak(QtCore.Qt.TopToolBarArea)
+        self.addToolBarBreak(QtCore.Qt.TopToolBarArea)
         
         self.addToolBar(tb)
 
@@ -262,25 +268,6 @@ class BaseEditor(QtGui.QWidget):
                 self.comboSize.findText(
                         "%s" % (QtGui.QApplication.font().pointSize())))
 
-    def load(self, f):
-        if not QtCore.QFile.exists(f):
-            return False
-
-        fh = QtCore.QFile(f)
-        if not fh.open(QtCore.QFile.ReadOnly):
-            return False
-
-        data = fh.readAll()
-        codec = QtCore.QTextCodec.codecForHtml(data)
-        unistr = codec.toUnicode(data)
-
-        if QtCore.Qt.mightBeRichText(unistr):
-            self.textEdit.setHtml(unistr)
-        else:
-            self.textEdit.setPlainText(unistr)
-
-        self.setCurrentFileName(f)
-        return True
 
     def maybeSave(self):
         if not self.textEdit.document().isModified():
@@ -302,79 +289,6 @@ class BaseEditor(QtGui.QWidget):
             return False
 
         return True
-
-    def setCurrentFileName(self, fileName=''):
-        self.fileName = fileName
-        self.textEdit.document().setModified(False)
-
-        if not fileName:
-            shownName = 'untitled.txt'
-        else:
-            shownName = QtCore.QFileInfo(fileName).fileName()
-
-        self.setWindowTitle(self.tr("%s[*] - %s" % (shownName, "Rich Text")))
-        self.setWindowModified(False)
-
-    def fileNew(self):
-        if self.maybeSave():
-            self.textEdit.clear()
-            self.setCurrentFileName()
-
-    def fileOpen(self):
-        fn = QtGui.QFileDialog.getOpenFileName(self, "Open File...", None,
-                "HTML-Files (*.htm *.html);;All Files (*)")
-
-        if fn:
-            self.load(fn)
-
-    def fileSave(self):
-        if not self.fileName:
-            return self.fileSaveAs()
-
-        writer = QtGui.QTextDocumentWriter(self.fileName)
-        success = writer.write(self.textEdit.document())
-        if success:
-            self.textEdit.document().setModified(False)
-
-        return success
-
-    def fileSaveAs(self):
-        fn = QtGui.QFileDialog.getSaveFileName(self, "Save as...", None,
-                "ODF files (*.odt);;HTML-Files (*.htm *.html);;All Files (*)")
-
-        if not fn:
-            return False
-
-        lfn = fn.lower()
-        if not lfn.endswith(('.odt', '.htm', '.html')):
-            # The default.
-            fn += '.odt'
-
-        self.setCurrentFileName(fn)
-        return self.fileSave()
-
-    def filePrint(self):
-        printer = QtGui.QPrinter(QtGui.QPrinter.HighResolution)
-        dlg = QtGui.QPrintDialog(printer, self)
-
-        if self.textEdit.textCursor().hasSelection():
-            dlg.addEnabledOption(QtGui.QAbstractPrintDialog.PrintSelection)
-
-        dlg.setWindowTitle("Print Document")
-
-        if dlg.exec_() == QtGui.QDialog.Accepted:
-            self.textEdit.print_(printer)
-
-        del dlg
-
-    def filePrintPreview(self):
-        printer = QtGui.QPrinter(QtGui.QPrinter.HighResolution)
-        preview = QtGui.QPrintPreviewDialog(printer, self)
-        preview.paintRequested.connect(self.printPreview)
-        preview.exec_()
-
-    def printPreview(self, printer):
-        self.textEdit.print_(printer)
 
     
     def textBold(self):
