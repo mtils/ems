@@ -1,3 +1,4 @@
+#coding=utf8
 '''
 Created on 27.03.2011
 
@@ -101,8 +102,8 @@ class ListFormContainer(QWidget):
         super(ListFormContainer, self).showEvent(event)
     
     @staticmethod
-    def toDialog(parent=None, invokeClass=None, acceptText="Accept", 
-                 rejectText="Reject", **kwargs):
+    def toDialog(parent=None, invokeClass=None, acceptText=u"OK", 
+                 rejectText=u"Abbrechen", **kwargs):
         
         dialog = QDialog(parent)
         if invokeClass is None:
@@ -118,9 +119,9 @@ class ListFormContainer(QWidget):
         dialog.container = widget
         dialog.buttonBox = QDialogButtonBox(dialog)
         dialog.buttonBox.setOrientation(Qt.Horizontal)
-        dialog.buttonBox.addButton(dialog.tr(acceptText),
+        dialog.buttonBox.addButton(dialog.trUtf8(acceptText),
                                    QDialogButtonBox.AcceptRole)
-        dialog.buttonBox.addButton(dialog.tr(rejectText),
+        dialog.buttonBox.addButton(dialog.trUtf8(rejectText),
                                    QDialogButtonBox.RejectRole)
         dialog.buttonBox.connect(dialog.buttonBox,
                                      SIGNAL("accepted()"),
