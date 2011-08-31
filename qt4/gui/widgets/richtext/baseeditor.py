@@ -10,15 +10,10 @@ from PyQt4.QtGui import QWidget, QHBoxLayout, QSpacerItem, QSizePolicy
 
 from ems.qt4.gui.widgets.dialogable import DialogableWidget
 
-if sys.platform.startswith('darwin'):
-    rsrcPath = ":/images/mac"
-else:
-    rsrcPath = ":/images/win"
-
 class BaseEditor(DialogableWidget):
     def __init__(self, text=None, parent=None):
         super(BaseEditor, self).__init__(parent)
-
+        self.rsrcPath = ':/textedit'
         self.setWindowIcon(QtGui.QIcon(':/images/logo.png'))
         #self.setToolButtonStyle(QtCore.Qt.ToolButtonFollowStyle)
         self.__currentToolbarIndex = 0
@@ -95,20 +90,20 @@ class BaseEditor(DialogableWidget):
 
         self.actionUndo = QtGui.QAction(
                 QtGui.QIcon.fromTheme('edit-undo',
-                        QtGui.QIcon(rsrcPath + '/editundo.png')),
+                        QtGui.QIcon(self.rsrcPath + '/editundo.png')),
                 "&Undo", self, shortcut=QtGui.QKeySequence.Undo)
         tb.addAction(self.actionUndo)
         
         self.actionRedo = QtGui.QAction(
                 QtGui.QIcon.fromTheme('edit-redo',
-                        QtGui.QIcon(rsrcPath + '/editredo.png')),
+                        QtGui.QIcon(self.rsrcPath + '/editredo.png')),
                 "&Redo", self, priority=QtGui.QAction.LowPriority,
                 shortcut=QtGui.QKeySequence.Redo)
         tb.addAction(self.actionRedo)
         
         self.actionCut = QtGui.QAction(
                 QtGui.QIcon.fromTheme('edit-cut',
-                        QtGui.QIcon(rsrcPath + '/editcut.png')),
+                        QtGui.QIcon(self.rsrcPath + '/editcut.png')),
                 "Cu&t", self, priority=QtGui.QAction.LowPriority,
                 shortcut=QtGui.QKeySequence.Cut)
         tb.addAction(self.actionCut)
@@ -116,7 +111,7 @@ class BaseEditor(DialogableWidget):
 
         self.actionCopy = QtGui.QAction(
                 QtGui.QIcon.fromTheme('edit-copy',
-                        QtGui.QIcon(rsrcPath + '/editcopy.png')),
+                        QtGui.QIcon(self.rsrcPath + '/editcopy.png')),
                 "&Copy", self, priority=QtGui.QAction.LowPriority,
                 shortcut=QtGui.QKeySequence.Copy)
         tb.addAction(self.actionCopy)
@@ -124,7 +119,7 @@ class BaseEditor(DialogableWidget):
 
         self.actionPaste = QtGui.QAction(
                 QtGui.QIcon.fromTheme('edit-paste',
-                        QtGui.QIcon(rsrcPath + '/editpaste.png')),
+                        QtGui.QIcon(self.rsrcPath + '/editpaste.png')),
                 "&Paste", self, priority=QtGui.QAction.LowPriority,
                 shortcut=QtGui.QKeySequence.Paste,
                 enabled=(len(QtGui.QApplication.clipboard().text()) != 0))
@@ -140,7 +135,7 @@ class BaseEditor(DialogableWidget):
 
         self.actionTextBold = QtGui.QAction(
                 QtGui.QIcon.fromTheme('format-text-bold',
-                        QtGui.QIcon(rsrcPath + '/textbold.png')),
+                        QtGui.QIcon(self.rsrcPath + '/textbold.png')),
                 "&Bold", self, priority=QtGui.QAction.LowPriority,
                 shortcut=QtCore.Qt.CTRL + QtCore.Qt.Key_B,
                 triggered=self.textBold, checkable=True)
@@ -152,7 +147,7 @@ class BaseEditor(DialogableWidget):
 
         self.actionTextItalic = QtGui.QAction(
                 QtGui.QIcon.fromTheme('format-text-italic',
-                        QtGui.QIcon(rsrcPath + '/textitalic.png')),
+                        QtGui.QIcon(self.rsrcPath + '/textitalic.png')),
                 "&Italic", self, priority=QtGui.QAction.LowPriority,
                 shortcut=QtCore.Qt.CTRL + QtCore.Qt.Key_I,
                 triggered=self.textItalic, checkable=True)
@@ -164,7 +159,7 @@ class BaseEditor(DialogableWidget):
 
         self.actionTextUnderline = QtGui.QAction(
                 QtGui.QIcon.fromTheme('format-text-underline',
-                        QtGui.QIcon(rsrcPath + '/textunder.png')),
+                        QtGui.QIcon(self.rsrcPath + '/textunder.png')),
                 "&Underline", self, priority=QtGui.QAction.LowPriority,
                 shortcut=QtCore.Qt.CTRL + QtCore.Qt.Key_U,
                 triggered=self.textUnderline, checkable=True)
@@ -179,33 +174,33 @@ class BaseEditor(DialogableWidget):
         if QtGui.QApplication.isLeftToRight():
             self.actionAlignLeft = QtGui.QAction(
                     QtGui.QIcon.fromTheme('format-justify-left',
-                            QtGui.QIcon(rsrcPath + '/textleft.png')),
+                            QtGui.QIcon(self.rsrcPath + '/textleft.png')),
                     "&Left", grp)
             self.actionAlignCenter = QtGui.QAction(
                     QtGui.QIcon.fromTheme('format-justify-center',
-                            QtGui.QIcon(rsrcPath + '/textcenter.png')),
+                            QtGui.QIcon(self.rsrcPath + '/textcenter.png')),
                     "C&enter", grp)
             self.actionAlignRight = QtGui.QAction(
                     QtGui.QIcon.fromTheme('format-justify-right',
-                            QtGui.QIcon(rsrcPath + '/textright.png')),
+                            QtGui.QIcon(self.rsrcPath + '/textright.png')),
                     "&Right", grp)
         else:
             self.actionAlignRight = QtGui.QAction(
                     QtGui.QIcon.fromTheme('format-justify-right',
-                            QtGui.QIcon(rsrcPath + '/textright.png')),
+                            QtGui.QIcon(self.rsrcPath + '/textright.png')),
                     "&Right", grp)
             self.actionAlignCenter = QtGui.QAction(
                     QtGui.QIcon.fromTheme('format-justify-center',
-                            QtGui.QIcon(rsrcPath + '/textcenter.png')),
+                            QtGui.QIcon(self.rsrcPath + '/textcenter.png')),
                     "C&enter", grp)
             self.actionAlignLeft = QtGui.QAction(
                     QtGui.QIcon.fromTheme('format-justify-left',
-                            QtGui.QIcon(rsrcPath + '/textleft.png')),
+                            QtGui.QIcon(self.rsrcPath + '/textleft.png')),
                     "&Left", grp)
  
         self.actionAlignJustify = QtGui.QAction(
                 QtGui.QIcon.fromTheme('format-justify-fill',
-                        QtGui.QIcon(rsrcPath + '/textjustify.png')),
+                        QtGui.QIcon(self.rsrcPath + '/textjustify.png')),
                 "&Justify", grp)
 
         self.actionAlignLeft.setShortcut(QtCore.Qt.CTRL + QtCore.Qt.Key_L)
