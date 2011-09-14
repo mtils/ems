@@ -26,6 +26,7 @@ class SAOrmSearchModel(QAbstractTableModel):
         self._resultCache = {}
         self._objectCache = {}
         self._headerCache = {}
+        self.sectionFriendlyNames = {} 
         self._columns = columns
         if not len(self._columns):
             self._columns = self.possibleColumns
@@ -322,6 +323,9 @@ class SAOrmSearchModel(QAbstractTableModel):
         if role == qt4.ColumnNameRole:
 #            print "columnNameRole"
             return QVariant(unicode(self._queryBuilder.currentColumnList[index.column()]))
+        if role == qt4.RowObjectRole:
+            return QVariant(self.getObject(index.row()))
+        
         return QVariant()
     
     def getObject(self, row):
@@ -337,6 +341,8 @@ class SAOrmSearchModel(QAbstractTableModel):
         if role != Qt.DisplayRole:
             return QVariant()
         if orientation == Qt.Horizontal:
+            if self.sectionFriendlyNames.has_key(section):
+                return self.sectionFriendlyNames[section]
             columnName = unicode(self.getPropertyNameByIndex(section))
             name = self.getPropertyFriendlyName(columnName)
 
