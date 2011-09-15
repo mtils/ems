@@ -13,28 +13,39 @@ from sqlalchemy.orm.collections import InstrumentedList
 from sqlalchemy.util import NamedTuple
 from ems import qt4
 from ems.thirdparty.odict import OrderedDict
+from ems.model.sa.orm.querybuilder import SAQueryBuilder
 
 class SAOrmSearchModel(QAbstractTableModel):
-    def __init__(self,session, queriedObject, querybuilder, filter=None,
+    def __init__(self,session, queriedObject, querybuilder=None, filter=None,
                  columns = [],
                  dataListener=None,
                  appendOptions = None):
         super(SAOrmSearchModel, self).__init__()
         self._session = session
+        
+        if querybuilder is None:
+            querybuilder = SAQueryBuilder(queriedObject)
+        self._queryBuilder = querybuilder
+        
         self.__dataListener = dataListener
         self._queriedObject = queriedObject
         self._resultCache = {}
         self._objectCache = {}
         self._headerCache = {}
-        self.sectionFriendlyNames = {} 
+        self.sectionFriendlyNames = {}
+        self._defaultColumns = [] 
         self._columns = columns
+        self._ormProperties = None
+        
         if not len(self._columns):
             self._columns = self.possibleColumns
+            
         self._appendOptions = appendOptions
         self._mapper = None
-        self._ormProperties = None
+        
         self._flagsCache = {}
-        self._queryBuilder = querybuilder
+        
+        
         self._filter = filter
         self._askCount = 0
         
@@ -47,7 +58,7 @@ class SAOrmSearchModel(QAbstractTableModel):
         
         self._query = None
         self._headerNameCache = {}
-        self._defaultColumns = []
+        
         
         self._columnName2Index = self._buildReversedColumnLookup(columns)
         self._dirty = True
