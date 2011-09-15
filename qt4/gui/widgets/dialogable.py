@@ -83,6 +83,8 @@ class DialogableWidget(QWidget):
     @staticmethod
     def _addButtonBox2Dialog(dlg):
         layout = dlg.layout()
+        if layout is None:
+            raise TypeError("The Widget needs a layout to assign the buttons")
         if isinstance(layout, QVBoxLayout):
             dlg.buttonBox = QDialogButtonBox(Qt.Horizontal)
             layout.addWidget(dlg.buttonBox)
