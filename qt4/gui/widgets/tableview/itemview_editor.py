@@ -18,9 +18,11 @@ class ItemViewEditor(QWidget):
     INSERT_AFTER_CURRENT = 2
     
     isRowSelectedStateChanged = pyqtSignal(bool)
-    lastSelectedRowChanged = pyqtSignal(int)
+    rowInsertionRequested = pyqtSignal(int,int)
+    rowEditingRequested = pyqtSignal(list)
+    rowDeletionRequested = pyqtSignal(list)
     
-    def __init__(self, itemView, parent=None):
+    def __init__(self, itemView, connectOwnMethods=True, parent=None):
         QWidget.__init__(self, parent)
         if not isinstance(itemView, QAbstractItemView):
             raise TypeError("itemView has to be instanceof QAbstractItemView")
@@ -32,6 +34,9 @@ class ItemViewEditor(QWidget):
         self._isRowSelected = None 
         self.setupUi()
         self._checkSelection()
+        if connectOwnMethods:
+            self.rowInsertionRequested.connect(self.addRows)
+            self.rowDeletionRequested.connect(self.deleteRows)
     
     def _setIsRowSelected(self, isSelected):
         if self._isRowSelected != isSelected:
@@ -77,28 +82,47 @@ class ItemViewEditor(QWidget):
         self.buttonContainer.layout().addWidget(self.deleteButton)
         
         self.buttonContainer.layout().addStretch()
+
+    @property
+    def selectedRows(self):
+        rowList = []
+        for idx in self.itemView.selectionModel().selection().indexes():
+            rowList.append(idx.row())
+        return rowList
     
     def onAddButtonClicked(self):
-        print "addButtonClicked"
         if self.insertMode in (self.INSERT_PRIOR_CURRENT,
                                self.INSERT_AFTER_CURRENT):
             idx = self.itemView.currentIndex()
-            
             if idx.isValid():
                 if self.insertMode == self.INSERT_PRIOR_CURRENT:
-                    self.itemView.model().insertRow(idx.row())
+                    self.rowInsertionRequested.emit(idx.row(), 1)
                     return
                 else:
-                    self.itemView.model().insertRow(idx.row()+1)
+                    self.rowInsertionRequested.emit(idx.row()+1, 1)
                     return
-
-        self.itemView.model().insertRow(self.itemView.model().rowCount())
+        self.rowInsertionRequested.emit(self.itemView.model().rowCount(), 1)
+    
+    def addRows(self, targetRow, count):
+        self.itemView.model().insertRows(targetRow, count)
     
     def onEditButtonClicked(self):
-        print "editButtonClicked"
+        if self.isRowSelected:
+            self.rowEditingRequested.emit(self.selectedRows)
     
     def onDeleteButtonClicked(self):
-        print "deleteButtonClicked"
+        if self.isRowSelected:
+            self.rowDeletionRequested.emit(self.selectedRows)
+            
+    
+    def deleteRows(self, rows):
+        model = self.itemView.model()
+        if hasattr(model, 'removeRowList'):
+            model.removeRowList(rows)
+        else:
+            for row in rows:
+                self.itemView.model().removeRows(row,1)
+                break
         
 
 if __name__ == '__main__':
@@ -113,7 +137,8 @@ if __name__ == '__main__':
                          QStandardItem("Item %s 1" % i),
                          QStandardItem("Item %s 2" % i)))
     editor = ItemViewEditor(view, parent=None)
-    #editor.insertMode = editor.INSERT_AFTER_CURRENT
+    #editor.editButton.hide()
+#    editor.insertMode = editor.INSERT_PRIOR_CURRENT
     editor.show()
     
     app.exec_()
