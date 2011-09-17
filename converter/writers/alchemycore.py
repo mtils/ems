@@ -18,6 +18,7 @@ class AlchemyCore(OutputWriter):
     classdocs
     '''
     commaMask = "<#|.|#>"
+    rowIdSeparator = '|=|'
     
     def notify(self,eventType):
         if eventType == self.startProcess:
@@ -150,7 +151,7 @@ class AlchemyCore(OutputWriter):
             return
         if self.__currentDepth == 2:
             if self.__currentParams.has_key('identifying'):
-                self.__currentTableCacheId += unicode(value)
+                self.__currentTableCacheId += self.rowIdSeparator + unicode(value)
             self.__currentTableDict[self.__currentColumnName] = value
             
     def endElement(self):
