@@ -90,7 +90,10 @@ def stringSimilarity(a,b, returnPercent=False):
         #rightLetters = float(aLen - current[n])
         #print "Richtige: %s" % rightLetters
         #print "Richtig: %s" % ( aLen / rightLetters)
-        result = 100.0 - (float(current[n]) / (float(aLen)/100.0))
+        try:
+            result = 100.0 - (float(current[n]) / (float(aLen)/100.0))
+        except ZeroDivisionError:
+            return 0.0
         if result < 0.0:
             return 0.0
         return result
