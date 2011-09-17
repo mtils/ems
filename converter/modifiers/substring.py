@@ -15,10 +15,10 @@ class Substring(Modifier):
                 if isinstance(params['start'], basestring):
                     start = int(params['start'])
                     if not params.has_key('count'):
-                        return params['value'][start:]
+                        return unicode(params['value'])[start:]
                     else:
                         count = int(params['count'])
-                        return params['value'][start:count]
+                        return unicode(params['value'])[start:count]
         else:
             raise ModifierException("Modifier 'substring' needs a value param")
 
