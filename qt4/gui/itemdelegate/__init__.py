@@ -1,6 +1,8 @@
 from PyQt4 import QtCore, QtGui
 from PyQt4.QtCore import QPoint,QRect,QVariant
 
+from ems.qt4.util import variant_to_pyobject
+
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
 except AttributeError:
@@ -220,38 +222,34 @@ class ImgRepeatDelegate(QtGui.QStyledItemDelegate):
     initialImgSize = property(getInitialImgSize, setInitialImgSize, delInitialImgSize, "initialImgSize's docstring")
 
 class UnitDelegate(QtGui.QStyledItemDelegate):
-    def __init__(self, prefix="",postfix="", numberformat="%s", parent=None):
-        super(UnitDelegate, self).__init__(parent)
+    def __init__(self, prefix="",suffix="", numberformat="", parent=None):
+        QtGui.QStyledItemDelegate.__init__(self, parent)
         self.prefix = prefix
-        self.postfix = postfix
-        self.numberformat = numberformat 
+        self.suffix = suffix
+        self.numberformat = numberformat
+        if numberformat:
+            self._pyNumberFormat = "{0:" + numberformat + "}"
+        else:
+            self._pyNumberFormat = "{0}"
     
     def getString(self, value):
-        strValue = self.numberformat.format((value))
-        string = unicode(self.prefix+strValue+self.postfix)
+#        print self.numberformat, value
+        strValue = self._pyNumberFormat.format((value))
+        string = unicode(self.prefix+strValue+self.suffix)
         return string
     
     def paint(self, painter, option, index):
-        value = index.data()
-        if isinstance(value, QVariant) and value.typeName() in ('int','float','double'):
-            value = value.toDouble()[0]
+        value = variant_to_pyobject(index.data())
         if isinstance(value,(int,float)):
-            if option.state & QtGui.QStyle.State_Selected:
-                painter.fillRect(option.rect, option.palette.highlight())
-                txtPalette = QtGui.QPalette.HighlightedText
-            else:
-                txtPalette = QtGui.QPalette.Text
+            options = QtGui.QStyleOptionViewItemV4(option)
+            self.initStyleOption(options, index)
             
-            strTpl = self.getString(value)
-            
-            QtGui.QApplication.style().\
-                drawItemText(painter,
-                             option.rect,
-                             QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter,
-                             QtGui.QApplication.palette(),
-                             True,
-                             _fromUtf8(strTpl),
-                             txtPalette)
+            style = QtGui.QApplication.style() if options.widget is None \
+                else options.widget.style()
                 
-        else:
-            super(UnitDelegate, self).paint(painter, option, index)
+            options.text = QtCore.QString.fromUtf8(self.getString(value))
+            style.drawControl(QtGui.QStyle.CE_ItemViewItem, options, painter)
+            return None
+        
+        
+        return super(UnitDelegate, self).paint(painter, option, index)

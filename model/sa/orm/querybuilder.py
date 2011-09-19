@@ -76,6 +76,14 @@ class SAQueryBuilder(object):
         self._multipleRowsProperties = []
         self._forceJoins = forceJoins
     
+    def isAutoProperty(self, property):
+        rProp = self.properties[property]
+        if isinstance(rProp, ColumnProperty):
+            isAi = rProp.columns[0].autoincrement
+            isPk = rProp.columns[0].primary_key
+            return isAi and isPk
+        return False
+    
     @property
     def ormObj(self):
         return self._ormObj

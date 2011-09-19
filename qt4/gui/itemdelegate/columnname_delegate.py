@@ -8,17 +8,15 @@ from PyQt4.QtCore import Qt
 
 from ems import qt4
 
-class GenericDelegate(QStyledItemDelegate):
+class ColumnNameDelegate(QStyledItemDelegate):
 
     def __init__(self, parent=None):
-        super(GenericDelegate, self).__init__(parent)
+        super(ColumnNameDelegate, self).__init__(parent)
         self.delegates = {}
-    
-    def _getDelegate(self, index):
-        return self.delegates.get(index.column())
+
     
     def sizeHint(self, option, index):
-        delegate = self._getDelegate(index)
+        delegate = self.delegates.get(index.column())
         
         if delegate is not None:
             return delegate.sizeHint(option, index)
@@ -29,12 +27,14 @@ class GenericDelegate(QStyledItemDelegate):
         delegate.setParent(self)
         self.delegates[column] = delegate
 
+
     def removeColumnDelegate(self, column):
         if column in self.delegates:
             del self.delegates[column]
 
+
     def paint(self, painter, option, index):
-        delegate = self._getDelegate(index)
+        delegate = self.delegates.get(index.column())
         
         if delegate is not None:
             return delegate.paint(painter, option, index)
@@ -43,7 +43,7 @@ class GenericDelegate(QStyledItemDelegate):
 
 
     def createEditor(self, parent, option, index):
-        delegate = self._getDelegate(index)
+        delegate = self.delegates.get(index.column())
         if delegate is not None:
             return delegate.createEditor(parent, option, index)
         else:
@@ -53,7 +53,7 @@ class GenericDelegate(QStyledItemDelegate):
 
 
     def setEditorData(self, editor, index):
-        delegate = self._getDelegate(index)
+        delegate = self.delegates.get(index.column())
         if delegate is not None:
             return delegate.setEditorData(editor, index)
         else:
@@ -62,7 +62,7 @@ class GenericDelegate(QStyledItemDelegate):
 
 
     def setModelData(self, editor, model, index):
-        delegate = self._getDelegate(index)
+        delegate = self.delegates.get(index.column())
         if delegate is not None:
             return delegate.setModelData(editor, model, index)
         else:

@@ -6,7 +6,7 @@ Created on 14.06.2011
 import datetime
 
 from PyQt4.QtCore import QAbstractTableModel, QModelIndex, Qt, QVariant,\
-     QString, QDateTime
+     QString, QDateTime, pyqtSlot
 
 from sqlalchemy.orm import object_mapper, ColumnProperty, RelationshipProperty
 from sqlalchemy.orm.collections import InstrumentedList
@@ -14,12 +14,13 @@ from sqlalchemy.util import NamedTuple
 from ems import qt4
 from ems.thirdparty.odict import OrderedDict
 from ems.model.sa.orm.querybuilder import SAQueryBuilder
+from ems.qt4.util import variant_to_pyobject
 
 class SAOrmSearchModel(QAbstractTableModel):
     def __init__(self,session, queriedObject, querybuilder=None, filter=None,
                  columns = [],
-                 dataListener=None,
-                 appendOptions = None):
+                 appendOptions = None,
+                 editable = False):
         super(SAOrmSearchModel, self).__init__()
         self._session = session
         
@@ -27,8 +28,8 @@ class SAOrmSearchModel(QAbstractTableModel):
             querybuilder = SAQueryBuilder(queriedObject)
         self._queryBuilder = querybuilder
         
-        self.__dataListener = dataListener
         self._queriedObject = queriedObject
+        self._currentlyEditedRow = None
         self._resultCache = {}
         self._objectCache = {}
         self._headerCache = {}
@@ -36,6 +37,7 @@ class SAOrmSearchModel(QAbstractTableModel):
         self._defaultColumns = [] 
         self._columns = columns
         self._ormProperties = None
+        self.editable = editable
         
         if not len(self._columns):
             self._columns = self.possibleColumns
@@ -44,10 +46,7 @@ class SAOrmSearchModel(QAbstractTableModel):
         self._mapper = None
         
         self._flagsCache = {}
-        
-        
         self._filter = filter
-        self._askCount = 0
         
         try:
             self._queryBuilder.propertyNames
@@ -154,9 +153,7 @@ class SAOrmSearchModel(QAbstractTableModel):
     def getIndexByPropertyName(self, name):
         return self._columnName2Index[name]
     
-    def extractValue(self, index, propertyName):
-        
-        currentObj = self._objectCache[index.row()]
+    def extractValue(self, currentObj, index, propertyName):
         
         if hasattr(currentObj, propertyName):
             return currentObj.__getattribute__(propertyName)
@@ -283,33 +280,19 @@ class SAOrmSearchModel(QAbstractTableModel):
         elif isinstance(obj, InstrumentedList):
 #            print "{0} is multiple".format(pathStack)
             return obj
-            
-    def getDataListener(self):
-        return self.__dataListener
-    
-    def setDataListener(self, dataListener):
-        self.__dataListener = dataListener
-    
-    def delDataListener(self):
-        self.__dataListener = None
-        
-    dataListener = property(getDataListener,setDataListener,delDataListener)
     
     def _castToVariant(self, value):
         if isinstance(value, basestring):
             return QVariant(unicode(value)) 
-        elif hasattr(value.__class__,'__ormDecorator__'):
-            return QVariant(value.__class__.__ormDecorator__().getReprasentiveString(value))
+#        elif hasattr(value.__class__,'__ormDecorator__'):
+#            return QVariant(value.__class__.__ormDecorator__().getReprasentiveString(value))
         elif isinstance(value, datetime.datetime):
             return QVariant(QDateTime(value.year, value.month, value.day,
                                       value.hour, value.minute, value.second)) 
         return QVariant(value)
     
     def data(self, index, role=Qt.DisplayRole):
-        #return QVariant()
-        self._askCount += 1
-        if self.__dataListener is not None:
-            self.__dataListener.data(index, role)
+        
         self.perform()
         
         if not index.isValid() or \
@@ -317,27 +300,76 @@ class SAOrmSearchModel(QAbstractTableModel):
             return QVariant()
         
         if role in (Qt.DisplayRole, Qt.EditRole):
-            if self._resultCache[index.row()].has_key(index.column()):
-                #print "cacheHit %s" % self._askCount
-                return self._resultCache[index.row()][index.column()]
-#            else:
-#                print "no cacheHit %s" % self._askCount
-            
-            columnName = self.getPropertyNameByIndex(index.column())
-#            print "Hole %s" % columnName
-            value = self.extractValue(index, columnName)
-            
-#            print columnName, value, type(value)
-            self._resultCache[index.row()][index.column()] = self._castToVariant(value)
-            return self._resultCache[index.row()][index.column()]
+            if self._objectCache.has_key(index.row()):
+                #Not currently inserted
+                if self._resultCache.has_key(index.row()):
+                    if self._resultCache[index.row()].has_key(index.column()):
+                        return self._resultCache[index.row()][index.column()]
+                    
+                    columnName = self.getPropertyNameByIndex(index.column())
+                    value = self.extractValue(self._objectCache[index.row()], index,
+                                              columnName)
+                    
+                    self._resultCache[index.row()][index.column()] = self._castToVariant(value)
+                    return self._resultCache[index.row()][index.column()]
+                #currently inserted
+                else:
+                    columnName = self.getPropertyNameByIndex(index.column())
+                    return self.extractValue(self._objectCache[index.row()],
+                                         index, columnName)
         
         if role == qt4.ColumnNameRole:
-#            print "columnNameRole"
-            return QVariant(unicode(self._queryBuilder.currentColumnList[index.column()]))
+            return QVariant(unicode(self.getPropertyNameByIndex(index.column())))
         if role == qt4.RowObjectRole:
             return QVariant(self.getObject(index.row()))
         
         return QVariant()
+    
+    def setData(self, index, value, role=Qt.EditRole):
+        columnName = self.getPropertyNameByIndex(index.column())
+        val = variant_to_pyobject(value)
+        print "setData {0} {1} {2}".format(columnName, val, type(val))
+        oldValue = self._objectCache[index.row()].__getattribute__(columnName)
+        if oldValue != val:
+            print "dataChanged"
+            self._objectCache[index.row()].__setattr__(columnName, val)
+            try:
+                del self._resultCache[index.row()][index.column()]
+            except KeyError:
+                pass
+            self.dataChanged.emit(index, index)
+            print self._session.dirty
+            return True
+        return False
+    
+    @pyqtSlot()
+    def submit(self):
+        print "submit called"
+        self._session.commit()
+        return super(SAOrmSearchModel, self).submit()
+    
+    def insertRows(self, row, count, parent=QModelIndex()):
+        if count > 1:
+            raise NotImplementedError("Currently only one row can be inserted")
+        rowCount = self.rowCount(parent)
+        if row != rowCount:
+            raise NotImplementedError("Currently the row can be inserted at the end")
+        
+        cls = self._queriedObject.__class__
+        print self._queriedObject
+        
+        newObj = cls.__new__(cls)
+        newObj.__init__()
+        self.rowsAboutToBeInserted.emit(parent, row, row)
+        self._currentlyEditedRow = row
+        self._session.add(newObj)
+        self._objectCache[row] = newObj
+        self.rowsInserted.emit(parent, row, row)
+        
+        
+        #print newObj.kontakt
+        print "insertRows {0} {1}".format(row, count)
+        return False
     
     def getObject(self, row):
         if self._objectCache.has_key(row):
@@ -379,25 +411,23 @@ class SAOrmSearchModel(QAbstractTableModel):
         
         print 
     
-#    def flags(self, index):
-#        
-#        propertyName = self.getPropertyNameByIndex(index.column())
-#        if not self._flagsCache.has_key(propertyName):
-#            isPk = False
-#            if isinstance(self.ormProperties[propertyName], ColumnProperty):
-#                for col in self.ormProperties[propertyName].columns:
-#                    if col.primary_key:
-#                        isPk = True
-#                if not isPk:
-#                    self._flagsCache[propertyName] = Qt.ItemIsEditable | Qt.ItemIsSelectable | Qt.ItemIsEnabled
-#                else:
-#                    self._flagsCache[propertyName] = Qt.ItemIsSelectable | Qt.ItemIsEnabled
-#            else:
-#                self._flagsCache[propertyName] = Qt.ItemIsSelectable | Qt.ItemIsEnabled
-#                
-#        return self._flagsCache[propertyName]
-
-    
+    def flags(self, index):
+        if not self.editable:
+            return Qt.ItemIsSelectable | Qt.ItemIsEnabled
+        
+#            return Qt.ItemIsSelectable | Qt.ItemIsEnabled  | Qt.ItemIsEditable
+        
+        
+        
+        if not self._flagsCache.has_key(index.column()):
+            propertyName = self.getPropertyNameByIndex(index.column())
+            if self._queryBuilder.isAutoProperty(propertyName):
+                flags = Qt.ItemIsSelectable | Qt.ItemIsEnabled
+            else:
+                flags = Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsEditable
+            self._flagsCache[index.column()] = flags
+        return self._flagsCache[index.column()]
+        
     def isDataChanged(self):
         return self._session.dirty
     
@@ -419,7 +449,8 @@ class SAOrmSearchModel(QAbstractTableModel):
         self._resultCache.clear()
         self._objectCache.clear()
         self._headerCache.clear()
-        self._askCount = 0
+        self._flagsCache.clear()
+
         query = self._queryBuilder.getQuery(self._session,
                                             propertySelection=self._columns,
                                             filter=self._filter,

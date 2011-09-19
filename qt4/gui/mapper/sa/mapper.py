@@ -14,9 +14,11 @@ from sqlalchemy.util import symbol
 
 from ems.thirdparty.singletonmixin import Singleton
 from ems.qt4.itemmodel.alchemyormmodel import AlchemyOrmModel
-from ems.view.qt4.genericdelegate import GenericDelegate
+from ems.qt4.gui.itemdelegate.genericdelegate import GenericDelegate
+from delegate.itemview import MapperItemViewDelegate #@UnresolvedImport
 
 from strategy.base import BaseStrategy
+from ems.qt4.itemmodel.sa.orm_search_model import SAOrmSearchModel
 
 class SAInterfaceMixin(object):
     def _init(self):
@@ -56,11 +58,17 @@ class SAMapper(QObject, SAInterfaceMixin):
     def delegate(self):
         return self._delegate
     
+    def itemViewDelegate(self, ormObj, model, parent=None):
+        return MapperItemViewDelegate(ormObj, model, self, parent)
+    
+    def widgetDelegate(self, ormObj, propertyName, model):
+        pass
+    
     def getModel(self):
         return self._model
     
     def setModel(self, model):
-        if not isinstance(model, AlchemyOrmModel):
+        if not isinstance(model, (AlchemyOrmModel, SAOrmSearchModel)):
             raise TypeError("Model has to be instanceof AlchemyOrmModel")
         self._model = model
         self._dataWidgetMapper.setModel(model)
@@ -127,6 +135,6 @@ class SAMapper(QObject, SAInterfaceMixin):
         
     
     def addMapping(self, widget, ormObj, property):
-        if not isinstance(self._model, AlchemyOrmModel):
+        if not isinstance(self._model, (AlchemyOrmModel, SAOrmSearchModel)):
             raise TypeError("Assign a AlchemyOrmModel prior to addMapping")
         return self.getStrategyFor(ormObj, property).map(widget, ormObj, property)

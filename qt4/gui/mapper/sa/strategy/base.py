@@ -11,6 +11,8 @@ from sqlalchemy.types import AbstractType, String, Integer, Float, Boolean
 from sqlalchemy.orm import object_mapper
 from sqlalchemy.orm.properties import ColumnProperty
 
+from ems.qt4.gui.mapper.sa.delegate.base import MapperDelegate  #@UnresolvedImport
+from ems.qt4.gui.mapper.sa.delegate.unit import UnitColumnDelegate #@UnresolvedImport
 
 class BaseStrategy(QObject):
     def __init__(self, parent=None):
@@ -31,29 +33,27 @@ class BaseStrategy(QObject):
     def formatValue(self, obj, property, colInfo=None):
         pass
     
-    def getValueFormatString(self, obj, property, colInfo=None):
-        return "%s"
+    def getValueFormatString(self, obj, rProperty):
+        colInfo = self.getColInfos(rProperty)
+        if colInfo is not None:
+            if colInfo.has_key('textFormat'):
+                return "{0:" + unicode(colInfo['textFormat']) + "}"
+        return ""
     
-    def getValuePrefix(self, obj, property, colInfo=None):
+    def getValuePrefix(self, obj, rProperty):
         return u""
     
-    def getValueSuffix(self, instance, property, colType=None):
-        rProperty = self.getRProperty(instance, property)
-        if colType is None:
-            colType = self.extractType(rProperty)
-        
+    def getValueSuffix(self, instance, rProperty):
+        #colType = self.extractType(rProperty)
         colInfo = self.getColInfos(rProperty)
         if colInfo is not None:
             if colInfo.has_key('unit'):
                 return u" %s" % colInfo['unit']
-            
-    def getNumberFormat(self, obj, property, colInfo=None):
-        pass
-    
+        return u""
     
     mapper = property(getMapper, setMapper)
     
-    def getWidget(self, prototype, property):
+    def getWidget(self, prototype, property, parent=None):
         
         objMapper = object_mapper(prototype)
         rProperty = objMapper.get_property(property)
@@ -63,19 +63,19 @@ class BaseStrategy(QObject):
             return QLabel("?")
         
         if isinstance(colType, Integer):
-            widget = QSpinBox()
+            widget = QSpinBox(parent)
             self.setSpinBoxOptions(widget, rProperty, colType)
             self._setQWidgetParams(widget, rProperty)
             return widget
             
         elif isinstance(colType, Float):
-            widget = QDoubleSpinBox()
+            widget = QDoubleSpinBox(parent)
             self.setDoubleSpinBoxOptions(widget, rProperty, colType)
             self._setQWidgetParams(widget, rProperty)
             return widget
         
         else:
-            widget = QLineEdit()
+            widget = QLineEdit(parent)
             self.setLineEditOptions(widget, rProperty)
             self._setQWidgetParams(widget, rProperty)
             return widget
@@ -107,7 +107,6 @@ class BaseStrategy(QObject):
             if colInfo.has_key('unit'):
                 spinbox.setSuffix(self.trUtf8(u" %s" % colInfo['unit']))
         spinbox.setMaximum(10000.0)
-        pass
     
     def setAbstractSliderOptions(self, spinbox, rProperty, colType=None):
         if colType is None:
@@ -158,10 +157,29 @@ class BaseStrategy(QObject):
             saMapper = object_mapper(instance)
             self._rProperties[objHash] = saMapper.get_property(propertyName)
 
-        return self._rProperties[objHash]    
+        return self._rProperties[objHash]
+    
+    def getDelegate(self, prototype, property):
+        objMapper = object_mapper(prototype)
+        rProperty = objMapper.get_property(property)
+        try:
+            colType = self.extractType(rProperty)
+            if isinstance(colType, (Integer, Float)):
+                return UnitColumnDelegate(self, prototype, property,
+                                          self.getValuePrefix(prototype,
+                                                              rProperty),
+                                          self.getValueSuffix(prototype,
+                                                              rProperty),
+                                          self.getValueFormatString(prototype,
+                                                                    rProperty))
+            else:
+                return MapperDelegate(self, prototype, property)
+            
+        except TypeError:
+            return None
+        return None
     
     def map(self, widget, prototype, property):
-        print "%s %s" % (property,type(property))
         objMapper = object_mapper(prototype)
         rProperty = objMapper.get_property(property)
         colType = self.extractType(rProperty)

@@ -3,8 +3,8 @@ Created on 19.06.2011
 
 @author: michi
 '''
-from PyQt4.QtCore import QVariant
-from PyQt4.QtGui import QComboBox, QItemDelegate, QWidget
+from PyQt4.QtCore import QVariant, Qt
+from PyQt4.QtGui import QComboBox, QItemDelegate, QStyledItemDelegate, QWidget
 
 from sqlalchemy.orm import object_mapper
 from sqlalchemy.sql.expression import BooleanClauseList, and_
@@ -16,8 +16,11 @@ from ems.qt4.itemmodel.alchemyormmodel import AlchemyOrmModel
 from ems.qt4.itemmodel.sa.representative_model import RepresentativeModel #@UnresolvedImport
 from ems.qt4.itemmodel.sa.representative_model import RepresentativeModelMatch #@UnresolvedImport
 from ems.qt4.gui.widgets.bigcombo import BigComboBox #@UnresolvedImport
+from ems.qt4.gui.mapper.sa.delegate.base import MapperDelegate #@UnresolvedImport
+from ems.qt4.gui.mapper.sa.delegate.many2one import Many2OneComboMapperDelegate, Many2OneDelegate #@UnresolvedImport
 
 from base import BaseStrategy #@UnresolvedImport
+
 
 class ComboBoxRelationDelegate(QItemDelegate):
     def __init__(self, fkColumnName, itemModel, parent=None):
@@ -30,6 +33,7 @@ class ComboBoxRelationDelegate(QItemDelegate):
         
     def setEditorData(self, editor, index):
         #print "setEditorData %s" % index.data().toString()
+        print "ComboboxDelegate.setEditorData" % variant_to_pyobject(index.data())
         currentIndex = self._fk2Index[variant_to_pyobject(index.data())]
         #print "currentIndex %s" % currentIndex
         #print self._itemModel.data(self._itemModel.index(index.row(),0)).toString()
@@ -39,7 +43,7 @@ class ComboBoxRelationDelegate(QItemDelegate):
     def setModelData(self, editor, model, index):
         #print "setModelData %s" % index.data().toString()
         fkVal = self._index2Fk[editor.currentIndex()]
-        #print "fkVal: %s" % fkVal
+        print "fkVal: %s" % fkVal
         model.setData(index, QVariant(fkVal))
         #super(ComboBoxRelationDelegate, self).setModelData(editor, model, index)
     
@@ -51,10 +55,6 @@ class ComboBoxRelationDelegate(QItemDelegate):
             fkVal = variant_to_pyobject(variant)
             self._index2Fk[i] = fkVal
             self._fk2Index[fkVal] = i
-        
-        print self._index2Fk
-        print self._fk2Index
-        
 
 
     
@@ -118,7 +118,7 @@ class Many2OneComboStrategy(BaseStrategy):
 
         
     
-    def getWidget(self, prototype, property):
+    def getWidget(self, prototype, property, parent=None):
         rProperty = self.getProperty(prototype, property)
         class_ = self.getRemoteClass(rProperty)
         #print "ich werde aufgerufen %s" % class_.__name__ 
@@ -140,21 +140,24 @@ class Many2OneComboStrategy(BaseStrategy):
             
         count = query.count()
         if count < self.maxEntriesForNormalCombo:
-            widget = QComboBox()
+            widget = QComboBox(parent)
             widget.setModel(self._getObjModel(prototype,
                                               rProperty.key,
                                               query))
+            widget.setItemDelegate(Many2OneDelegate(prototype, widget))
             return widget
             
         else:
             widget = BigComboBox(self._getObjModel(prototype,
                                               rProperty.key,
                                               query,
-                                              True))
+                                              True),
+                                 parent=parent)
+            widget.setItemDelegate(Many2OneDelegate(prototype, widget))
             return widget
         #print "%s: %s" % (class_, count)
         
-        return QWidget()
+        return QWidget(parent)
     
     def map(self, widget, prototype, property):
         if isinstance(widget, QComboBox):
@@ -175,6 +178,9 @@ class Many2OneComboStrategy(BaseStrategy):
             #print "Ich mache im Moment ersma nuescht"
         else:
             raise TypeError("Many2OneComboStrategy can only handle QCombobox")
+    
+    def getDelegate(self, prototype, property):
+        return Many2OneComboMapperDelegate(self, prototype, property)
     
     def getProperty(self, prototype, propertyName):
         objMapper = object_mapper(prototype)
