@@ -35,28 +35,33 @@ class SAMapperDefaults(Singleton, SAInterfaceMixin):
         SAInterfaceMixin._init(self)
 
 class SAMapper(QObject, SAInterfaceMixin):
-    def __init__(self, parent=None):
+    def __init__(self, ormObjInstance, model=None, session=None, parent=None):
         QObject.__init__(self, parent)
         SAInterfaceMixin._init(self)
         self._defaults = SAMapperDefaults.getInstance()
-        self._dataWidgetMapper = QDataWidgetMapper(self)
-        self._delegate = GenericDelegate(self)
-        self._dataWidgetMapper.setItemDelegate(self._delegate)
+        self._dataWidgetMapper = None
+        self._ormObj = ormObjInstance
+        self._dataWidgetMapperDelegate = None
+        
         self._defaultStrategy = BaseStrategy(self)
         self._defaultStrategy.mapper = self
         self._mappings = {}
         self._hashToType = {}
-        self._model = None
-        self.session = None
+        self._model = model
+        self.session = session
     
     
     @property
     def dataWidgetMapper(self):
+        if not isinstance(self._dataWidgetMapper, QDataWidgetMapper):
+            self._dataWidgetMapper = QDataWidgetMapper(self)
+            self._dataWidgetMapper.setModel(self.model)
+            itemDelegate = MapperItemViewDelegate(self._ormObj,
+                                                  self.model,
+                                                  self,
+                                                  self._dataWidgetMapper)
+            self._dataWidgetMapper.setItemDelegate(itemDelegate)
         return self._dataWidgetMapper
-    
-    @property
-    def delegate(self):
-        return self._delegate
     
     def itemViewDelegate(self, ormObj, model, parent=None):
         return MapperItemViewDelegate(ormObj, model, self, parent)
@@ -71,7 +76,8 @@ class SAMapper(QObject, SAInterfaceMixin):
         if not isinstance(model, (AlchemyOrmModel, SAOrmSearchModel)):
             raise TypeError("Model has to be instanceof AlchemyOrmModel")
         self._model = model
-        self._dataWidgetMapper.setModel(model)
+        if isinstance(self._dataWidgetMapper,QDataWidgetMapper):
+            self._dataWidgetMapper.setModel(model)
         #self._dataWidgetMapper.setItemDelegate(self._delegate)
     
     
@@ -134,7 +140,7 @@ class SAMapper(QObject, SAInterfaceMixin):
         return self.getStrategyFor(ormObj, property).getWidget(ormObj, property)
         
     
-    def addMapping(self, widget, ormObj, property):
+    def addMapping(self, widget, ormObj, propertyName):
         if not isinstance(self._model, (AlchemyOrmModel, SAOrmSearchModel)):
             raise TypeError("Assign a AlchemyOrmModel prior to addMapping")
-        return self.getStrategyFor(ormObj, property).map(widget, ormObj, property)
+        return self.getStrategyFor(ormObj, propertyName).map(widget, ormObj, propertyName)
