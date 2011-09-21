@@ -8,7 +8,7 @@ from ems.qt4.gui.itemdelegate import UnitDelegate
 from base import MapperDelegate #@UnresolvedImport
 
 class UnitColumnDelegate(UnitDelegate, MapperDelegate):
-    def __init__(self, strategy, ormObj, propertyName, prefix="",suffix="",
+    def __init__(self, mapper, propertyName, prefix="",suffix="",
                   numberformat="", parent=None):
         UnitDelegate.__init__(self, prefix, suffix, numberformat, parent)
-        MapperDelegate.__init__(self, strategy, ormObj, propertyName, parent)
+        MapperDelegate.__init__(self, mapper, propertyName, parent)

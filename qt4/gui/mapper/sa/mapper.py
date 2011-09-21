@@ -14,7 +14,7 @@ from sqlalchemy.util import symbol
 
 from ems.thirdparty.singletonmixin import Singleton
 from ems.qt4.itemmodel.alchemyormmodel import AlchemyOrmModel
-from ems.qt4.gui.itemdelegate.genericdelegate import GenericDelegate
+from ems.model.sa.orm.querybuilder import SAQueryBuilder
 from delegate.itemview import MapperItemViewDelegate #@UnresolvedImport
 
 from strategy.base import BaseStrategy
@@ -42,14 +42,26 @@ class SAMapper(QObject, SAInterfaceMixin):
         self._dataWidgetMapper = None
         self._ormObj = ormObjInstance
         self._dataWidgetMapperDelegate = None
-        
+        self._queryBuilder = None
         self._defaultStrategy = BaseStrategy(self)
-        self._defaultStrategy.mapper = self
+#        self._defaultStrategy.mapper = self
         self._mappings = {}
         self._hashToType = {}
         self._model = model
         self.session = session
     
+    @property
+    def ormObject(self):
+        return self._ormObj
+    
+    @property
+    def queryBuilder(self):
+        if self._queryBuilder is None:
+            if self.model is not None:
+                self._queryBuilder = self.model.queryBuilder
+            else:
+                self._queryBuilder = SAQueryBuilder(self._ormObj)
+        return self._queryBuilder
     
     @property
     def dataWidgetMapper(self):
@@ -63,8 +75,16 @@ class SAMapper(QObject, SAInterfaceMixin):
             self._dataWidgetMapper.setItemDelegate(itemDelegate)
         return self._dataWidgetMapper
     
-    def itemViewDelegate(self, ormObj, model, parent=None):
-        return MapperItemViewDelegate(ormObj, model, self, parent)
+    
+    def getDelegateForItemView(self, propertyName=None, parent=None):
+        return MapperItemViewDelegate(self._ormObj, self.model, self, parent)
+    
+    def getDelegateForItem(self, propertyName, rProperty=None, parent=None):
+        if rProperty is None:
+            rProperty = self.queryBuilder.properties[propertyName]
+        strategy = self.getStrategyFor(propertyName, rProperty)
+        return strategy.getDelegateForItem(self, propertyName, rProperty,
+                                           parent)
     
     def widgetDelegate(self, ormObj, propertyName, model):
         pass
@@ -93,7 +113,7 @@ class SAMapper(QObject, SAInterfaceMixin):
         return classOrObj
     
     def getRealRelationSymbol(self, rProperty):
-        direction = rProperty.direction
+        #direction = rProperty.direction
         uselist = rProperty.uselist
         #print "%s uselist %s" % (direction, uselist)
         if uselist:
@@ -101,9 +121,11 @@ class SAMapper(QObject, SAInterfaceMixin):
         else:
             return symbol('MANYTOONE')
     
-    def getStrategyFor(self, ormObj, property):
-        objMapper = object_mapper(ormObj)
-        rProperty = objMapper.get_property(property)
+    def getStrategyFor(self, propertyName, rProperty=None):
+        if rProperty is None:
+            rProperty = self.queryBuilder.properties[propertyName]
+        #rProperty = self.queryBuilder.properties[propertyName]
+        #rProperty = objMapper.get_property(property)
         mappingKey = None
         
         if isinstance(rProperty, ColumnProperty):
@@ -115,7 +137,7 @@ class SAMapper(QObject, SAInterfaceMixin):
                     mappingKey = col.type.__class__
                 else:
                     raise TypeError("Could not determine Type of %s.%s" % \
-                                    (ormObj.__class__.__name__,property))
+                                    (self._ormObj.__class__.__name__,propertyName))
             else:
                 raise NotImplementedError("ColumnProperties with more than " +
                                           "one Column are not supported")
@@ -124,7 +146,7 @@ class SAMapper(QObject, SAInterfaceMixin):
             realSymbol = self.getRealRelationSymbol(rProperty)
             mappingKey = realSymbol
             #mappingKey = rProperty.direction
-        #print "%s.%s mappingKey: %s" % (ormObj.__class__.__name__, property, mappingKey)
+        #print "%s.%s mappingKey: %s" % (self._ormObj.__class__.__name__, property, mappingKey)
         key = hash(mappingKey)
         self._hashToType[key] = mappingKey
         
@@ -136,11 +158,15 @@ class SAMapper(QObject, SAInterfaceMixin):
             return self._defaultStrategy
         
     
-    def getWidget(self, ormObj, property):
-        return self.getStrategyFor(ormObj, property).getWidget(ormObj, property)
+    def getWidget(self, propertyName, parent=None):
+        rProperty = self.queryBuilder.properties[propertyName]
+        strategy = self.getStrategyFor(propertyName, rProperty)
+        return strategy.getWidget(self, propertyName, rProperty, parent)
         
     
-    def addMapping(self, widget, ormObj, propertyName):
+    def addMapping(self, widget, propertyName):
         if not isinstance(self._model, (AlchemyOrmModel, SAOrmSearchModel)):
             raise TypeError("Assign a AlchemyOrmModel prior to addMapping")
-        return self.getStrategyFor(ormObj, propertyName).map(widget, ormObj, propertyName)
+        rProperty = self.queryBuilder.properties[propertyName]
+        strategy = self.getStrategyFor(propertyName, rProperty)
+        return strategy.map(self, widget, propertyName, rProperty)

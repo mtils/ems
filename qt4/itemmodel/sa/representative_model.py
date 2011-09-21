@@ -32,6 +32,14 @@ class RepresentativeModel(QAbstractListModel):
         
         #self._buildFulltextCriteria()
     
+    @property
+    def queriedObject(self):
+        return self._queriedObject
+    
+    @property
+    def query(self):
+        return self._query
+    
     def rowCount(self, index=QModelIndex()):
         self.perform()
         return len(self._resultCache)

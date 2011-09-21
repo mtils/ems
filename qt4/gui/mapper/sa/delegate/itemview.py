@@ -23,8 +23,9 @@ class MapperItemViewDelegate(GenericDelegate):
         col = index.column()
         if not self._columnDelegates.has_key(col):
             columnName = variant_to_pyobject(index.data(qt4.ColumnNameRole))
-            strategy = self.mapper.getStrategyFor(self.ormObj, columnName)
-            self._columnDelegates[col] = strategy.getDelegate(self.ormObj, columnName)
+            self._columnDelegates[col] = self.mapper.getDelegateForItem(columnName)
+#            strategy = self.mapper.getStrategyFor(columnName)
+#            self._columnDelegates[col] = strategy.getDelegate(self.ormObj, columnName)
 #            if self._columnDelegates[col]:
 #                print "Custom Delegate for col {0}".format(columnName)
         return self._columnDelegates[col]

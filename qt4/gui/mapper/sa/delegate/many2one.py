@@ -13,9 +13,8 @@ from ems.qt4.gui.widgets.bigcombo import BigComboBox
 from base import MapperDelegate #@UnresolvedImport
 
 class Many2OneDelegate(QStyledItemDelegate):
-    def __init__(self, ormObj, parent=None):
+    def __init__(self, parent=None):
         QStyledItemDelegate.__init__(self, parent)
-        self.ormObj = ormObj
     
     def setEditorData(self, editor, index):
         if isinstance(editor, QComboBox):
@@ -38,7 +37,7 @@ class Many2OneDelegate(QStyledItemDelegate):
         return QStyledItemDelegate.setModelData(self, editor, model, index)
 
 class Many2OneComboMapperDelegate(MapperDelegate, Many2OneDelegate):
-    def __init__(self, strategy, ormObj, propertyName, parent=None):
-        MapperDelegate.__init__(self, strategy, ormObj, propertyName, parent)
-        Many2OneDelegate.__init__(self, ormObj, parent)
+    def __init__(self, mapper, propertyName, parent=None):
+        MapperDelegate.__init__(self, mapper, propertyName, parent)
+        Many2OneDelegate.__init__(self, parent)
         

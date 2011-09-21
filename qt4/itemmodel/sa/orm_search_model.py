@@ -8,9 +8,8 @@ import datetime
 from PyQt4.QtCore import QAbstractTableModel, QModelIndex, Qt, QVariant,\
      QString, QDateTime, pyqtSlot
 
-from sqlalchemy.orm import object_mapper, ColumnProperty, RelationshipProperty
+from sqlalchemy.orm import object_mapper
 from sqlalchemy.orm.collections import InstrumentedList
-from sqlalchemy.util import NamedTuple
 from ems import qt4
 from ems.thirdparty.odict import OrderedDict
 from ems.model.sa.orm.querybuilder import SAQueryBuilder
@@ -61,6 +60,9 @@ class SAOrmSearchModel(QAbstractTableModel):
         
         self._columnName2Index = self._buildReversedColumnLookup(columns)
         self._dirty = True
+    
+    def index(self, row, column, parent=QModelIndex()):
+        return self.createIndex(row, column, object=0)
     
     @property
     def queryBuilder(self):
@@ -152,6 +154,28 @@ class SAOrmSearchModel(QAbstractTableModel):
     
     def getIndexByPropertyName(self, name):
         return self._columnName2Index[name]
+    
+    def extractObject(self, currentObj, index, propertyName):
+        if hasattr(currentObj, propertyName):
+            return currentObj
+        else:
+            if propertyName.find('.'):
+                stack = propertyName.split('.')
+                value = self._extractObject(currentObj, stack)
+                if value is not None:
+                    return value
+                
+    def _extractObject(self, obj, pathStack):
+        if(hasattr(obj, pathStack[0])):
+            if len(pathStack) < 2:
+                return obj.__getattribute__(pathStack[0])
+            nextObj = obj.__getattribute__(pathStack[0])
+            pathStack.pop(0)
+            if len(pathStack) == 1:
+                if(hasattr(nextObj,pathStack[0])):
+                    return nextObj
+            if len(pathStack) > 1:
+                return self._extractObject(nextObj, pathStack)
     
     def extractValue(self, currentObj, index, propertyName):
         
@@ -328,19 +352,34 @@ class SAOrmSearchModel(QAbstractTableModel):
     def setData(self, index, value, role=Qt.EditRole):
         columnName = self.getPropertyNameByIndex(index.column())
         val = variant_to_pyobject(value)
-        print "setData {0} {1} {2}".format(columnName, val, type(val))
-        oldValue = self._objectCache[index.row()].__getattribute__(columnName)
-        if oldValue != val:
-            print "dataChanged"
-            self._objectCache[index.row()].__setattr__(columnName, val)
-            try:
-                del self._resultCache[index.row()][index.column()]
-            except KeyError:
-                pass
-            self.dataChanged.emit(index, index)
-            print self._session.dirty
-            return True
-        return False
+        #print "setData {0} {1} {2}".format(columnName, val, type(val))
+        
+        #oldValue = self._objectCache[index.row()].__getattribute__(columnName)
+        currentObj = self._objectCache[index.row()]
+        
+        targetObj = self.extractObject(currentObj, index, columnName)
+        targetProperty = columnName.split('.')[-1:][0]
+        
+#        print "targetObject: {0} {1} {2}".format(targetObj, type(targetObj),
+#                                                     targetProperty)
+        
+        if hasattr(targetObj,targetProperty):
+            oldValue = targetObj.__getattribute__(targetProperty)
+            
+            if oldValue != val:
+                targetObj.__setattr__(targetProperty, val)
+                try:
+                    del self._resultCache[index.row()][index.column()]
+                except KeyError:
+                    pass
+                self.dataChanged.emit(index, index)
+                print self._session.dirty
+                return True
+            return False
+        else:
+            msg = "TargetObj {0} has no attribute {1}".format(targetObj,
+                                                              targetProperty)
+            raise AttributeError(msg)
     
     @pyqtSlot()
     def submit(self):
@@ -356,15 +395,15 @@ class SAOrmSearchModel(QAbstractTableModel):
             raise NotImplementedError("Currently the row can be inserted at the end")
         
         cls = self._queriedObject.__class__
-        print self._queriedObject
         
         newObj = cls.__new__(cls)
         newObj.__init__()
-        self.rowsAboutToBeInserted.emit(parent, row, row)
+        self.beginInsertRows(parent, row, row)
         self._currentlyEditedRow = row
         self._session.add(newObj)
         self._objectCache[row] = newObj
-        self.rowsInserted.emit(parent, row, row)
+#        self.rowsInserted.emit(parent, row, row)
+        self.endInsertRows()
         
         
         #print newObj.kontakt

@@ -200,10 +200,9 @@ class SABuilderBackend(RowBuilderBackend):
             operatorInput.addItem(QString.fromUtf8('='),QVariant('='))
             
     def getValueEditor(self, parent, currentProperty):
-        propertyKey = currentProperty.split('.')[-1:][0]
         try:
-            class_ = self._queryBuilder.propertyName2Class[currentProperty]
-            return self._mapper.getWidget(class_(), propertyKey)
+            print currentProperty
+            return self._mapper.getWidget(currentProperty, parent)
         except KeyError:
             return QLineEdit(parent)
     

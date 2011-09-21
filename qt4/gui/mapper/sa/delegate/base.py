@@ -11,15 +11,14 @@ from ems import qt4
 from ems.qt4.util import variant_to_pyobject
 
 class MapperDelegate(QStyledItemDelegate):
-    def __init__(self, strategy, ormObj, propertyName, parent=None):
+    def __init__(self, mapper, propertyName, parent=None):
         super(MapperDelegate, self).__init__(parent)
-        self.strategy = strategy
-        self.ormObj = ormObj
+        self.mapper = mapper
         self.propertyName = propertyName
     
     def createEditor(self, parent, option, index):
         columnName = variant_to_pyobject(index.data(qt4.ColumnNameRole))
-        widget = self.strategy.getWidget(self.ormObj, columnName, parent)
+        widget = self.mapper.getWidget(columnName, parent)
         if isinstance(widget, QWidget):
             return widget
         return super(MapperDelegate, self).createEditor(parent, option, index)

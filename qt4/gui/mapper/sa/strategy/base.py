@@ -17,14 +17,7 @@ from ems.qt4.gui.mapper.sa.delegate.unit import UnitColumnDelegate #@UnresolvedI
 class BaseStrategy(QObject):
     def __init__(self, parent=None):
         QObject.__init__(self, parent)
-        self._mapper = None
         self._rProperties = {}
-    
-    def getMapper(self):
-        return self._mapper
-    
-    def setMapper(self, mapper):
-        self._mapper = mapper
     
     def getValueString(self, obj, property, colInfo=None):
         return "" % (self.getValuePrefix(obj, property, colInfo),
@@ -51,12 +44,9 @@ class BaseStrategy(QObject):
                 return u" %s" % colInfo['unit']
         return u""
     
-    mapper = property(getMapper, setMapper)
-    
-    def getWidget(self, prototype, property, parent=None):
+    def getWidget(self, mapper, propertyName, rProperty, parent=None):
         
-        objMapper = object_mapper(prototype)
-        rProperty = objMapper.get_property(property)
+        
         try:
             colType = self.extractType(rProperty)
         except TypeError:
@@ -159,13 +149,12 @@ class BaseStrategy(QObject):
 
         return self._rProperties[objHash]
     
-    def getDelegate(self, prototype, property):
-        objMapper = object_mapper(prototype)
-        rProperty = objMapper.get_property(property)
+    def getDelegateForItem(self, mapper, propertyName, rProperty, parent=None):
+        prototype = mapper.ormObject
         try:
             colType = self.extractType(rProperty)
             if isinstance(colType, (Integer, Float)):
-                return UnitColumnDelegate(self, prototype, property,
+                return UnitColumnDelegate(mapper, propertyName,
                                           self.getValuePrefix(prototype,
                                                               rProperty),
                                           self.getValueSuffix(prototype,
@@ -173,22 +162,21 @@ class BaseStrategy(QObject):
                                           self.getValueFormatString(prototype,
                                                                     rProperty))
             else:
-                return MapperDelegate(self, prototype, property)
+                return MapperDelegate(mapper, propertyName)
             
         except TypeError:
             return None
         return None
     
-    def map(self, widget, prototype, property):
-        objMapper = object_mapper(prototype)
-        rProperty = objMapper.get_property(property)
+    def map(self, mapper, widget, propertyName, rProperty):
+        
         colType = self.extractType(rProperty)
         
         if isinstance(colType, String):
             if isinstance(widget, (QLineEdit, QTextEdit,
                                    QPlainTextEdit)):
-                columnIndex = self.mapper.model.getIndexByPropertyName(property)
-                self.mapper.dataWidgetMapper.addMapping(widget,
+                columnIndex = mapper.model.getIndexByPropertyName(propertyName)
+                mapper.dataWidgetMapper.addMapping(widget,
                                                         columnIndex)
                 if isinstance(widget, QLineEdit):
                     self.setLineEditOptions(widget, rProperty)
@@ -198,8 +186,8 @@ class BaseStrategy(QObject):
                                 widget)
         elif isinstance(colType, Integer):
             if isinstance(widget, (QSpinBox, QAbstractSlider)):
-                columnIndex = self.mapper.model.getIndexByPropertyName(property)
-                self.mapper.dataWidgetMapper.addMapping(widget,
+                columnIndex = mapper.model.getIndexByPropertyName(propertyName)
+                mapper.dataWidgetMapper.addMapping(widget,
                                                         columnIndex)
                 
                 if isinstance(widget, QSpinBox):
@@ -215,8 +203,8 @@ class BaseStrategy(QObject):
             if isinstance(widget, QDoubleSpinBox):
                 self.setDoubleSpinBoxOptions(widget, rProperty, colType)
                 self._setQWidgetParams(widget, rProperty)
-                columnIndex = self.mapper.model.getIndexByPropertyName(property)
-                self.mapper.dataWidgetMapper.addMapping(widget,
+                columnIndex = mapper.model.getIndexByPropertyName(propertyName)
+                mapper.dataWidgetMapper.addMapping(widget,
                                                         columnIndex)
             else:
                 raise TypeError("Floats needs a QDoubleSpinBox")

@@ -12,11 +12,9 @@ from sqlalchemy.util import symbol
 
 from ems import qt4
 from ems.qt4.util import variant_to_pyobject #@UnresolvedImport
-from ems.qt4.itemmodel.alchemyormmodel import AlchemyOrmModel
 from ems.qt4.itemmodel.sa.representative_model import RepresentativeModel #@UnresolvedImport
 from ems.qt4.itemmodel.sa.representative_model import RepresentativeModelMatch #@UnresolvedImport
 from ems.qt4.gui.widgets.bigcombo import BigComboBox #@UnresolvedImport
-from ems.qt4.gui.mapper.sa.delegate.base import MapperDelegate #@UnresolvedImport
 from ems.qt4.gui.mapper.sa.delegate.many2one import Many2OneComboMapperDelegate, Many2OneDelegate #@UnresolvedImport
 
 from base import BaseStrategy #@UnresolvedImport
@@ -68,8 +66,8 @@ class Many2OneComboStrategy(BaseStrategy):
     ormModelCache = {}
     maxEntriesForNormalCombo = 300
     
-    def getRemoteClass(self, rProperty):
-        direction = self.mapper.getRealRelationSymbol(rProperty)
+    def getRemoteClass(self, mapper, rProperty):
+        direction = mapper.getRealRelationSymbol(rProperty)
         if direction is symbol('MANYTOONE'):
             return rProperty.mapper.class_manager.class_
         else:
@@ -94,38 +92,15 @@ class Many2OneComboStrategy(BaseStrategy):
             #print "Multiple Join Conditions %s" % len(rProperty.primaryjoin)
         #print type(rProperty.primaryjoin)
     
-    def _getObjModel(self, prototype, property, query=None, matchModel=False):
-        objMapper = object_mapper(prototype)
-        rProperty = objMapper.get_property(property)
-        class_ = self.getRemoteClass(rProperty)
-        if query is None:
-            query = self.mapper.session.query(class_)
-            
-        fk = self.getForeignKey(rProperty)
+    def _getObjModel(self, mapper, propertyName, rProperty, matchModel=False):
+        #objMapper = object_mapper(prototype)
+        remoteClass = self.getRemoteClass(mapper, rProperty)
         
-        orderByCol = class_.__ormDecorator__().getDefaultOrderByProperty(prototype)
-        
-        if orderByCol is not None:
-            query = query.order_by(class_.__dict__[orderByCol])
-        
-        if not matchModel:
-            model = RepresentativeModel(self.mapper.session, class_, fk,
-                                        query, nullEntry="Auswahl...")
-        else:
-            model = RepresentativeModelMatch(self.mapper.session, class_, fk,
-                                        query, nullEntry="")
-        return model
-
-        
-    
-    def getWidget(self, prototype, property, parent=None):
-        rProperty = self.getProperty(prototype, property)
-        class_ = self.getRemoteClass(rProperty)
-        #print "ich werde aufgerufen %s" % class_.__name__ 
-        if self.mapper.session is None:
+        if mapper.session is None:
             raise TypeError("Please Assign a session to the mapper")
         
         clauses = self.buildSelectClauses(rProperty)
+        
         if len(clauses):
             if len(clauses) > 1:
                 conj = clauses[0]
@@ -134,53 +109,60 @@ class Many2OneComboStrategy(BaseStrategy):
                 for clause in clauses:
                     conj.append(clause)
                     
-            query = self.mapper.session.query(class_).filter(conj)
+            query = mapper.session.query(remoteClass).filter(conj)
         else:
-            query = self.mapper.session.query(class_)
+            query = mapper.session.query(remoteClass)
             
-        count = query.count()
-        if count < self.maxEntriesForNormalCombo:
+        
+        orderByCol = remoteClass.__ormDecorator__().getDefaultOrderByProperty(remoteClass)
+        
+        if orderByCol is not None:
+            query = query.order_by(remoteClass.__dict__[orderByCol])
+        
+        itemCount = query.count()
+        
+        fk = self.getForeignKey(rProperty)
+        
+        if itemCount > self.maxEntriesForNormalCombo:
+            return RepresentativeModelMatch(mapper.session, remoteClass, fk,
+                                            query, nullEntry="")
+        else:
+            return RepresentativeModel(mapper.session, remoteClass, fk,
+                                       query, nullEntry="Auswahl...")
+        
+    
+    def getWidget(self, mapper, propertyName, rProperty, parent=None):
+        print "getWidget %s" % propertyName
+        
+        model = self._getObjModel(mapper, propertyName, rProperty)
+        
+        if isinstance(model, RepresentativeModelMatch):
+            widget = BigComboBox(model, parent=parent)
+            widget.setItemDelegate(Many2OneDelegate(widget))
+            return widget
+        else:
             widget = QComboBox(parent)
-            widget.setModel(self._getObjModel(prototype,
-                                              rProperty.key,
-                                              query))
-            widget.setItemDelegate(Many2OneDelegate(prototype, widget))
+            widget.setModel(model)
+            widget.setItemDelegate(Many2OneDelegate(widget))
             return widget
-            
-        else:
-            widget = BigComboBox(self._getObjModel(prototype,
-                                              rProperty.key,
-                                              query,
-                                              True),
-                                 parent=parent)
-            widget.setItemDelegate(Many2OneDelegate(prototype, widget))
-            return widget
-        #print "%s: %s" % (class_, count)
         
         return QWidget(parent)
-    
-    def map(self, widget, prototype, property):
+        
+    def map(self, mapper, widget, propertyName, rProperty):
         if isinstance(widget, QComboBox):
-            rProperty = self.getProperty(prototype, property)
-            fk = self.getForeignKey(rProperty)
 
-            model = self._getObjModel(prototype, property)
+            model = self._getObjModel(mapper, propertyName, rProperty)
             
-            col = self.mapper.model.getIndexByPropertyName('gruppeId')
+            col = mapper.model.getIndexByPropertyName(propertyName)
             
-            delegate = ComboBoxRelationDelegate(fk, model, self)
-            self.mapper.delegate.insertColumnDelegate(col,delegate)
             widget.setModel(model)
-            self.mapper.dataWidgetMapper.addMapping(widget,
-                                                    col)#,"currentIndex")
-            #print prototype.__class__
-            #print self.mapper.model.session
-            #print "Ich mache im Moment ersma nuescht"
+            mapper.dataWidgetMapper.addMapping(widget, col)
+            
         else:
             raise TypeError("Many2OneComboStrategy can only handle QCombobox")
     
-    def getDelegate(self, prototype, property):
-        return Many2OneComboMapperDelegate(self, prototype, property)
+    def getDelegateForItem(self, mapper, propertyName, rProperty, parent=None):
+        return Many2OneComboMapperDelegate(mapper, propertyName, parent)
     
     def getProperty(self, prototype, propertyName):
         objMapper = object_mapper(prototype)
