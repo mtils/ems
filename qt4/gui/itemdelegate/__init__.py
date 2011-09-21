@@ -222,19 +222,28 @@ class ImgRepeatDelegate(QtGui.QStyledItemDelegate):
     initialImgSize = property(getInitialImgSize, setInitialImgSize, delInitialImgSize, "initialImgSize's docstring")
 
 class UnitDelegate(QtGui.QStyledItemDelegate):
-    def __init__(self, prefix="",suffix="", numberformat="", parent=None):
+    def __init__(self, prefix="",suffix="", numberfmt=None, parent=None):
         QtGui.QStyledItemDelegate.__init__(self, parent)
         self.prefix = prefix
         self.suffix = suffix
-        self.numberformat = numberformat
-        if numberformat:
-            self._pyNumberFormat = "{0:" + numberformat + "}"
+        if isinstance(numberfmt, basestring):
+            if numberfmt.startswith('{') or numberfmt.startswith('%'):
+                raise TypeError("I need clean numberformats, not {0}".format(numberfmt))
+            else:
+                self.numberformat = numberfmt
+        else:
+            self.numberformat = ""
+            
+        
+        if self.numberformat:
+            self._pyNumberFormat = "{0:" + self.numberformat + "}"
         else:
             self._pyNumberFormat = "{0}"
     
     def getString(self, value):
 #        print self.numberformat, value
         strValue = self._pyNumberFormat.format((value))
+#        print "'{0}'".format(strValue)
         string = unicode(self.prefix+strValue+self.suffix)
         return string
     
@@ -246,8 +255,10 @@ class UnitDelegate(QtGui.QStyledItemDelegate):
             
             style = QtGui.QApplication.style() if options.widget is None \
                 else options.widget.style()
-                
-            options.text = QtCore.QString.fromUtf8(self.getString(value))
+            
+            string = self.getString(value)
+#            print "'{0}'".format(string)
+            options.text = QtCore.QString.fromUtf8(string)
             style.drawControl(QtGui.QStyle.CE_ItemViewItem, options, painter)
             return None
         

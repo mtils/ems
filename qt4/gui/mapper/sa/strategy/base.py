@@ -30,8 +30,8 @@ class BaseStrategy(QObject):
         colInfo = self.getColInfos(rProperty)
         if colInfo is not None:
             if colInfo.has_key('textFormat'):
-                return "{0:" + unicode(colInfo['textFormat']) + "}"
-        return ""
+                return unicode(colInfo['textFormat'])
+        return None
     
     def getValuePrefix(self, obj, rProperty):
         return u""

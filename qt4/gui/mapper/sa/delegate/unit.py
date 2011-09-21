@@ -9,6 +9,6 @@ from base import MapperDelegate #@UnresolvedImport
 
 class UnitColumnDelegate(UnitDelegate, MapperDelegate):
     def __init__(self, mapper, propertyName, prefix="",suffix="",
-                  numberformat="", parent=None):
+                  numberformat=None, parent=None):
         UnitDelegate.__init__(self, prefix, suffix, numberformat, parent)
         MapperDelegate.__init__(self, mapper, propertyName, parent)
