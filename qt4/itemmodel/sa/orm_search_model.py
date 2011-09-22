@@ -402,13 +402,25 @@ class SAOrmSearchModel(QAbstractTableModel):
         self._currentlyEditedRow = row
         self._session.add(newObj)
         self._objectCache[row] = newObj
-#        self.rowsInserted.emit(parent, row, row)
         self.endInsertRows()
-        
-        
-        #print newObj.kontakt
-        print "insertRows {0} {1}".format(row, count)
         return False
+    
+    def removeRows(self, row, count, parentIndex=QModelIndex()):
+        if count > 1:
+            raise NotImplementedError("Currently only one row can be removed")
+        self.beginRemoveRows(parentIndex, row, row)
+        #self._session.delete()
+        obj = self._objectCache[row]
+        self._session.delete(obj)
+        del self._objectCache[row]
+        try:
+            del self._resultCache[row]
+        except KeyError:
+            pass
+        #print obj.benutzer
+        self.endRemoveRows()
+        self.submit()
+        return True
     
     def getObject(self, row):
         if self._objectCache.has_key(row):
