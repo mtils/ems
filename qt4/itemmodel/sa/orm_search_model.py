@@ -362,8 +362,49 @@ class SAOrmSearchModel(QAbstractTableModel):
         
 #        print "targetObject: {0} {1} {2}".format(targetObj, type(targetObj),
 #                                                     targetProperty)
+        if targetObj is None:
+            #if it is a new object, try to create the foreign object
+            
+            #retrieve the parent object
+            nameStack = columnName.split('.')
+            currentStackObj = currentObj
+            lastStackObj = currentObj
+            tmpStack = []
+            for node in nameStack:
+                tmpStack.append(node)
+                currentStackObj = self.extractObject(currentStackObj,
+                                                     index,
+                                                     node)
+                if currentStackObj is None:
+                    currentStackObj = lastStackObj.createRelatedObject(lastStackObj, tmpStack[-2])
+                    if not currentStackObj:
+                        break
+                    
+                lastStackObj = currentStackObj
+            
+            if lastStackObj:
+                targetObj = lastStackObj
+                
+#            try:
+#                parentName = '.'.join(columnName.split('.')[:-1])
+#                if '.' in parentName:
+#                    parentNode = parentName.split('.')[-1]
+#                else:
+#                    parentNode = parentName
+#                 
+#                #print "parentName: %s" % parentName
+#                parentObj = self.extractObject(currentObj, index, parentName)
+#                result = parentObj.createRelatedObject(parentObj, parentNode)
+#                if result:
+#                    targetObj = parentObj.__getattribute__(parentNode)
+#            except IndexError:
+#                pass
         
-        if hasattr(targetObj,targetProperty):
+        if not hasattr(targetObj,targetProperty):
+            msg = "TargetObj {0} has no attribute {1}".format(targetObj,
+                                                              targetProperty)
+            raise AttributeError(msg)
+        else:
             oldValue = targetObj.__getattribute__(targetProperty)
             
             if oldValue != val:
@@ -373,13 +414,9 @@ class SAOrmSearchModel(QAbstractTableModel):
                 except KeyError:
                     pass
                 self.dataChanged.emit(index, index)
-                print self._session.dirty
+#                print self._session.dirty
                 return True
             return False
-        else:
-            msg = "TargetObj {0} has no attribute {1}".format(targetObj,
-                                                              targetProperty)
-            raise AttributeError(msg)
     
     @pyqtSlot()
     def submit(self):

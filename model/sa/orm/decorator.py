@@ -38,9 +38,7 @@ class OrmDecorator(object):
             notDottedProperty = str(propertyName).split('.')[-1:][0]
             if self._class.__propertyFriendlyNames__.has_key(notDottedProperty):
                 return self._class.__propertyFriendlyNames__[notDottedProperty]
-            else:
-#                print notDottedProperty
-                print self._class.__propertyFriendlyNames__
+
         return propertyName
     
     def getShownProperties(self):

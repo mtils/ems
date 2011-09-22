@@ -87,7 +87,8 @@ class ItemViewEditor(QWidget):
     def selectedRows(self):
         rowList = []
         for idx in self.itemView.selectionModel().selection().indexes():
-            rowList.append(idx.row())
+            if idx.row() not in rowList:
+                rowList.append(idx.row())
         return rowList
     
     def onAddButtonClicked(self):
