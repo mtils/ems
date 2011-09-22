@@ -1,5 +1,5 @@
 from PyQt4 import QtCore, QtGui
-from PyQt4.QtCore import QPoint,QRect,QVariant
+from PyQt4.QtCore import QPoint,QRect,QVariant, Qt
 
 from ems.qt4.util import variant_to_pyobject
 
@@ -15,7 +15,6 @@ class ImgRepeatEditor(QtGui.QWidget):
     def __init__(self, delegate, parent = None, reversedMode=False):
         super(ImgRepeatEditor, self).__init__(parent)
         self.reversedMode = reversedMode
-
         self._value = 0
         self._delegate = delegate
         self.setMouseTracking(True)
@@ -226,6 +225,9 @@ class UnitDelegate(QtGui.QStyledItemDelegate):
         QtGui.QStyledItemDelegate.__init__(self, parent)
         self.prefix = prefix
         self.suffix = suffix
+        self.thousandsSeparator = '.'
+        self.decimalPoint = ','
+        
         if isinstance(numberfmt, basestring):
             if numberfmt.startswith('{') or numberfmt.startswith('%'):
                 raise TypeError("I need clean numberformats, not {0}".format(numberfmt))
@@ -242,7 +244,7 @@ class UnitDelegate(QtGui.QStyledItemDelegate):
     
     def getString(self, value):
 #        print self.numberformat, value
-        strValue = self._pyNumberFormat.format((value))
+        strValue = self._pyNumberFormat.format((value)).replace('.',self.decimalPoint)
 #        print "'{0}'".format(strValue)
         string = unicode(self.prefix+strValue+self.suffix)
         return string
@@ -251,6 +253,7 @@ class UnitDelegate(QtGui.QStyledItemDelegate):
         value = variant_to_pyobject(index.data())
         if isinstance(value,(int,float)):
             options = QtGui.QStyleOptionViewItemV4(option)
+            options.displayAlignment = Qt.AlignRight | Qt.AlignVCenter
             self.initStyleOption(options, index)
             
             style = QtGui.QApplication.style() if options.widget is None \

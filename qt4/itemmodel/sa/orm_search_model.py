@@ -190,7 +190,7 @@ class SAOrmSearchModel(QAbstractTableModel):
 #                else:
 #                    print propertyName,type(value)
                 
-        return "*Nichts*"
+        return None
     
     def _extractValue(self, obj, pathStack):
         
