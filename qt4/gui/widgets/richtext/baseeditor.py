@@ -85,6 +85,7 @@ class BaseEditor(DialogableWidget):
     
     def setupEditActions(self):
         tb = QtGui.QToolBar(self)
+        tb.setObjectName("editActions")
         tb.setWindowTitle("Edit Actions")
         self.addToolBar(tb)
 
@@ -129,6 +130,8 @@ class BaseEditor(DialogableWidget):
     def setupTextActions(self):
         tb = QtGui.QToolBar(self)
         tb.setWindowTitle("Format Actions")
+        tb.setObjectName("fontFormatActions")
+        
         self.addToolBar(tb)
 
         
