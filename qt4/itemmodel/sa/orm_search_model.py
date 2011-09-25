@@ -14,6 +14,7 @@ from ems import qt4
 from ems.thirdparty.odict import OrderedDict
 from ems.model.sa.orm.querybuilder import SAQueryBuilder
 from ems.qt4.util import variant_to_pyobject
+from sqlalchemy.exc import InvalidRequestError
 
 class SAOrmSearchModel(QAbstractTableModel):
     def __init__(self,session, queriedObject, querybuilder=None, filter=None,
@@ -37,6 +38,7 @@ class SAOrmSearchModel(QAbstractTableModel):
         self._columns = columns
         self._ormProperties = None
         self.editable = editable
+        self._unsubmittedRows = []
         
         if not len(self._columns):
             self._columns = self.possibleColumns
@@ -143,6 +145,7 @@ class SAOrmSearchModel(QAbstractTableModel):
     
     def rowCount(self, index=QModelIndex()):
         self.perform()
+        #print "rowCount called %s" % len(self._objectCache)
         return len(self._objectCache)
     
     def columnCount(self, index=QModelIndex()):
@@ -422,7 +425,19 @@ class SAOrmSearchModel(QAbstractTableModel):
     def submit(self):
         print "submit called"
         self._session.commit()
+        self._unsubmittedRows = []
         return super(SAOrmSearchModel, self).submit()
+    
+    @pyqtSlot()
+    def revert(self):
+        print "reject called"
+        self._session.rollback()
+        if len(self._unsubmittedRows):
+            self._unsubmittedRows.reverse()
+            for row in self._unsubmittedRows:
+                self.removeRow(row)
+        super(SAOrmSearchModel, self).revert()
+        self.forceReset()
     
     def insertRows(self, row, count, parent=QModelIndex()):
         if count > 1:
@@ -439,6 +454,7 @@ class SAOrmSearchModel(QAbstractTableModel):
         self._currentlyEditedRow = row
         self._session.add(newObj)
         self._objectCache[row] = newObj
+        self._unsubmittedRows.append(row)
         self.endInsertRows()
         return False
     
@@ -448,8 +464,15 @@ class SAOrmSearchModel(QAbstractTableModel):
         self.beginRemoveRows(parentIndex, row, row)
         #self._session.delete()
         obj = self._objectCache[row]
-        self._session.delete(obj)
+        try:
+            self._session.delete(obj)
+        except InvalidRequestError:
+            pass
         del self._objectCache[row]
+        
+        if row in self._unsubmittedRows:
+            self._unsubmittedRows.remove(row)
+            
         try:
             del self._resultCache[row]
         except KeyError:
