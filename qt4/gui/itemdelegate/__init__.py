@@ -227,6 +227,7 @@ class UnitDelegate(QtGui.QStyledItemDelegate):
         self.suffix = suffix
         self.thousandsSeparator = '.'
         self.decimalPoint = ','
+        self._lastValue = ''
         
         if isinstance(numberfmt, basestring):
             if numberfmt.startswith('{') or numberfmt.startswith('%'):
@@ -251,10 +252,11 @@ class UnitDelegate(QtGui.QStyledItemDelegate):
     
     def paint(self, painter, option, index):
         value = variant_to_pyobject(index.data())
+        self._lastValue = value
         if isinstance(value,(int,float)):
             options = QtGui.QStyleOptionViewItemV4(option)
-            options.displayAlignment = Qt.AlignRight | Qt.AlignVCenter
             self.initStyleOption(options, index)
+            options.displayAlignment = Qt.AlignRight | Qt.AlignVCenter
             
             style = QtGui.QApplication.style() if options.widget is None \
                 else options.widget.style()
@@ -263,7 +265,26 @@ class UnitDelegate(QtGui.QStyledItemDelegate):
 #            print "'{0}'".format(string)
             options.text = QtCore.QString.fromUtf8(string)
             style.drawControl(QtGui.QStyle.CE_ItemViewItem, options, painter)
+            
             return None
         
         
         return super(UnitDelegate, self).paint(painter, option, index)
+    
+    def sizeHint(self, option, index):
+        #print "sizeHint"
+        #print option.text
+        value = variant_to_pyobject(index.data())
+        if isinstance(value,(int,float)):
+            options = QtGui.QStyleOptionViewItemV4(option)
+            self.initStyleOption(options, index)
+            options.displayAlignment = Qt.AlignRight | Qt.AlignVCenter
+            options.text = QtCore.QString.fromUtf8(self.getString(value))
+            width = options.fontMetrics.width(options.text) + 6
+            if index.column() == 0:
+                print options.text, width
+            #print "I calculate it myself"
+            return QtCore.QSize(width, options.rect.height())
+        else:
+            print "not handled by me %s" % value
+        return QtGui.QStyledItemDelegate.sizeHint(self, option, index)
