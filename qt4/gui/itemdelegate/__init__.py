@@ -281,9 +281,6 @@ class UnitDelegate(QtGui.QStyledItemDelegate):
             options.displayAlignment = Qt.AlignRight | Qt.AlignVCenter
             options.text = QtCore.QString.fromUtf8(self.getString(value))
             width = options.fontMetrics.width(options.text) + 6
-            if index.column() == 0:
-                print options.text, width
-            #print "I calculate it myself"
             return QtCore.QSize(width, options.rect.height())
         else:
             print "not handled by me %s" % value
