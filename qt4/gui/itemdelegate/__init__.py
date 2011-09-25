@@ -282,6 +282,4 @@ class UnitDelegate(QtGui.QStyledItemDelegate):
             options.text = QtCore.QString.fromUtf8(self.getString(value))
             width = options.fontMetrics.width(options.text) + 6
             return QtCore.QSize(width, options.rect.height())
-        else:
-            print "not handled by me %s" % value
         return QtGui.QStyledItemDelegate.sizeHint(self, option, index)
