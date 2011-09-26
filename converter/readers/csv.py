@@ -25,6 +25,7 @@ class CSVReader(InputReader):
     fieldNames = None
     offset = 0
     
+    
     remapping = {}
     
     
@@ -37,7 +38,8 @@ class CSVReader(InputReader):
             if xpath in self.getReaderClass().fieldnames:
 #                print "xpath: %s" % xpath
                 if isinstance(self.currentRow[xpath], basestring):
-                    return unicode(self.currentRow[xpath],"iso-8859-15")
+                    #print xpath, self.currentRow[xpath]
+                    return unicode(self.currentRow[xpath],self.get_charset())
                 if self.currentRow[xpath] is None:
                     raise DataNotFoundException("%s not found in source"
                                                 % xpath,xpath)
@@ -64,7 +66,7 @@ class CSVReader(InputReader):
             
             #self.readerClass = Dbf(self.source,readOnly=True)
             self.currentIndex = -1
-            self.set_charset('iso-8859-15')
+            #self.set_charset('iso-8859-15')
         return self.readerClass
     
     def getType(self):
@@ -74,6 +76,8 @@ class CSVReader(InputReader):
         return self.currentIndex
     
     def notify(self,eventType):
+        if eventType == self.init:
+            self.set_charset('iso-8859-15')
         if eventType == self.startProcess:
             self.currentIndex = -1
             self.currentRow = None
