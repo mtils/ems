@@ -307,6 +307,10 @@ class SABuilderBackend(RowBuilderBackend):
             
     def buildPathClause(self, field, operator, value, matches):
         pc = PathClause(field)
+        if isinstance(value, basestring):
+            value = value.replace("%",'[%]')
+            value = value.replace("*",'%')
+            
         if operator == '=':
             if matches:
                 return pc.__eq__(value)

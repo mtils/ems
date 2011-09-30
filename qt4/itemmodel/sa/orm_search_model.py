@@ -14,7 +14,7 @@ from ems import qt4
 from ems.thirdparty.odict import OrderedDict
 from ems.model.sa.orm.querybuilder import SAQueryBuilder
 from ems.qt4.util import variant_to_pyobject
-from sqlalchemy.exc import InvalidRequestError
+from sqlalchemy.exc import SQLAlchemyError, InvalidRequestError
 
 class SAOrmSearchModel(QAbstractTableModel):
     def __init__(self,session, queriedObject, querybuilder=None, filter=None,
@@ -423,14 +423,17 @@ class SAOrmSearchModel(QAbstractTableModel):
     
     @pyqtSlot()
     def submit(self):
-        print "submit called"
-        self._session.commit()
-        self._unsubmittedRows = []
-        return super(SAOrmSearchModel, self).submit()
+        #print "submit called"
+        try:
+            self._session.commit()
+            self._unsubmittedRows = []
+            return True
+        except SQLAlchemyError:
+            return False
     
     @pyqtSlot()
     def revert(self):
-        print "reject called"
+        #print "reject called"
         self._session.rollback()
         if len(self._unsubmittedRows):
             self._unsubmittedRows.reverse()
