@@ -129,6 +129,12 @@ class SABuilderBackend(RowBuilderBackend):
             if isinstance(value, int):
                 if widget.count() > value:
                     widget.setCurrentIndex(value)
+            if hasattr(value, '__ormDecorator__'):
+                for i in range(widget.count()):
+                    if variant_to_pyobject(widget.itemData(i)) is value:
+                        widget.setCurrentIndex(i)
+                        return
+            
             return
         if hasattr(widget, 'setValue') and callable(widget.setValue):
             if isinstance(widget, QSpinBox) and isinstance(value, int):
