@@ -125,7 +125,9 @@ class BigComboBox(QComboBox):
         result = super(BigComboBox, self).keyPressEvent(event)
         #if fromListView:
         index = self.itemView.model().index(0,0)
-        self.itemView.model().match(index, Qt.DisplayRole, QVariant(self.currentText()))
+        if event.key() not in (Qt.Key_Return, Qt.Key_Enter, Qt.Key_Tab):
+            matchResult = self.itemView.model().match(index, Qt.DisplayRole, QVariant(self.currentText()))
+#        print "keyPressEvent %s" % matchResult
         return result
             
     def onEditTextChanged(self, index):
