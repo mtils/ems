@@ -40,6 +40,9 @@ class RowBuilderBackend(QObject):
     def buildQuery(self, criterias):
         raise NotImplementedError("Please create a buildQuery Method")
     
+    def setEditorData(self, editor, index):
+        pass
+    
 class FieldSelectDelegate(QStyledItemDelegate):
     def __init__(self, builderBackend, parent=None):
         self.builderBackend = builderBackend
@@ -186,7 +189,7 @@ class ValueDelegate(QStyledItemDelegate):
         model.setData(index, QVariant(self.extractValueOfWidget(editor)))
     
     def setEditorData(self, editor, index):
-        pass
+        return self.builderBackend.setEditorData(editor, index)
 #        res = editor.findData(index.data())
 #        if res < 0:
 #            res = 0

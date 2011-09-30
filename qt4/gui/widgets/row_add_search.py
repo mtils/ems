@@ -312,6 +312,7 @@ class RowAddSearch(QWidget):
             return widget.text()
     
     def setValueOfWidget(self, widget, value):
+        print "setValueOfWidget"
         if value is None:
             return
         if isinstance(widget, QCheckBox) and isinstance(value, bool):

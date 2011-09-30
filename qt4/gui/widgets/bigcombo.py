@@ -47,7 +47,6 @@ class TestModel(QAbstractListModel):
         return 1
     
     def match(self, start, role, value, hits=1, matchFlags=Qt.MatchStartsWith|Qt.MatchWrap):
-        print "match is called with value %s" % value.toString()
         criteria = unicode(value.toString())
         self.beginResetModel()
         self._currentList = []

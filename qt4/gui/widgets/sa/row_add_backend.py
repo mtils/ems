@@ -5,7 +5,8 @@ Created on 26.06.2011
 @author: michi
 '''
 from PyQt4.QtCore import QVariant, QString, Qt, pyqtSignal, QObject
-from PyQt4.QtGui import QSpinBox, QDoubleSpinBox, QLineEdit
+from PyQt4.QtGui import QSpinBox, QDoubleSpinBox, QLineEdit, QCheckBox,\
+    QComboBox
 
 from sqlalchemy import and_, or_
 from sqlalchemy.orm import RelationshipProperty, ColumnProperty
@@ -14,6 +15,8 @@ from sqlalchemy.types import AbstractType, String, Integer, Float, Boolean
 
 from ems.qt4.gui.widgets.tableview.querybuilder_tableview import RowBuilderBackend #@UnresolvedImport
 from ems.model.sa.orm.querybuilder import SAQueryBuilder, PathClause, AndList, OrList #@UnresolvedImport
+from ems.qt4.gui.widgets.treecombo import TreeComboBox #@UnresolvedImport
+from ems.qt4.gui.widgets.bigcombo import BigComboBox #@UnresolvedImport
 from ems.qt4.util import variant_to_pyobject #@UnresolvedImport
 from lib.ems.model.sa.orm import base_object
 
@@ -96,7 +99,46 @@ class SABuilderBackend(RowBuilderBackend):
         
         
         fieldInput.itemTreeView.expandAll()
+    
+    def setEditorData(self, editor, index):
+        widget = editor
         
+        value = variant_to_pyobject(index.data())
+        
+        if value is None:
+            return
+        if isinstance(widget, QCheckBox) and isinstance(value, bool):
+            widget.setChecked(value)
+            return
+        if isinstance(widget, TreeComboBox):
+            widget.setValue(value)
+            return
+        if isinstance(widget, BigComboBox):
+            if isinstance(value, basestring):
+                widget.setEditText(value)
+            else:
+                if hasattr(value, '__ormDecorator__'):
+                    valueStr = value.__ormDecorator__().getReprasentiveString(value)
+                    widget.setEditText(QString.fromUtf8(valueStr))
+                
+            return
+        if isinstance(widget, QComboBox):
+            if isinstance(value, basestring):
+                index = widget.findText(value)
+                widget.setCurrentIndex(index)
+            if isinstance(value, int):
+                if widget.count() > value:
+                    widget.setCurrentIndex(value)
+            return
+        if hasattr(widget, 'setValue') and callable(widget.setValue):
+            if isinstance(widget, QSpinBox) and isinstance(value, int):
+                widget.setValue(value)
+            if isinstance(widget, QDoubleSpinBox) and isinstance(value, float):
+                widget.setValue(value)
+            return
+        if hasattr(widget, 'setText') and callable(widget.setText) and isinstance(value, basestring):
+            widget.setText(QString.fromUtf8(value))
+            return
     
     @property
     def shownPropertiesByClassName(self):
@@ -201,7 +243,6 @@ class SABuilderBackend(RowBuilderBackend):
             
     def getValueEditor(self, parent, currentProperty):
         try:
-            print currentProperty
             return self._mapper.getWidget(currentProperty, parent)
         except KeyError:
             return QLineEdit(parent)
