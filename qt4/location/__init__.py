@@ -1,0 +1,1 @@
+'''This is a PyQt port of the QtMobility Location Lib'''
