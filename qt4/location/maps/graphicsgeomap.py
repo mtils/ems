@@ -9,7 +9,6 @@ from PyQt4.QtGui import QGraphicsWidget, QPainterPath
 
 from ems.qt4.location.geocoordinate import GeoCoordinate #@UnresolvedImport
 from ems.qt4.location.geoboundingbox import GeoBoundingBox #@UnresolvedImport
-from ems.qt4.location.maps.geomapobject import GeoMapObject #@UnresolvedImport
 
 
 class GraphicsGeoMap(QGraphicsWidget):
@@ -471,7 +470,7 @@ class GraphicsGeoMap(QGraphicsWidget):
         if not mapObject or not self.mapData:
             return
         
-        if (mapObject.type() == GeoMapObject.CustomType) and not \
+        if (mapObject.type() == mapObject.CustomType) and not \
             self.supportsCustomMapObjects():
             return
         
