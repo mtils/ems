@@ -3,7 +3,9 @@ Created on 24.10.2011
 
 @author: michi
 '''
-from PyQt4.QtCore import QObject, QFile, QString
+import re
+
+from PyQt4.QtCore import QObject, QFile, QString, SIGNAL, pyqtSignal
 from landmark import Landmark #@UnresolvedImport
 from landmarkid import LandmarkId #@UnresolvedImport
 from landmarkcategory import LandmarkCategory #@UnresolvedImport
@@ -179,6 +181,42 @@ class LandmarkManager(QObject):
     Kmz = 'Kmz'
     'The format constant to define using the kmz format in the import and export functions.'
     
+    
+    QTLANDMARKS_IMPLEMENTATION_VERSION_NAME = "com.nokia.qtmobility.landmarks.implementation.version"
+    
+    URI_PREFIX = 'qtlandmarks'
+    'The prefix for calls with an uri @see parseUri'
+    
+    dataChanged = pyqtSignal()
+    '''This signal is emitted by the manager if its internal state changes and it is unable to precisely determine
+    the changes which occurred, or if the manager considers the changes to be radical enough to require clients to reload
+    all data.  If the signal is emitted, no other signals will be emitted for the associated changes.'''
+
+    landmarksAdded = pyqtSignal(list)
+    '''This signal is emitted when landmarks (identified by \a landmarkIds) have been added to the datastore managed by this manager.
+    This signal is not emitted if the dataChanged() signal was previously emitted for these changes.'''
+    
+    landmarksChanged = pyqtSignal(list)
+    '''This signal is emitted when landmarks (identified by \a landmarkIds) have been modified in the datastore managed by this manager.
+    This signal is not emitted if the dataChanged() signal was previously emitted for these changes.  Note that removal
+    of a category will not trigger a \c landmarksChanged signal for landmarks belonging to that category.'''
+    
+    landmarksRemoved = pyqtSignal(list)
+    '''This signal is emitted when landmarks (identified by \a landmarkIds) have been removed from the datastore managed by this manager.
+    This signal is not emitted if the dataChanged() signal was previously emitted for these changes.'''
+    
+    categoriesAdded = pyqtSignal(list)
+    '''This signal is emitted when categories (identified by \a categoryIds) have been added to the datastore managed by this manager.
+    This signal is not emitted if the dataChanged() signal was previously emitted for these changes.'''
+    
+    categoriesChanged = pyqtSignal(list)
+    '''This signal is emitted when categories (identified by \a categoryIds) have been modified in the datastore managed by this manager.
+    This signal is not emitted if the dataChanged() signal was previously emitted for these changes.'''
+    
+    categoriesRemoved = pyqtSignal(list)
+    '''This signal is emitted when categories (identified by \a categoryIds) have been removed from the datastore managed by this manager.
+    This signal is not emitted if the dataChanged() signal was previously emitted for these changes.'''
+    
     _factories = {}
     
     def __init__(self, managerName, parameters, parent=None):
@@ -200,6 +238,7 @@ class LandmarkManager(QObject):
         self._errorCode = 0
         self._errorString = ""
         self._errorMap = {}
+        self.__isConnected = False
     
     def __del__(self):
         '''
@@ -930,5 +969,189 @@ class LandmarkManager(QObject):
         @param implementationVersion: Optional version, defaults to -1
         @type implementationVersion: int
         '''
-        for key in params:
-            params
+        escapedParams = []
+        
+        for key in params.keys():
+            arg = params[key]
+            arg = unicode(arg).replace('&','&amp;').replace('=', '&equ;')
+            key = unicode(key).replace('&','&amp;').replace('=', '&equ;')
+            escapedParams.append(key + '=' + arg)
+        
+        if implementationVersion != -1:
+            versionString = LandmarkManager.QTLANDMARKS_IMPLEMENTATION_VERSION_NAME
+            versionString = u"{0}{1}{2}".format(versionString.format,'=',
+                                                implementationVersion)
+            escapedParams.append(versionString)
+        
+        return u"{0}:{1}:{2}".format(LandmarkManager.URI_PREFIX, managerName,
+                                     u"&".join(escapedParams))
+    
+    @staticmethod
+    def fromUri(storeUri, parent=None):
+        '''
+        Constructs a QLandmarkManager whose implementation, store and parameters are specified in the given \a storeUri,
+        and whose parent object is \a parent.
+        
+        @param storeUri: The uri for the manager
+        @type storeUri: str
+        @param parent: Parent object
+        @type parent: QObject
+        @rtype: LandmarkManager
+        '''
+        
+        if not storeUri:
+            return LandmarkManager("",{},parent)
+        
+        id = ""
+        parsed = LandmarkManager.parseUri(storeUri)
+        if isinstance(parsed, dict) and parsed.has_key('managerName') and\
+            parsed.has_key('params'):
+            return LandmarkManager(parsed['managerName'],parsed['parameters'],
+                                   parent)
+        else:
+            return None 
+        
+    @staticmethod
+    def parseUri(uri, managerName=None, params=None):
+        '''
+        Splits the given \a uri into the manager name and parameters that it describes, and places the information
+        into the memory addressed by \a pManagerName and \a pParams respectively.  Returns true if \a uri could be split successfully,
+        otherwise returns false
+        
+        Format: qtlandmarks:<managerid>:<key>=<value>&<key>=<value>
+        it is assumed the prefix(qtlandmarks) and managerid cannot contain ':'
+        it is assumed keys and values do not contain '=' or '&'
+        but can contain &amp; and &equ;
+        
+        @param uri: The uri as string "qtlandmarks:<managerid>:<key>=<value>&<key>=<value>"
+        @type uri: str
+        @param managerName: unused, only for compatiblity reasons
+        @type managerName: str
+        @param params: unused, only for compatiblity reasons
+        @type params: dict
+        @rtype: dict
+        '''
+        
+        colonSplit = uri.split(':')
+        prefix = colonSplit[0]
+        
+        if prefix != LandmarkManager.URI_PREFIX:
+            return False
+        
+        managerName = colonSplit[1]
+        
+        if not managerName.strip():
+            return False
+        
+        firstParts = prefix + ':' + managerName + ':'
+        paramString = colonSplit[2]
+        params = paramString.split()
+        rParams = {}
+        
+        if paramString:
+            for part in re.split('&(?!(amp;|equ;))', params):
+                if part is not None:
+                    chunk = part.split('=')
+                    if len(chunk != 2):
+                        return False
+                    arg = chunk[0]
+                    param = chunk[1]
+                    
+                    arg = arg.replace('&equ;','=').replace('&amp;','&')
+                    param = param.replace('&equ;','=').replace('&amp;','&')
+                    rParams[arg] = param
+        return {'managerName':managerName, 'parameters':rParams}
+    
+    def connectNotify(self, signal):
+        if self.__isConnected or not self.__engine:
+            return
+        if signal in (unicode(SIGNAL('landmarksAdded(PyQt_PyObject)')),
+                      unicode(SIGNAL('landmarksChanged(PyQt_PyObject)')),
+                      unicode(SIGNAL('landmarksRemoved(PyQt_PyObject)')),
+                      unicode(SIGNAL('categoriesAdded(PyQt_PyObject)')),
+                      unicode(SIGNAL('categoriesChanged(PyQt_PyObject)')),
+                      unicode(SIGNAL('categoriesRemoved(PyQt_PyObject)')),
+                      unicode(SIGNAL('dataChanged()'))):
+            
+            self.__engine.landmarksAdded.connect(self.landmarksAdded)
+            self.__engine.landmarksChanged.connect(self.landmarksChanged)
+            self.__engine.landmarksRemoved.connect(self.landmarksRemoved)
+            self.__engine.categoriesAdded.connect(self.categoriesAdded)
+            self.__engine.categoriesChanged.connect(self.categoriesChanged)
+            self.__engine.categoriesRemoved.connect(self.categoriesRemoved)
+            self.__isConnected = True
+            
+        return QObject.connectNotify(self, signal)
+    
+    def disconnectNotify(self, signal):
+        if not self.__isConnected or not self.__engine:
+            return
+        
+        if signal in (unicode(SIGNAL('landmarksAdded(PyQt_PyObject)')),
+                      unicode(SIGNAL('landmarksChanged(PyQt_PyObject)')),
+                      unicode(SIGNAL('landmarksRemoved(PyQt_PyObject)')),
+                      unicode(SIGNAL('categoriesAdded(PyQt_PyObject)')),
+                      unicode(SIGNAL('categoriesChanged(PyQt_PyObject)')),
+                      unicode(SIGNAL('categoriesRemoved(PyQt_PyObject)')),
+                      unicode(SIGNAL('dataChanged()'))):
+            
+            self.__engine.landmarksAdded.disconnect(self.landmarksAdded)
+            self.__engine.landmarksChanged.disconnect(self.landmarksChanged)
+            self.__engine.landmarksRemoved.disconnect(self.landmarksRemoved)
+            self.__engine.categoriesAdded.disconnect(self.categoriesAdded)
+            self.__engine.categoriesChanged.disconnect(self.categoriesChanged)
+            self.__engine.categoriesRemoved.disconnect(self.categoriesRemoved)
+            self.__isConnected = False
+            
+        return QObject.disconnectNotify(self, signal)
+    
+    def __createEngine(self, managerName, parameters):
+        '''
+        Creates the engine
+        
+        @param managerName: The name of the manager
+        @type managerName: str
+        @param parameters: params
+        @type parameters: dict
+        '''
+        if managerName not in self.availableManagers():
+            self._errorCode = LandmarkManager.InvalidManagerError
+            self._errorString = 'The landmark manager, {0}, was not found'.format(managerName)
+            self.__engine = None
+            return
+        
+        factory = LandmarkManager._factories[managerName]
+        
+        if parameters.has_key(self.QTLANDMARKS_IMPLEMENTATION_VERSION_NAME):
+            implementationVersion = int(parameters[self.QTLANDMARKS_IMPLEMENTATION_VERSION_NAME])
+            raise NotImplementedError("Currently no version handling supported")
+        else:
+            implementationVersion = -1
+        
+        self.__engine = factory.engine(parameters, self._errorCode,
+                                       self._errorString)
+        if not self.__engine:
+            if self._errorCode == LandmarkManager.NoError:
+                self._errorCode = LandmarkManager.InvalidManagerError
+                self._errorString = 'The landmark manager could not return the requested engine instance'
+    
+    @staticmethod
+    def getEngine(manager):
+        if manager.getEngine():
+            return manager.getEngine()
+        return None
+    
+    @staticmethod
+    def loadFactories():
+        pass
+    
+    @staticmethod
+    def factories(reload=False):
+        return LandmarkManager._factories
+    
+    
+    
+    
+        
+        
+    
