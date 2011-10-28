@@ -5,5 +5,5 @@ Created on 28.10.2011
 '''
 from landmarkfilter import LandmarkFilter #@UnresolvedImport
 
-class LandmarkBoxFilter(LandmarkFilter):
+class LandmarkCategoryFilter(LandmarkFilter):
     pass
