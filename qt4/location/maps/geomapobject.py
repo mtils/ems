@@ -123,7 +123,7 @@ class GeoMapObject(QObject):
     
     serial = 0
     
-    def __init__(self, mapData):
+    def __init__(self, mapData=None):
         '''
          Constructs a new map object associated with \a mapData.
 
@@ -132,7 +132,8 @@ class GeoMapObject(QObject):
         @param mapData: The mapData
         @type mapData: GeoMapData
         '''
-        self.setMapData(mapData)
+        if mapData is not None:
+            self.setMapData(mapData)
         QObject.__init__(self, None)
         
     
