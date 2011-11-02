@@ -3,7 +3,7 @@ Created on 29.10.2011
 
 @author: michi
 '''
-from PyQt4.QtCore import pyqtSignal, pyqtSlot, QPointF 
+from PyQt4.QtCore import pyqtSignal, pyqtSlot, QPointF, QRectF 
 
 from lib.ems.qt4.location.maps.geomapobjectinfo import GeoMapObjectInfo
 from ems.qt4.location.geocoordinate import GeoCoordinate #@UnresolvedImport
@@ -140,7 +140,9 @@ class GeoTiledMapObjectInfo(GeoMapObjectInfo):
                     return True
         return False
     
-    def updateItem(self, target):
+    def updateItem(self, target=None):
+        if target is None:
+            target = QRectF()
         if not self.inited:
             self.updateAfterInit = True
             return

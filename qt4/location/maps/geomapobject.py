@@ -315,7 +315,7 @@ class GeoMapObject(QObject):
         This will mostly be useful when implementing custom QGeoMapData
         subclasses.
         
-        @return: GeoObjectInfo
+        @return: GeoMapObjectInfo
         '''
         return self._info
     
