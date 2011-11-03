@@ -5,8 +5,10 @@ Created on 31.10.2011
 '''
 import math
 
-from PyQt4.QtCore import qRound, QPointF, QPoint, qAbs, QRectF, Qt
-from PyQt4.QtGui import QPixmap, QPainter 
+from PyQt4.QtCore import qRound, QPointF, QPoint, qAbs, QRectF, Qt, pyqtSlot,\
+    QRect, QTimer, SLOT
+from PyQt4.QtGui import QPixmap, QPainter, QImage, QPainterPath, \
+    QStyleOptionGraphicsItem 
 
 from lib.ems.qt4.location.maps.geomapdata import GeoMapData
 from lib.ems.qt4.location.geocoordinate import GeoCoordinate
@@ -21,6 +23,8 @@ from geotiledmappixmapobjectinfo import GeoTiledMapPixmapObjectInfo #@Unresolved
 from geotiledmaptextobjectinfo import GeoTiledMapTextObjectInfo #@UnresolvedImport
 from geotiledmaprouteobjectinfo import GeoTiledMapRouteObjectInfo #@UnresolvedImport
 from geotiledmapcustomobjectinfo import GeoTiledMapCustomObjectInfo #@UnresolvedImport
+from geotiledmapreply import GeoTiledMapReply #@UnresolvedImport
+from lib.ems.qt4.location.maps.geomapobjectengine import GeoMapObjectEngine
 
 def rmod(a, b):
     div = float(a) / float(b)
@@ -71,12 +75,35 @@ class GeoTiledMapData(GeoMapData):
         
         self.setBlockPropertyChangeSignals(True)
         self.setZoomLevel(8.0)
+        
+        self._worldReferenceViewportCenter = QRect()
         self._worldReferenceSize = (1 << qRound(self.tileEngine.maximumZoomLevel())) * self.tileEngine.tileSize()
-        self._worldReferenceViewportCenter = None
+        self._worldReferenceViewportRect = QRect()
+        
+        self._worldReferenceViewportRectLeft = QRect()
+        self._worldReferenceViewportRectRight = QRect()
+        
+        self._requestRects = []
+        self._replyRects = []
+        
+        self._requests = []
+        self._replies = []
+        
         self.cache = {}
         self.zoomCache = {}
+        
         self._zoomFactor = 0
+        self._oe = GeoMapObjectEngine(self, self)
+        self.spherical = "+proj=latlon +ellps=sphere"
+        self.wgs84 = "+proj=latlon +ellps=WGS84"
         #self._tileSize = 0
+    
+    def __del__(self):
+        for reply in self._replies:
+            reply.abort()
+            reply.deleteLater()
+        if self._oe:
+            del self._oe
     
     def coordinateToScreenPosition(self, coordOrLat, lon=0.0):
         if isinstance(coordOrLat, GeoCoordinate):
@@ -413,23 +440,6 @@ class GeoTiledMapData(GeoMapData):
         
         self.setZoomLevel(maxZoomLevel)
     
-    def paintMap(self, painter, option):
-        '''
-        @param painter: The painter
-        @type painter: QPainter
-        @param option: The StyleOption
-        @type option: QStyleOptionGraphicsItem
-        '''
-        self._paintMap(painter, option)
-            
-    def paintObjects(self, painter, option):    
-        '''
-        @param painter: The painter
-        @type painter: QPainter
-        @param option: The StyleOption
-        @type option: QStyleOptionGraphicsItem
-        '''
-        self._paintObjects(painter, option)
     
     def createMapObjectInfo(self, mapObject):
         '''
@@ -455,3 +465,522 @@ class GeoTiledMapData(GeoMapData):
             return GeoTiledMapRouteObjectInfo(self, mapObject)
         elif type_ == GeoMapObject.CustomType:
             return GeoTiledMapCustomObjectInfo(self, mapObject)
+        else:
+            return None
+    @pyqtSlot()
+    def _processRequests(self):
+        for reply in self._replies:
+            if not self.intersectsScreen(reply.request().tileRect()) \
+                or (self.zoomLevel() != reply.request().zoomLevel()) \
+                or (self.mapType() != reply.request().mapType()) \
+                or (self.connectivityMode() != reply.request().connectivityMode()):
+                self._replyRects.remove(reply.request().tileRect())
+                del self.zoomCache[reply.request()]
+        
+        tiledEngine = self._engine
+        
+        for req in self._requests:
+            self._requestRects.remove(req.tileRect())
+            
+            if (req.tileRect() in self._replyRects) or\
+                not self._intersectsScreen(req.tileRect()):
+                continue
+            
+            reply = tiledEngine.getTileImage(req)
+            
+            if not reply:
+                continue
+            
+            if reply.error() != GeoTiledMapReply.NoError:
+                self.tileError(reply.error(), reply.errorString())
+                reply.deleteLater()
+                del self.zoomCache[reply.request()]
+                continue
+            
+            reply.finished.connect(self._tileFinished)
+            reply.error.connect(self.tileError)
+            
+            self._replies.append(reply)
+            self._replyRects.append(reply.request.tileRect())
+            
+            if reply.isFinished():
+                self._replyFinished(reply)
+    
+    @pyqtSlot()
+    def _tileFinished(self):
+        reply = self.sender()
+        
+        if not reply:
+            if len(self._requests) > 0:
+                QTimer.singleShot(0, self, SLOT('_processRequests()'))
+                return
+        else:
+            self._replyFinished(reply)
+    
+    @pyqtSlot(GeoTiledMapReply)
+    def _replyFinished(self, reply):
+        self._replyRects.remove(reply.request().tileRect())
+        self._replies.remove(reply)
+        del self.zoomCache[reply.request()]
+        
+        if reply.error() != GeoTiledMapReply.NoError:
+            if len(self._requests) > 0:
+                QTimer.singleShot(0, self, SLOT('_processRequests()'))
+            reply.deleteLater()
+            return
+        
+        if self.zoomLevel() != reply.request().zoomLevel()\
+            or self.mapType() != reply.request().mapType()\
+            or self.connectivityMode() != reply.request().connectivityMode():
+            if len(self._requests) > 0:
+                QTimer.singleShot(0, self, SLOT("_processRequests()"))
+            reply.deleteLater()
+            return
+        
+        tile = QImage()
+        
+        if not tile.loadFromData(reply.mapImageData(), reply.mapImageFormat().toAscii()):
+            del tile
+            if len(self._requests) > 0:
+                QTimer.singleShot(0, self, SLOT('_processRequests()'))
+            reply.deleteLater()
+            return
+        
+        if tile.isNull() or tile.size().isEmpty():
+            del tile
+            if len(self._requests) > 0:
+                QTimer.singleShot(0, self, SLOT("_processRequests()"))
+            reply.deleteLater()
+            return
+        
+        self.cache[reply.request()] = tile
+        
+        self._cleanupCaches()
+        
+        tileRect = reply.request.tileRect()
+        offset = self.windowOffset()
+        
+        overlaps = self.intersectedScreen(tileRect)
+        
+        for overlap in overlaps:
+            t = overlap.second
+            target = QRectF(offset.x() + int(t.left()) / self._zoomFactor,
+                            offset.y() + int(t.top()) / self._zoomFactor,
+                            int(t.width()) / self._zoomFactor,
+                            int(t.height()) / self._zoomFactor);
+            self.updateMapDisplay.emit(target)
+        
+        if len(self._requests) > 0:
+            QTimer.singleShot(0, self, SLOT("_processRequests()"))
+        
+        reply.deleteLater()
+    
+    def tileError(self, error, errorString):
+        pass
+    
+    def mapObjectsAtScreenPosition(self, screenPosition):
+        if screenPosition.isNull():
+            return []
+        
+        results = []
+        considered = []
+        
+        self._oe.updateTransforms()
+        
+        pixelItems = self._oe.pixelScene.items(QRectF(screenPosition - QPointF(1,1),
+                                                      screenPosition + QPointF(1,1)),
+                                               Qt.IntersectsItemShape,
+                                               Qt.AscendingOrder)
+        
+        for item in pixelItems:
+            obj = self._oe.pixelItems.value(item)
+            
+            if obj.isVisible() and (obj not in considered):
+                contains = False
+            
+            if self._oe.pixelExact.has_key(obj):
+                for item in self._oe.pixelExact[obj]:
+                    if item.shape().contains(screenPosition):
+                        contains = True
+                        break
+            else:
+                item = self._oe.graphicsItemFromMapObject(obj)
+                
+                if item:
+                    trans = self._oe.pixelTrans[obj]
+                    
+                    for t in trans:
+                        unused = False 
+                        inv, ok = t.inverted(unused)
+                        if ok:
+                            testPt = screenPosition * inv
+                            
+                            #we have to special case text objects here
+                            #in order to maintain their old (1.1) behaviour
+                            
+                            if obj.type_() == GeoMapObject.TextType:
+                                if item.boundingRect().contains(testPt):
+                                    contains = True
+                                    break
+                                else:
+                                    if item.shape().contains(testPt):
+                                        contains = True;
+            if contains:
+                results.append(obj)
+            
+            considered.append(obj)
+        return results
+    
+    def mapObjectsInScreenRect(self, screenRect):
+        results = []
+        considered = []
+        
+        self._oe.updateTransforms()
+        
+        pixelItems = self._oe.pixelScene.items(screenRect,
+                                               Qt.IntersectsItemShape,
+                                               Qt.AscendingOrder)
+        
+        for item in pixelItems:
+            obj = self._oe.pixelItems[item]
+            
+            if obj.isVisible() and (obj not in considered):
+                contains = False
+                
+                if self._oe.pixelExact.has_key(obj):
+                    for childItem in self._oe.pixelExact[obj]:
+                        if childItem.shape().intersects(screenRect):
+                            contains = True
+                
+                else:
+                    gItem = self._oe.graphicsItemFromMapObject(obj) #QGraphicsItem
+                    
+                    if gItem:
+                        trans = self._oe.pixelTrans[obj]
+                        for t in trans:
+                            unused = False
+                            inv, ok = t.inverted(unused)
+                            if ok:
+                                testPoly = screenRect * inv
+                                
+                                testPath = QPainterPath()
+                                testPath.moveTo(testPoly[0])
+                                testPath.moveTo(testPoly[1])
+                                testPath.moveTo(testPoly[2])
+                                testPath.moveTo(testPoly[3])
+                                testPath.closeSubpath()
+                                
+                                if item.shape().intersects(testPath):
+                                    contains = True
+                if contains:
+                    results.append(obj)
+                
+                considered.append(obj)
+                
+    def worldReferenceViewportCenter(self):
+        '''
+        Returns the center of the viewport, in pixels on the entire
+        map as a pixmap at the maximum zoom level.
+        
+        @rtype: QPoint
+        '''
+        return self._worldReferenceViewportCenter
+    
+    def worldReferenceSize(self):
+        '''
+        Returns the size, in pixels, of the entire map as a pixmap at the maximum
+        zoom level.
+        
+        @rtype: QSize
+        '''
+        return self._worldReferenceSize
+    
+    def worldReferenceViewportRect(self):
+        '''
+        Returns the visible screen rectangle, in pixels on the entire map
+        as a pixmap at the maximum zoom level.
+        
+        @rtype: QRect
+        '''
+        return self._worldReferenceViewportRect
+    
+    def zoomFactor(self):
+        '''
+        Returns the ratio between a single pixel on the screen and a pixel on
+        the entire map as a pixmap at the maximum zoom level.
+        
+        @rtype: int
+        '''
+        return self._zoomFactor
+    
+    def triggerUpdateMapDisplay(self, target=QRectF()):
+        '''
+        Forces the map display to update in the region specified by \a target.
+
+        If \a target is empty the entire map display will be updated.
+        
+        @param target: The target to be updated
+        @type target: QRectF
+        '''
+        self.updateMapDisplay.emit(target)
+    
+    def windowOffset(self):
+        offsetX = ((self._windowSize.width() * self._zoomFactor) - self._worldReferenceViewportRect.width()) / 2.0
+        if offsetX < 0.0:
+            offsetX = 0.0
+        offsetX /= self._zoomFactor
+        
+        offsetY = ((self._windowSize.height() * self._zoomFactor) - self._worldReferenceViewportRect.height()) / 2.0
+        if offsetY < 0.0:
+            offsetY = 0.0
+        offsetY /= self._zoomFactor;
+    
+        return QPointF(offsetX, offsetY)
+    
+    def _updateMapImage(self):
+        if self._zoomLevel == -1.0 or not self._windowSize.isValid():
+            return
+        wasEmpty = (len(self._requests) == 0)
+        it = GeoTileIterator(self)
+        
+        while it.hasNext():
+            req = it.next()
+            tileRect = req.tileRect()
+            if not self.cache.has_key(req):
+                if not (tileRect in self._requestRects) and not (tileRect in self._replyRects):
+                    self._requests.append(req)
+                    self._requestRects.append(tileRect)
+        
+        if wasEmpty and len(self._requests) > 0:
+            QTimer.singleShot(0, self, SLOT("_processRequests()"))
+    
+    def _clearRequests(self):
+        self._requests = []
+        self._requestRects = []
+    
+    def paintMap(self, painter, option):
+        '''
+        @param painter: The painter
+        @type painter: QPainter
+        @param option: The StyleOption
+        @type option: QStyleOptionGraphicsItem
+        '''
+        offset = self.windowOffset()
+        
+        it = GeoTileIterator(self)
+        
+        while it.hasNext():
+            req = it.next()
+            tileRect = req.tileRect()
+            
+            overlaps = self.intersectedScreen(tileRect)
+            for overlap in overlaps:
+                s = overlap.first
+                t = overlap.second
+                
+                source = QRectF(int(s.left()) / self._zoomFactor,
+                                int(s.top()) / self._zoomFactor,
+                                int(s.width()) / self._zoomFactor,
+                                int(s.height()) / self._zoomFactor)
+                
+                target = QRectF(offset.x() + int(t.left()) / self._zoomFactor,
+                                offset.y() + int(t.top()) / self._zoomFactor,
+                                int(t.width()) / self._zoomFactor,
+                                int(t.height()) / self._zoomFactor)
+                
+                if self.cache.has_key(req):
+                    painter.drawImage(target, self.cache[req], source)
+                else:
+                    if self.zoomCache.has_key(req):
+                        painter.drawPixmap(target, self.zoomCache[req], source)
+                    else:
+                        painter.fillRect(target, Qt.lightGray)
+    
+    def paintObjects(self, painter, option):
+        '''
+        @param painter: The painter
+        @type painter: QPainter
+        @param option: The StyleOption
+        @type option: QStyleOptionGraphicsItem
+        '''
+        painter.save()
+        painter.setRenderingHint(QPainter.Antialiasing)
+        
+        if option:
+            target = option.rect
+        else:
+            target = QRectF(QPointF(0,0), self._windowSize)
+        
+        offset = self.windowOffset()
+        
+        target.adjust(offset.x(), offset.y(), -1.0 * offset.x(), -1.0 * offset.y())
+        
+        painter.setClipRect(target)
+        
+        self._oe.updateTransforms()
+        
+        items = self._oe.pixelScene.items(target,
+                                          Qt.IntersectsItemShape,
+                                          Qt.AscendingOrder)
+        
+        objsDone = []
+        
+        baseTrans = painter.transform()
+        
+        style = QStyleOptionGraphicsItem()
+        
+        for item in items:
+            obj = self._oe.pixelItems[item]
+            
+            if obj.isVisible() and not (obj in objsDone):
+                if self._oe.pixelExact.has_key(obj):
+                    for it in self._oe.pixelExact[obj]:
+                        painter.setTransform(baseTrans)
+                        
+                        it.paint(painter, style)
+                else:
+                    gItem = self._oe.graphicsItemFromMapObject(obj)
+                    for trans in self._oe.pixelTrans[obj]:
+                        painter.setTransform(trans * baseTrans)
+                        item.paint(painter, style)
+                        for child in gItem.children():
+                            painter.setTransform(child.transform() * trans * baseTrans)
+                            painter.translate(child.pos())
+                            child.paint(painter, style)
+            
+            objsDone.append(obj)
+        painter.restore()
+        del style
+    
+    def _cleanupCaches(self):
+        boundaryTiles = 3
+        
+        tiledEngine = self._engine
+        
+        tileSize = tiledEngine.tileSize()
+        
+        cacheRect1 = QRectF()
+        cacheRect2 = QRectF()
+        
+        cacheRect1 = self._worldReferenceViewportRect.adjusted(-boundaryTiles * tileSize.width(),
+                                                               -boundaryTiles * tileSize.height(),
+                                                               boundaryTiles * tileSize.width(),
+                                                               boundaryTiles * tileSize.height())
+        
+        if cacheRect1.width() > self._worldReferenceSize.width():
+            cacheRect1.setX(0)
+            cacheRect1.setWidth(self._worldReferenceSize.width())
+        else:
+            if cacheRect1.x() + cacheRect1.width() > self._worldReferenceSize.width():
+                oldWidth = cacheRect1.width()
+                cacheRect1.setWidth(self._worldReferenceSize.width() - cacheRect1.x())
+                cacheRect2 = QRectF(0,
+                                    cacheRect1.y(),
+                                    oldWidth - cacheRect1.width(),
+                                    cacheRect1.height())
+        
+        keys = self.cache.keys()
+        for key in keys:
+            tileRect = keys[key].tileRect()
+            if not cacheRect1.intersects(tileRect):
+                if cacheRect2.isNull() or not cacheRect2.intersects(tileRect):
+                    del self.cache[key]
+    
+    def screenRectForZoomFactor(self, factor):
+        viewportWidth = self._windowSize.width()
+        viewportHeight = self._windowSize.height()
+        
+        width = int(viewportWidth * factor)
+        height = int(viewportHeight * factor)
+        
+        if width > self._worldReferenceSize.width():
+            width = self._worldReferenceSize.width()
+        
+        if height > self._worldReferenceSize.height():
+            height = self._worldReferenceSize.height()
+        
+        x = (self._worldReferenceViewportCenter.x() - (width / 2)) % self._worldReferenceSize.width()
+        if x < 0:
+            x += self._worldReferenceSize.width()
+        
+        y = self._worldReferenceViewportCenter.y() - (height / 2)
+        
+        if y < 0:
+            y = 0
+        
+        if (y + height) >= self._worldReferenceSize.height():
+            y = self._worldReferenceSize.height() - height
+        
+        return QRectF(x, y, width, height)
+    
+    def _updateScreenRect(self):
+        worldReferenceViewportRect = self.screenRectForZoomFactor(self._zoomFactor)
+        
+        x = worldReferenceViewportRect.x()
+        y = worldReferenceViewportRect.y()
+        width = worldReferenceViewportRect.width()
+        height = worldReferenceViewportRect.height()
+        
+        if x + width < self._worldReferenceSize.width():
+            self._worldReferenceViewportRectLeft = worldReferenceViewportRect
+            self._worldReferenceViewportRectRight = QRect()
+        else:
+            widthLeft = self._worldReferenceSize.width() - x
+            widthRight = width - widthLeft
+            self._worldReferenceViewportRectLeft = QRect(x, y, widthLeft, height)
+            self._worldReferenceViewportRectRight = QRect(0, y, widthRight, height)
+    
+    def containedInScreen(self, point):
+        return (self._worldReferenceViewportRectLeft.contains(point)
+                or (self._worldReferenceViewportRectRight.isValid()
+                    and self._worldReferenceViewportRectRight.contains(point)))
+    
+    def intersectsScreen(self, rect):
+        return (self._worldReferenceViewportRectLeft.intersects(rect)
+                or (self._worldReferenceViewportRectRight.isValid()
+                    and self._worldReferenceViewportRectRight.intersects(rect)))
+    
+    def intersectedScreen(self, rect, translateToScreen=True):
+        result = []
+        rectL = rect.intersected(self._worldReferenceViewportRectLeft)
+        if not rectL.isEmpty():
+            source = QRect(rectL.topLeft() - rect.topLeft(), rectL.size())
+            target = QRect(rectL.topLeft() - \
+                           self._worldReferenceViewportRectLeft.topLeft(),
+                           rectL.size())
+            
+            result.append((source, target))
+            
+            if self._worldReferenceViewportRectRight.isValid():
+                rectR = rect.intersected(self._worldReferenceViewportRectRight)
+                if not rectR.isEmpty():
+                    source = QRect(rectR.topLeft() - rect.topLeft(), rectR.size())
+                    target = QRect(rectR.topLeft() - \
+                                   self._worldReferenceViewportRectRight.topLeft(),
+                                   rectR.size())
+                    if translateToScreen:
+                        target.translate(self._worldReferenceViewportRectLeft.width,
+                                         0)
+                    result.append((source, target))
+        return result
+    
+    def addObject(self, obj):
+        super(GeoTiledMapData, self)._addObject(obj)
+        self._oe.addObject(obj)
+    
+    def removeObject(self, obj):
+        super(GeoTiledMapData, self)._removeObject(obj)
+        self._oe.removeObject(obj)
+    
+    def update(self, obj):
+        if obj:
+            if obj.type_() == GeoMapObject.GroupType:
+                self._oe.objectsForLatLonUpdate.append(obj)
+                self._oe.objectsForPixelUpdate.append(obj)
+                self.triggerUpdateMapDisplay()
+            else:
+                self._oe.invalidateObject(obj)
+        else:
+            self.triggerUpdateMapDisplay()
+        
+            
