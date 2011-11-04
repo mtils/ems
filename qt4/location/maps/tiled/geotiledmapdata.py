@@ -6,7 +6,7 @@ Created on 31.10.2011
 import math
 
 from PyQt4.QtCore import qRound, QPointF, QPoint, qAbs, QRectF, Qt, pyqtSlot,\
-    QRect, QTimer, SLOT
+    QRect, QTimer, SLOT, QSize
 from PyQt4.QtGui import QPixmap, QPainter, QImage, QPainterPath, \
     QStyleOptionGraphicsItem 
 
@@ -25,14 +25,77 @@ from geotiledmaprouteobjectinfo import GeoTiledMapRouteObjectInfo #@UnresolvedIm
 from geotiledmapcustomobjectinfo import GeoTiledMapCustomObjectInfo #@UnresolvedImport
 from geotiledmapreply import GeoTiledMapReply #@UnresolvedImport
 from lib.ems.qt4.location.maps.geomapobjectengine import GeoMapObjectEngine
+from geotiledmaprequest import GeoTiledMapRequest #@UnresolvedImport
 
 def rmod(a, b):
     div = float(a) / float(b)
     return float(a) - div * float(b)
 
 class GeoTileIterator(object):
-    pass
+    def __init__(self, mapDataOrConMode, mapType=None, screenRect=None,
+                  tileSize=None, zoomLevel=None):
+        self._atEnd = False
+        self._row = -1
+        self._col = -1
+        self._width = 0
+        self._screenRect = QRect()
+        self._tileSize = QSize()
+        self._mapType = 0
+        self._connectivityMode = 0
+        self._zoomLevel = 0
+        self._currTopLeft = QPoint(0,0)
+        self._tileRect = QRect()
+        
+        if isinstance(mapDataOrConMode,GeoTiledMapData):
+            self._screenRect = mapDataOrConMode.worldReferenceViewportRect()
+            self._mapType = mapDataOrConMode.mapType()
+            self._connectivityMode = mapDataOrConMode.connectivityMode()
+            self._zoomLevel = mapDataOrConMode.zoomLevel()
+            
+            tiledEngine = mapDataOrConMode.tileEngine
+            self._tileSize = tiledEngine.tileSize() * mapDataOrConMode.zoomFactor()
+        else:
+            self._screenRect = screenRect
+            self._tileSize = tileSize
+            self._mapType = mapType
+            self._connectivityMode = mapDataOrConMode
+            self._zoomLevel = zoomLevel
+            
+        self._tileRect = QRect(QPoint(0,0), self._tileSize)
+            
+        x = (self._screenRect.topLeft().x() / self._tileSize.width())
+        y = (self._screenRect.topLeft().y() / self._tileSize.height())
+        
+        self._width = self._tileSize.width() * (1 << self._zoomLevel)
+        
+        self._currTopLeft.setX(x * self._tileSize.width())
+        self._currTopLeft.setY(y * self._tileSize.height())
     
+    def hasNext(self):
+        return not self._atEnd
+    
+    def next_(self):
+        numCols = 1 << self._zoomLevel
+        col = int((self._currTopLeft.x() / self._tileSize.width()) % numCols)
+        row = int((self._currTopLeft.y() / self._tileSize.height()) % numCols)
+        self._tileRect.moveTopLeft(self._currTopLeft)
+        
+        if self._tileRect.left() >= self._width:
+            self._tileRect.translate(-self._width, 0)
+    
+        #self._currTopLeft.rx() += self._tileSize.width()
+        self._currTopLeft.setX(self._currTopLeft.x() + self._tileSize.width())
+        
+        if self._currTopLeft.x() > self._screenRect.right(): #next row
+            x = (self._screenRect.topLeft().x() / self._tileSize.width())
+            self._currTopLeft.setX(x * self._tileSize.width())
+            #self._currTopLeft.ry() += self._tileSize.height()
+            self._currTopLeft.setY(self._currTopLeft.y() + self._tileSize.height())
+        
+        return GeoTiledMapRequest(self._connectivityMode, self._mapType,
+                                  self._zoomLevel, self._row, self._col,
+                                  self._tileRect)
+        
 
 class GeoTiledMapData(GeoMapData):
     '''
@@ -983,4 +1046,4 @@ class GeoTiledMapData(GeoMapData):
         else:
             self.triggerUpdateMapDisplay()
         
-            
+        
