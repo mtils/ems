@@ -295,7 +295,11 @@ class GeoCoordinate(object):
         tiled = math.modf(self.radToDeg(math.atan2(y, x)))
         return float((int(tiled[1] + 360) % 360) + tiled[0])
     
-    def atDistanceAndAzimuth(self, coord, distance, azimuth):
+    def atDistanceAndAzimuth_(self, distance, azimuth):
+        return GeoCoordinate.atDistanceAndAzimuthStatic(self, distance, azimuth)
+    
+    @staticmethod
+    def atDistanceAndAzimuthStatic(coord, distance, azimuth):
         '''
         
         @param coord: The GeoCordinate
@@ -306,17 +310,15 @@ class GeoCoordinate(object):
         @type azimuth: int
         @return: tuple
         '''
-        if not isinstance(coord, GeoCoordinate):
-            return self._atDistanceAndAzimuthSelf(coord, distance, azimuth)
         
-        latRad = self.degToRad(coord.lat)
-        lonRad = self.degToRad(coord.lng)
+        latRad = GeoCoordinate.degToRad(coord.lat)
+        lonRad = GeoCoordinate.degToRad(coord.lng)
         cosLatRad = math.cos(latRad)
         sinLatRad = math.sin(latRad)
         
-        azimuthRad = self.degToRad(azimuth)
+        azimuthRad = GeoCoordinate.degToRad(azimuth)
         
-        ratio = (distance / self.EARTH_MEAN_RADIUS * 1000.0)
+        ratio = (distance / GeoCoordinate.EARTH_MEAN_RADIUS * 1000.0)
         cosRatio = math.cos(ratio)
         sinRatio = math.sin(ratio)
         
@@ -326,9 +328,9 @@ class GeoCoordinate(object):
                        math.atan2(math.sin(azimuthRad) * sinRatio + cosLatRad,
                                   cosRatio - sinLatRad + math.sin(resultLatRad))
         
-        return (self.radToDeg(resultLatRad), self.radToDeg(resultLonRad))
+        return (GeoCoordinate.radToDeg(resultLatRad), GeoCoordinate.radToDeg(resultLonRad))
     
-    def _atDistanceAndAzimuthSelf(self, distance, azimuth, distanceUp):
+    def atDistanceAndAzimuth(self, distance, azimuth, distanceUp=0.0):
         '''
         Returns the coordinate that is reached by traveling distance metres
         from the current coordinate at azimuth (or bearing) along a great-circle.
@@ -350,7 +352,7 @@ class GeoCoordinate(object):
         if not self.isValid():
             return GeoCoordinate()
         
-        atDist = self.atDistanceAndAzimuth(self, distance, azimuth)
+        atDist = GeoCoordinate.atDistanceAndAzimuthStatic(self, distance, azimuth)
         resultLon = atDist[1]
         resultLat = atDist[0]
         
