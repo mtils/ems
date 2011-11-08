@@ -103,7 +103,6 @@ class MimeTypeDB(object):
     
     @staticmethod
     def get(identifier=None,suffix=None):
-        '''Hallo'''
         if (identifier == None) and (suffix == None):
             raise SyntaxError("User either identifier or suffix, but not none of em")
         if not len(MimeTypeDB.mimeTypesBySuffix):

@@ -12,7 +12,6 @@ class HeaderEventFilter(QObject):
     def eventFilter(self, object, event):
         if(event.type() == QEvent.Paint):
             print self.parent()
-            print "Hallo"
         else:
             print event.type()
         return False
