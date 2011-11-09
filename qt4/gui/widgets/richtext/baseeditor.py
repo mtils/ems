@@ -19,6 +19,9 @@ class BaseEditor(DialogableWidget):
         self.__currentToolbarIndex = 0
         self.setLayout(QtGui.QVBoxLayout(self))
         self.layout().setSpacing(0)
+        #self.layout().setMargin(0)
+        #l = QtGui.QVBoxLayout(self)
+        
         self.toolBarContainers = []
         
         self.textEdit = QtGui.QTextEdit(self)
@@ -68,13 +71,24 @@ class BaseEditor(DialogableWidget):
     def addToolBar(self, toolbar):
         if len(self.toolBarContainers) <= self.__currentToolbarIndex:
             toolBarContainer = QWidget(self)
+#            toolbar.setStyleSheet('border: 1px solid black;')
             toolBarContainer.setLayout(QHBoxLayout(toolBarContainer))
+            toolBarContainer.layout().setSpacing(0)
+            
+            toolBarContainer.layout().setContentsMargins(0,0,0,0)
             spacerItem = QSpacerItem(10,5,QSizePolicy.Expanding)
             toolBarContainer.layout().addSpacerItem(spacerItem)
             self.toolBarContainers.append(toolBarContainer)
             self.layout().insertWidget(self.__currentToolbarIndex,
                                        toolBarContainer)
         self.layout().insertWidget(self.layout().count()-1, toolbar)
+        
+#        for i in range(self.layout().count()): 
+#            if self.layout().itemAt(i).widget() is self.textEdit:
+#                self.layout().setStretch(i, 1)
+#            else:
+#                self.layout().setStretch(i, 0)
+        #self.layout().setStretch(self.layout().count(), 1)
         
         layout = self.toolBarContainers[self.__currentToolbarIndex].layout()
         layout.insertWidget(layout.count()-1,toolbar)
