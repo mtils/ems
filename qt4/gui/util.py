@@ -123,7 +123,6 @@ class QTextDocumentHelper(object):
             docCopies = printer.numCopies()
             pageCopies = 1
         
-        print "pageCopies: {0} docCopies:{1}".format(pageCopies, docCopies)
         
         fromPage = printer.fromPage()
         toPage = printer.toPage()
