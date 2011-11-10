@@ -5,14 +5,17 @@ Created on 03.11.2011
 '''
 import math
 
-from PyQt4.QtCore import QObject, QPointF
+from PyQt4.QtCore import QObject, QPointF, Qt
 from PyQt4.QtGui import QGraphicsScene, QGraphicsPolygonItem, \
-    QGraphicsEllipseItem, QGraphicsPathItem, QPolygonF, QTransform
+    QGraphicsEllipseItem, QGraphicsPathItem, QPolygonF, QTransform, \
+    QPainterPath
     
-from lib.ems.qt4.location.maps.geomapobject import GeoMapObject
-from lib.ems.qt4.location.geocoordinate import GeoCoordinate
-from lib.ems.qt4.location.projwrapper import ProjCoordinateSystem,\
+from ems.qt4.location.maps.geomapobject import GeoMapObject
+from ems.qt4.location.geocoordinate import GeoCoordinate
+from ems.qt4.location.projwrapper import ProjCoordinateSystem,\
     ProjCoordinate, ProjPolygon
+from geomaprouteobject import GeoMapRouteObject #@UnresolvedImport
+from geomapgroupobject import GeoMapGroupObject
 
 class GeoMapObjectEngine(QObject):
     def __init__(self, mapData, mapDataP=None):
@@ -574,5 +577,548 @@ class GeoMapObjectEngine(QObject):
             
             polys.append(pixelPoly)
     
+    class PathStep(object):
+        tooClose = False
+        pixel = QPointF()
+        e = QPainterPath()
     
+    def exactPixelMap(self, origin, obj, polys):
+        '''
+        @param origin: GeoCoordinate
+        @type origin: GeoCoordinate
+        @param obj: GeoMapObject
+        @type obj: GeoMapObject
+        @param polys: List of QPolygonF
+        @type polys: list
+        '''
+        
+        latLonItems = self.latLonExact[obj]
+        
+        for i in self.pixelExact[obj]:
+            del i
+        del self.pixelExact[obj]
+        
+        tolerance = self.exactMappingTolerance
+        
+        if isinstance(obj, GeoMapRouteObject):
+            tolerance = obj.detailLevel()
+        # square it
+        tolerance = tolerance * tolerance
+        
+        for latLonItem in latLonItems:
+            if isinstance(latLonItem, QGraphicsPolygonItem):
+                poly = latLonItem.polygon()
+                pixelPoly = self.polyToScreen(poly)
+    
+                pi = self.polyCopy(latLonItem)
+                pi.setPolygon(pixelPoly)
+                
+                if self.pixelExact.has_key(obj):
+                    self.pixelExact[obj].append(pi)
+                else:
+                    self.pixelExact[obj] = [pi]
+                polys.append(pi.boundingRect())
             
+            if isinstance(latLonItem, QGraphicsPathItem):
+                pathItem = latLonItem
+                path = pathItem.path()
+                pathSize = path.elementCount()
+                mpath = QPainterPath()
+    
+                screen = self.latLonViewport().boundingRect()
+    
+                lastPixelAdded = QPointF()
+                lastOutside = True
+    
+                steps = []
+                
+                for i in range(pathSize):
+                    e = path.elementAt(i)
+                    pathStep = GeoMapObjectEngine.PathStep()
+                    pathStep.e = e
+                    
+                    x = e.x; x /= 3600.0
+                    y = e.y; y /= 3600.0
+                    
+                    pixel = self.mdp.coordinateToScreenPosition(x, y)
+                    deltaP = QPointF(pixel - lastPixelAdded)
+                    delta = deltaP.x() * deltaP.x() + deltaP.y() * deltaP.y()
+                    
+                    pathStep.pixel = pixel
+                    
+                    if not lastPixelAdded.isNull() and delta < tolerance:
+                        pathStep.tooClose = True
+                    else:
+                        pathStep.tooClose = False
+                        lastPixelAdded = pixel
+                    steps.append(pathStep)
+                
+                em = steps[0].e
+                
+                for i in range(pathSize):
+                    e = steps[i].e
+                    
+                    if steps[i].tooClose:
+                        continue
+                    
+                    # guilty until proven innocent
+                    outside = True
+                    if screen.contains(e.x, e.y):
+                        outside = False
+                    if lastOutside:
+                        if (em.x < screen.left() and e.x > screen.right()):
+                            outside = False;
+                        if (em.x > screen.right() and e.x < screen.left()):
+                            outside = False;
+                        if (em.y < screen.bottom() and e.y > screen.top()):
+                            outside = False;
+                        if (em.y > screen.top() and e.y < screen.bottom()):
+                            outside = False;
+                    
+                    # skip points not inside the screen rect
+                    # or attached to points inside it
+                    if (outside and lastOutside):
+                        continue
+                    
+                    # entering the screen rect
+                    if not outside and lastOutside and i > 0:
+                        lastPixel = steps[i-1].pixel
+                        mpath.moveTo(lastPixel)
+                    lastOutside = outside;
+    
+                    pixel = steps[i].pixel
+    
+                    if e.isMoveTo():
+                        mpath.moveTo(pixel)
+                    else:
+                        mpath.lineTo(pixel)
+    
+                    em = e
+                    
+                del steps
+                
+                pi = self.pathCopy(pathItem)
+                pi.setPath(mpath)
+                self.pixelExact.insertMulti(obj, pi);
+                if self.pixelExact.has_key(obj):
+                    self.pixelExact[obj].append(pi)
+                else:
+                    self.pixelExact[obj] = [pi]
+                
+                polys.append(QPolygonF(pi.boundingRect()))
+        
+    def pixelShiftToScreen(self, origin, obj, polys):
+        '''
+        @param origin: GeoCoordinate
+        @type origin: GeoCoordinate
+        @param obj: GeoMapObject
+        @type obj: GeoMapObject
+        @param polys: A list to which the polys will be appended
+        @type polys: list
+        '''
+        item = self.graphicsItemFromMapObject(obj)
+        if not item:
+            return
+    
+        localRect = item.boundingRect() | item.childrenBoundingRect()
+        
+        # compute the transform as an origin shift
+        origins = []
+        origins.append(QPointF(origin.longitude(), origin.latitude()))
+        origins.append(QPointF(origin.longitude() + 360.0, origin.latitude()))
+        origins.append(QPointF(origin.longitude() - 360.0, origin.latitude()))
+        
+        for o in origins:
+            pixel = item.transform()
+            pixelOrigin = self.mdp.coordinateToScreenPosition(o.x(), o.y())
+            pixel.translate(pixelOrigin.x(), pixelOrigin.y())
+            
+            if self.pixelExact.has_key(obj):
+                self.pixelExact[obj].append(pixel)
+            else:
+                self.pixelExact[obj] = [pixel]
+            
+            polys.append(pixel.map(localRect))
+    
+    '''
+    ****************************************************************************
+     Update utility functions
+    ****************************************************************************
+    '''
+    
+    @staticmethod
+    def _zoomDepsRecurse(eng, group):
+        '''
+        @param eng: GeoObjectEngine
+        @type eng: GeoObjectEngine
+        @param group: GeoMapGroupObject
+        @type group: GeoMapGroupObject
+        '''
+        for obj in group.childObjects():
+            if isinstance(obj, GeoMapGroupObject):
+                GeoMapObjectEngine._zoomDepsRecurse(eng, obj)
+            else:
+                if obj.units() == GeoMapObject.PixelUnit:
+                    eng.objectsForLatLonUpdate.append(obj)
+                    eng.objectsForPixelUpdate.append(obj)
+    
+    def invalidateZoomDependents(self):
+        if self.mdp._containerObject:
+            GeoMapObjectEngine._zoomDepsRecurse(self, self.mdp._containerObject)
+    
+    
+    def invalidatePixelsForViewport(self, updateNow):
+        view = self.latLonViewport()
+
+        itemsInView = []
+        itemsInView = self.latLonScene.items(view, Qt.IntersectsItemShape,
+                                             Qt.AscendingOrder)
+        
+        
+        for latLonItem in itemsInView:
+            obj = latLonItem.value(self.latLonItems[latLonItem])
+            if not obj in self.objectsForPixelUpdate:
+                self.objectsForPixelUpdate.append(obj)
+        
+        if updateNow:
+            self.mdp.emitUpdateDisplay()
+    
+    def trimPixelTransforms(self):
+        view = self.latLonViewport()
+        
+        itemsInView = self.latLonScene.items(view, Qt.IntersectsItemShape,
+                                             Qt.AscendingOrder)
+        
+        shouldBe = set()
+        for latLonItem in itemsInView:
+            obj = self.latLonItems[latLonItem]
+            shouldBe.add(obj)
+        
+        itemsInPixels = self.pixelScene.items()
+
+        currentlyAre = set()
+        for pixelItem in itemsInPixels:
+            obj = self.pixelItems[pixelItem]
+            currentlyAre.add(obj)
+        
+        excess = currentlyAre.difference(shouldBe)
+        
+        for obj in excess:
+            for item in self.pixelItemsRev[obj]:
+                self.pixelScene.removeItem(item)
+                del self.pixelItems[item]
+                del item
+            del self.pixelTrans[obj]
+            del self.pixelItemsRev[obj]
+        
+        self.mdp.emitUpdateMapDisplay()
+    
+    def invalidateObject(self, obj):
+        '''
+        @param obj: The GeoMapObject
+        @type obj: GeoMapObject
+        '''
+        
+        self.updateLatLonTransform(obj)
+        
+        view = self.latLonViewport().boundingRect()
+        
+        
+        needsPixelUpdate = False
+        for item in self.latLonItemsRev[obj]:
+            if item.boundingRect().intersects(view):
+                needsPixelUpdate = True
+                break;
+        
+        if needsPixelUpdate:
+            self.objectsForPixelUpdate.append(obj)
+            self.mdp.emitUpdateMapDisplay()
+        
+    def updateTransforms(self):
+        '''
+        update the transform tables as necessary
+        '''
+        groupUpdated = False
+
+        for obj in self.objectsForLatLonUpdate:
+            #group = qobject_cast<QGeoMapGroupObject*>(obj);
+            if obj.type_() == GeoMapObject.GroupType:
+                self.updateLatLonsForGroup(obj)
+                groupUpdated = True
+            else:
+                self.updateLatLonTransform(obj)
+        
+        self.objectsForLatLonUpdate = []
+        
+        for obj in self.objectsForPixelUpdate:
+            if obj.type_() == GeoMapObject.GroupType:
+                self.updatePixelsForGroup(obj)
+                groupUpdated = True
+            else:
+                self.updatePixelTransform(obj)
+        
+        self.objectsForPixelUpdate = []
+
+        if groupUpdated:
+            self.rebuildScenes()
+    
+    def updatePixelsForGroup(self, group):
+        '''
+        @param group: GeoMapGroupObject
+        @type group: GeoMapGroupObject
+        '''
+        for obj in group.childObjects():
+            if obj.type_() == GeoMapObject.GroupType:
+                self.updatePixelsForGroup(obj)
+            else:
+                self.updatePixelTransform(obj)
+    
+    def updateLatLonsForGroup(self, group):
+        '''
+        @param group: GeoMapGroupObject
+        @type group: GeoMapGroupObject
+        '''
+        for obj in group.childObjects():
+            if obj.type_() == GeoMapGroupObject:
+                self.updateLatLonsForGroup(obj)
+            else:
+                self.updateLatLonTransform(obj)
+    
+    @staticmethod
+    def addGroupToScene(eng, group):
+        '''
+        @param eng: GeoMapObjectEngine
+        @type eng: GeoMapObjectEngine
+        @param group: GeoMapGroupObject
+        @type group: GeoMapGroupObject
+        '''
+        for obj in group.childObjects():
+            if obj.type_() == GeoMapObject.GroupType:
+                GeoMapObjectEngine.addGroupToScene(eng, obj)
+            else:
+                for i in eng.latLonItemsRev[obj]:
+                    eng.latLonScene.addItem(i)
+                for i in eng.pixelItemsRev[obj]:
+                    eng.pixelScene.addItem(i)
+        
+    def rebuildScenes(self):
+        for i in self.latLonScene.items():
+            self.latLonScene.removeItem(i)
+        for i in self.pixelScene.items():
+            self.pixelScene.removeItem(i)
+    
+        del self.latLonScene
+        del self.pixelScene
+    
+        self.latLonScene = QGraphicsScene()
+        self.pixelScene = QGraphicsScene()
+        self.pixelScene.setItemIndexMethod(QGraphicsScene.NoIndex)
+    
+        self.addGroupToScene(self, self.mdp._containerObject)
+    
+    '''
+    ****************************************************************************
+     Actual update functions
+    ****************************************************************************
+    '''
+    
+    def updateLatLonTransform(self, obj):
+        '''
+        
+        @param obj: The obj to update
+        @type obj: GeoMapObject
+        '''
+        origin = obj.origin()
+        
+        item = self.graphicsItemFromMapObject(obj)
+        
+        if not item:
+            return
+        
+        localRect = (item.boundingRect() | item.childrenBoundingRect())
+        
+        # skip any objects with invalid bounds
+        if not localRect.isValid() or localRect.isEmpty() or localRect.isNull():
+            return
+        
+        local = localRect * item.transform()
+        
+        polys = []
+        
+        del self.latLonTrans[obj]
+        
+        if obj.transformType() == GeoMapObject.BilinearTransform or\
+            obj.units() == GeoMapObject.PixelUnit:
+            latLon = QTransform()
+            
+            if obj.units() == GeoMapObject.MeterUnit:
+                self.bilinearMetersToSeconds(origin, item, local, latLon);
+            elif obj.units() == GeoMapObject.RelativeArcSecondUnit:
+                latLon.translate(origin.longitude() * 3600.0, origin.latitude() * 3600.0)
+            elif obj.units() == GeoMapObject.PixelUnit:
+                self.bilinearPixelsToSeconds(origin, item, local, latLon)
+            
+            polys.append(latLon.map(localRect))
+            if self.latLonTrans.has_key(obj):
+                self.latLonTrans[obj].append(latLon)
+            else:
+                self.latLonTrans[obj] = [latLon]
+            
+            latLonWest = QTransform()
+            latLonWest.translate(360.0 * 3600.0, 0.0)
+            latLonWest = latLon * latLonWest
+            
+            polys.append(latLonWest.map(localRect))
+            if self.latLonTrans.has_key(obj):
+                self.latLonTrans[obj].append(latLonWest)
+            else:
+                self.latLonTrans[obj] = [latLonWest]
+            
+            latLonEast = QTransform()
+            latLonEast.translate(-360.0 * 3600.0, 0.0)
+            latLonEast = latLon * latLonEast
+            
+            polys.append(latLonEast.map(localRect))
+            if self.latLonTrans.has_key(obj):
+                self.latLonTrans[obj].append(latLonEast)
+            else:
+                self.latLonTrans[obj] = [latLonEast]
+            
+        elif obj.transformType() == GeoMapObject.ExactTransform:
+            if obj.units() == GeoMapObject.MeterUnit:
+                if not self.exactMetersToSeconds(origin, obj, item, polys):
+                    return
+            elif obj.units() == GeoMapObject.AbsoluteArcSecondUnit or\
+                   obj.units() == GeoMapObject.RelativeArcSecondUnit:
+                if not self.exactSecondsToSeconds(origin, obj, item, polys):
+                    return
+            else:
+                return
+        
+        items = self.latLonItemsRev[obj]
+        if len(items) != len(polys):
+            for item in items:
+                self.latLonScene.removeItem(item)
+                del self.latLonItems[item]
+                del item
+            
+            del self.latLonItemsRev[obj]
+            
+            for poly in polys:
+                item = QGraphicsPolygonItem(poly)
+                item.setZValue(obj.zValue())
+                item.setVisible(True)
+                self.latLonItems[item] = [obj]
+                if self.latLonItemsRev.has_key(obj):
+                    self.latLonItemsRev[obj].append(item)
+                else:
+                    self.latLonItemsRev[obj] = [item]
+                self.latLonScene.addItem(item)
+        else:
+            i = 0
+            for item in items:
+                if not item:
+                    continue
+                
+                item.setPolygon(polys[i])
+                i += 1
+                object
+    
+    def updatePixelTransform(self, obj):
+        origin = object.origin()
+        item = self.graphicsItemFromMapObject(object)
+        
+        # skip any objects without graphicsitems
+        if not item:
+            return
+        
+        localRect = (item.boundingRect() | item.childrenBoundingRect())
+        
+        # skip any objects with invalid bounds
+        if not localRect.isValid() or localRect.isEmpty() or localRect.isNull():
+            return
+        
+        polys = []
+        
+        del self.pixelTrans[obj]
+        
+        if obj.transformType() == GeoMapObject.BilinearTransform:
+            self.bilinearSecondsToScreen(origin, obj, polys)
+        elif obj.transformType() == GeoMapObject.ExactTransform:
+            if object.units() == GeoMapObject.PixelUnit:
+                self.pixelShiftToScreen(origin, obj, polys)
+            else:
+                self.exactPixelMap(origin, obj, polys)
+        
+        items = self.pixelItemsRev[obj]
+        
+        if len(items) != len(polys):
+            for item in items:
+                del self.pixelItems[item]
+                self.pixelScene.removeItem(item)
+                del item
+            
+            del self.pixelItemsRev[obj]
+            for poly in polys:
+                item = QGraphicsPolygonItem(poly)
+                
+                item.setVisible(True)
+                self.pixelItems[item] = obj
+                self.pixelItemsRev.insertMulti(object, item);
+                if self.pixelItemsRev.has_key(obj):
+                    self.pixelItemsRev[obj].append(obj)
+                else:
+                    self.pixelItemsRev[obj] = [obj]
+                self.pixelScene.addItem(item)
+        else:
+            for i in range(len(polys)):
+                item = items[i]
+                
+                if not item:
+                    continue
+                
+                item.setPolygon(polys[i])
+            
+    
+    def latLonViewport(self):
+        '''
+        @rtype: QPolygonF
+        '''
+        view = QPolygonF()
+        viewport = self.md.viewport()
+        offset = 0.0
+        
+        c = viewport.bottomLeft()
+        view << QPointF(c.longitude() * 3600.0, c.latitude() * 3600.0)
+        c2 = viewport.bottomRight()
+        if c2.longitude() < c.longitude():
+            offset = 360.0 * 3600.0
+        view << QPointF(c2.longitude() * 3600.0 + offset, c2.latitude() * 3600.0)
+        c = viewport.topRight();
+        view << QPointF(c.longitude() * 3600.0 + offset, c.latitude() * 3600.0)
+        c = viewport.topLeft();
+        view << QPointF(c.longitude() * 3600.0, c.latitude() * 3600.0)
+    
+        return view
+    
+    def polyToScreen(self, poly):
+        r = QPolygonF()
+        for pt in poly:
+            x = pt.x() / 3600.0
+            y = pt.y() / 3600.0
+            pixel = self.mdp.coordinateToScreenPosition(x, y)
+            r.append(pixel)
+        return r
+    
+    def graphicsItemFromMapObject(self, obj):
+        if not obj or not obj.info():
+            return None
+        tiledInfo = obj.info()
+        
+        if tiledInfo:
+            return tiledInfo.graphicsItem
+        
+        return None
+        
+        
+        
