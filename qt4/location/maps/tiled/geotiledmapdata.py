@@ -10,10 +10,10 @@ from PyQt4.QtCore import qRound, QPointF, QPoint, qAbs, QRectF, Qt, pyqtSlot,\
 from PyQt4.QtGui import QPixmap, QPainter, QImage, QPainterPath, \
     QStyleOptionGraphicsItem 
 
-from lib.ems.qt4.location.maps.geomapdata import GeoMapData
-from lib.ems.qt4.location.geocoordinate import GeoCoordinate
-from lib.ems.qt4.location.geoboundingbox import GeoBoundingBox
-from lib.ems.qt4.location.maps.geomapobject import GeoMapObject
+from ems.qt4.location.maps.geomapdata import GeoMapData
+from ems.qt4.location.geocoordinate import GeoCoordinate
+from ems.qt4.location.geoboundingbox import GeoBoundingBox
+from ems.qt4.location.maps.geomapobject import GeoMapObject
 from geotiledmapgroupobjectinfo import GeoTiledMapGroupObjectInfo #@UnresolvedImport
 from geotiledmaprectangleobjectinfo import GeoTiledMapRectangleObjectInfo #@UnresolvedImport
 from geotiledmapcircleobjectinfo import GeoTiledMapCircleObjectInfo #@UnresolvedImport
@@ -24,7 +24,7 @@ from geotiledmaptextobjectinfo import GeoTiledMapTextObjectInfo #@UnresolvedImpo
 from geotiledmaprouteobjectinfo import GeoTiledMapRouteObjectInfo #@UnresolvedImport
 from geotiledmapcustomobjectinfo import GeoTiledMapCustomObjectInfo #@UnresolvedImport
 from geotiledmapreply import GeoTiledMapReply #@UnresolvedImport
-from lib.ems.qt4.location.maps.geomapobjectengine import GeoMapObjectEngine
+from ems.qt4.location.maps.geomapobjectengine import GeoMapObjectEngine
 from geotiledmaprequest import GeoTiledMapRequest #@UnresolvedImport
 
 def rmod(a, b):
