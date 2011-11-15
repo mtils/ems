@@ -3,7 +3,7 @@ Created on 05.11.2011
 
 @author: michi
 '''
-from lib.ems.qt4.location.geocoordinate import GeoCoordinate
+from ems.qt4.location.geocoordinate import GeoCoordinate
 
 class GeoManeuver(object):
     '''
