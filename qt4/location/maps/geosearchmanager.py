@@ -181,6 +181,7 @@ class GeoSearchManager(QObject):
         '''
         
         self.__engine = engine
+        QObject.__init__(self, parent)
         if self.__engine:
             self.__engine.setParent(self)
             self.__engine.finished.connect(self.finished)
