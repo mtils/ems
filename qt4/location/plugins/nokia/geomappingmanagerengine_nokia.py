@@ -11,6 +11,8 @@ from ems.qt4.location.maps.tiled.geotiledmappingmanagerengine import GeoTiledMap
 from ems.qt4.location.maps.graphicsgeomap import GraphicsGeoMap
 from ems.qt4.location.plugins.nokia.geotiledmapdata_nokia import GeoTiledMapDataNokia #@UnresolvedImport
 from ems.qt4.location.plugins.nokia.geomapreply_nokia import GeoMapReplyNokia #@UnresolvedImport
+from ems.qt4.location.plugins.nokia.geoserviceproviderfactory_nokia import GeoServiceProviderFactoryNokia #@UnresolvedImport
+#from ems.qt4.location.plugins.nokia.
 
 LARGE_TILE_DIMENSION = 256
 
@@ -29,8 +31,8 @@ class GeoMappingManagerEngineNokia(GeoTiledMappingManagerEngine):
     def __init__(self, parameters, error=0, errorString=""):
         self._m_cache = None
         self._m_host = "maptile.maps.svc.ovi.com"
-        self._m_token = ""
-        self._m_referer = ""
+        self._m_token = GeoServiceProviderFactoryNokia.defaultToken
+        self._m_referer = GeoServiceProviderFactoryNokia.defaultReferer
         
         self.setTileSize(QSize(256,256))
         self._setMinimumZoomLevel(0.0)
