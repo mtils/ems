@@ -7,14 +7,15 @@ from PyQt4.QtCore import pyqtSlot
 from PyQt4.QtGui import QGraphicsPathItem
 
 from geotiledmapobjectinfo import GeoTiledMapObjectInfo #@UnresolvedImport
-from lib.ems.qt4.location.maps.geomapgroupobject import GeoMapGroupObject
-from lib.ems.qt4.location.maps.geomapobject import GeoMapObject
+from ems.qt4.location.maps.geomapgroupobject import GeoMapGroupObject
+from ems.qt4.location.maps.geomapobject import GeoMapObject
 
 class GeoTiledMapGroupObjectInfo(GeoTiledMapObjectInfo):
     def __init__(self, mapData, mapObject):
-        self.group = GeoMapGroupObject()
-        self.group.addChildObject(mapObject)
-        self._mapData = mapData
+        GeoTiledMapObjectInfo.__init__(self, mapData, mapObject)
+        self.group = mapObject
+        #self.group.addChildObject(mapObject)
+        #self._mapData = mapData
         
         self.group.childAdded.connect(self.childAdded)
         self.group.childUpdated.connect(self.childUpdated)

@@ -53,7 +53,7 @@ class GeoMapReplyNokia(GeoTiledMapReply):
             return
         
         fromCache = self._m_reply.attribute(QNetworkRequest.SourceIsFromCacheAttribute)
-        self._setCached(fromCache.toBool)
+        self._setCached(fromCache.toBool())
         
         if not self.isChached():
             cache = self._m_reply.manager().cache()

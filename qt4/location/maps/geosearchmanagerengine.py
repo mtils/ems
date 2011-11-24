@@ -64,7 +64,7 @@ class GeoSearchManagerEngine(QObject):
 
     _locale = QLocale
     
-    finished = pyqtSignal()
+    finished = pyqtSignal(GeoSearchReply)
     '''This signal is emitted when \a reply has finished processing.
 
     If reply::error() equals QGeoSearchReply::NoError then the processing
@@ -76,7 +76,7 @@ class GeoSearchManagerEngine(QObject):
     \note Do no delete the \a reply object in the slot connected to this
     signal. Use deleteLater() instead.'''
     
-    error = pyqtSignal(int, basestring)
+    error = pyqtSignal(GeoSearchReply, int, str)
     '''This signal is emitted when an error has been detected in the processing of
     \a reply. The QGeoSearchManagerEngine::finished() signal will probably follow.
 

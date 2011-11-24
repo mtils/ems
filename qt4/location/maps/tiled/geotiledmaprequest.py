@@ -47,6 +47,7 @@ class GeoTiledMapRequest(object):
         self._tileRect = tileRect
         self._mapType = mapType
         self._connectivityMode = connectivityModeOrOther
+        self._cacheId = ""
         
     def __ilshift__(self, other):
         '''
@@ -73,6 +74,17 @@ class GeoTiledMapRequest(object):
                 return False
         
         return True
+    
+    def cacheId(self):
+        args = (str(int(self._zoomLevel)), str(self._row), str(self._column),
+                str(self._mapType), str(self._connectivityMode))
+        return "|".join(args)
+    
+#    def __hash__(self):
+#        hashList = []
+#        for prop in ('_zoomLevel','_row','_column','_mapType', '_connectivityMode'):
+#            hashList.append(str(self.__getattribute__(prop)))
+#        return "|".join(hashList)
     
     def connectivityMode(self):
         '''

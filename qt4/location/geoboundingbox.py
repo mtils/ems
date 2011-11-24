@@ -167,7 +167,7 @@ class GeoBoundingBox(GeoBoundingArea):
         @return: GeoCoordinate
         '''
         
-        if self.isValid():
+        if not self.isValid():
             return GeoCoordinate()
         return GeoCoordinate(self._topLeft.latitude(),
                              self._bottomRight.longitude())

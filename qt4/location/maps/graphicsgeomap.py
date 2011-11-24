@@ -4,7 +4,7 @@ Created on 13.10.2011
 @author: michi
 '''
 
-from PyQt4.QtCore import pyqtSignal, QSizeF, QPointF
+from PyQt4.QtCore import pyqtSignal, QSizeF, QPointF, QRectF
 from PyQt4.QtGui import QGraphicsWidget, QPainterPath
 
 from ems.qt4.location.geocoordinate import GeoCoordinate #@UnresolvedImport
@@ -81,6 +81,8 @@ class GraphicsGeoMap(QGraphicsWidget):
         @param parent: The parent GraphicsItem
         @type parent: QGraphicsItem
         '''
+        QGraphicsWidget.__init__(self, parent)
+        
         self.manager = manager
         
         self.mapData = self.manager.createMapData()
@@ -90,7 +92,9 @@ class GraphicsGeoMap(QGraphicsWidget):
         self.mapData.updateMapDisplay.connect(self.updateMapDisplay)
         
         self.setMapType(self.StreetMap)
+        
         self.mapData.setWindowSize(self.size())
+        #self.mapData.setWindowSize(QSizeF(500,500))
         
         self.mapData.zoomLevelChanged.connect(self.zoomLevelChanged)
         self.mapData.bearingChanged.connect(self.bearingChanged)
@@ -104,6 +108,8 @@ class GraphicsGeoMap(QGraphicsWidget):
         
         self.setMinimumSize(QSizeF(0,0))
         self.setPreferredSize(QSizeF(500,500))
+        
+        
     
     def __del__(self):
         pass
@@ -148,7 +154,13 @@ class GraphicsGeoMap(QGraphicsWidget):
         @param target: The target rect
         @type target: QRectF
         '''
-        self.update(target)
+#        print "GraphicsGeoMap.updateMapDisplay({0})".format(target)
+        #self.update()
+        
+        if isinstance(target, QRectF) and target.isValid():
+            self.update(target)
+        else:
+            self.update()
     
     def minimumZoomLevel(self):
         '''This property holds the minimum zoom level supported by the

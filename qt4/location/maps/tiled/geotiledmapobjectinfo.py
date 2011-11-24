@@ -5,18 +5,19 @@ Created on 29.10.2011
 '''
 from PyQt4.QtCore import pyqtSignal, pyqtSlot, QPointF, QRectF 
 
-from lib.ems.qt4.location.maps.geomapobjectinfo import GeoMapObjectInfo
+from ems.qt4.location.maps.geomapobjectinfo import GeoMapObjectInfo
 from ems.qt4.location.geocoordinate import GeoCoordinate #@UnresolvedImport
 from ems.qt4.location.geoboundingbox import GeoBoundingBox #@UnresolvedImport
 
 class GeoTiledMapObjectInfo(GeoMapObjectInfo):
     def __init__(self, mapData, mapObject):
         
+        GeoMapObjectInfo.__init__(self, mapData, mapObject)
         self.inited = False
         self.updateAfterInit = False
         self.graphicsItem = None
         self.tiledMapData = mapData
-        GeoMapObjectInfo.__init__(self, mapData, mapObject)
+        
     
     def init(self):
         if self.graphicsItem:
@@ -24,7 +25,7 @@ class GeoTiledMapObjectInfo(GeoMapObjectInfo):
             self.graphicsItem.setVisible(self.mapObject().isVisible())
         self.inited = True
         if self.updateAfterInit:
-            self.tiledMapData.updateMapDisplay()
+            self.tiledMapData._updateMapDisplay()
             self.updateAfterInit = False
         GeoMapObjectInfo.init(self)
     

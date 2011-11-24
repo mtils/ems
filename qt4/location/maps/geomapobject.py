@@ -268,6 +268,7 @@ class GeoMapObject(QObject):
         @param mapData: The associated GeoMapData Object
         @type mapData: GeoMapData
         '''
+        
         if self._mapData is mapData:
             return
         

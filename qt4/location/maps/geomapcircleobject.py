@@ -7,8 +7,8 @@ from PyQt4.QtCore import pyqtProperty, pyqtSignal
 from PyQt4.QtGui import QPen, QBrush
 
 from geomapobject import GeoMapObject #@UnresolvedImport
-from lib.ems.qt4.location.geocoordinate import GeoCoordinate
-from lib.ems.qt4.location.geoboundingcircle import GeoBoundingCircle
+from ems.qt4.location.geocoordinate import GeoCoordinate
+from ems.qt4.location.geoboundingcircle import GeoBoundingCircle
 
 class GeoMapCircleObject(GeoMapObject):
     '''

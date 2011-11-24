@@ -7,7 +7,7 @@ from PyQt4.QtCore import pyqtSlot, QPointF
 from PyQt4.QtGui import QGraphicsPolygonItem, QPen, QBrush, QPolygonF
 
 from geotiledmapobjectinfo import GeoTiledMapObjectInfo #@UnresolvedImport
-from lib.ems.qt4.location.geocoordinate import GeoCoordinate
+from ems.qt4.location.geocoordinate import GeoCoordinate
 
 class GeoTiledMapRectangleObjectInfo(GeoTiledMapObjectInfo):
     

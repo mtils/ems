@@ -11,7 +11,6 @@ from ems.qt4.location.maps.tiled.geotiledmappingmanagerengine import GeoTiledMap
 from ems.qt4.location.maps.graphicsgeomap import GraphicsGeoMap
 from ems.qt4.location.plugins.nokia.geotiledmapdata_nokia import GeoTiledMapDataNokia #@UnresolvedImport
 from ems.qt4.location.plugins.nokia.geomapreply_nokia import GeoMapReplyNokia #@UnresolvedImport
-from ems.qt4.location.plugins.nokia.geoserviceproviderfactory_nokia import GeoServiceProviderFactoryNokia #@UnresolvedImport
 #from ems.qt4.location.plugins.nokia.
 
 LARGE_TILE_DIMENSION = 256
@@ -29,10 +28,14 @@ class GeoMappingManagerEngineNokia(GeoTiledMappingManagerEngine):
     _m_referer = ""
     
     def __init__(self, parameters, error=0, errorString=""):
+        GeoTiledMappingManagerEngine.__init__(self, parameters)
         self._m_cache = None
         self._m_host = "maptile.maps.svc.ovi.com"
+        from ems.qt4.location.plugins.nokia.geoserviceproviderfactory_nokia \
+            import GeoServiceProviderFactoryNokia #@UnresolvedImport
         self._m_token = GeoServiceProviderFactoryNokia.defaultToken
         self._m_referer = GeoServiceProviderFactoryNokia.defaultReferer
+        self._lastRequestString = ""
         
         self.setTileSize(QSize(256,256))
         self._setMinimumZoomLevel(0.0)
@@ -79,6 +82,7 @@ class GeoMappingManagerEngineNokia(GeoTiledMappingManagerEngine):
             cacheDir = parameters["mapping.cache.directory"]
         else:
             cacheDir = QDir.temp().path() + "/maptiles"
+        
              
         if len(cacheDir):
             self._m_cache = QNetworkDiskCache(self)
@@ -112,6 +116,10 @@ class GeoMappingManagerEngineNokia(GeoTiledMappingManagerEngine):
         '''
         # TODO add error detection for if request.connectivityMode() != QGraphicsGeoMap::OnlineMode
         rawRequest = self._getRequestString(request)
+#        if rawRequest != self._lastRequestString:
+#            print rawRequest
+#        print rawRequest
+        self._lastRequestString = rawRequest
         
         # The extra pair of parens disambiguates this from a function declaration
         netRequest = QNetworkRequest(QUrl(rawRequest))
@@ -136,19 +144,20 @@ class GeoMappingManagerEngineNokia(GeoTiledMappingManagerEngine):
         maxDomains = 11; # TODO: hmmm....
         subdomainKey = (request.row() + request.column()) % maxDomains
         subdomain = 'a{0}'.format(subdomainKey) # a...k
+        
         http = "http://"
         path = "/maptiler/maptile/newest/"
         dot = '.'
         slash = '/'
         
-        requestParams = []
-        requestParams.append(subdomain)
-        requestParams.append(dot)
+        requestParams = [http]
+        #requestParams.append(subdomain)
+        #requestParams.append(dot)
         requestParams.append(self._m_host)
         requestParams.append(path)
         requestParams.append(GeoMappingManagerEngineNokia._mapTypeToStr(request.mapType()))
         requestParams.append(slash)
-        requestParams.append(unicode(request.zoomLevel()))
+        requestParams.append(unicode(int(request.zoomLevel())))
         requestParams.append(slash)
         requestParams.append(unicode(request.column()))
         requestParams.append(slash)
@@ -182,7 +191,8 @@ class GeoMappingManagerEngineNokia(GeoTiledMappingManagerEngine):
             return s256
         return s128
     
-    def _mapTypeToStr(self, type_):
+    @staticmethod
+    def _mapTypeToStr(type_):
         '''
         @param type_: int
         @type type_: int

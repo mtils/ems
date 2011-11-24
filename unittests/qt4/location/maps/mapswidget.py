@@ -4,56 +4,84 @@ Created on 29.10.2011
 @author: michi
 '''
 from PyQt4.QtCore import pyqtSignal, QPropertyAnimation, Qt, QPointF,\
-    QAbstractAnimation, QRectF, QTimer, SLOT, pyqtSlot, QParallelAnimationGroup
+    QAbstractAnimation, QRectF, QTimer, SLOT, pyqtSlot, QParallelAnimationGroup,\
+    QSizeF, pyqtProperty, QObject, QString
 from PyQt4.QtGui import QGraphicsRectItem, QGraphicsSimpleTextItem, QPen,\
     QBrush, QColor, QFont, QGraphicsView, QWidget, QGraphicsScene
 
-from lib.ems.qt4.location.maps.graphicsgeomap import GraphicsGeoMap
-from lib.ems.qt4.location.maps.geomappingmanager import GeoMappingManager
-from lib.ems.qt4.location.maps.geomapobject import GeoMapObject
-from lib.ems.qt4.location.geocoordinate import GeoCoordinate
+from ems.qt4.location.maps.graphicsgeomap import GraphicsGeoMap
+from ems.qt4.location.maps.geomappingmanager import GeoMappingManager
+from ems.qt4.location.maps.geomapobject import GeoMapObject
+from ems.qt4.location.geocoordinate import GeoCoordinate
 from marker import Marker #@UnresolvedImport
 
 class GeoMap(GraphicsGeoMap):
-    centerLatitude = 0.0
-    centerLongitude = 0.0
+#    centerLatitude = 0.0
+#    centerLongitude = 0.0
     
     clicked = pyqtSignal(Marker)
     panned = pyqtSignal()
     
     def __init__(self, manager, mapsWidget):
         self.mapsWidget = mapsWidget
-        super(GeoMap, self).__init__(manager, mapsWidget)
+        #super(GeoMap, self).__init__(manager, mapsWidget)
+        GraphicsGeoMap.__init__(self, manager)
         self.panActive = False
         self._markerPressed = False
         self.pressed = None
+        self._clickedWithoutMove = False
+        self._animTest = 8.5658544302
     
-    def centerLatitude(self):
+    
+    def getCenterLatitude(self):
         return self.center().latitude()
     
-    def centerLongitude(self):
-        return self.center().longitude()
     
     def setCenterLatitude(self, latitude):
+        print "lat:{0}".format(latitude)
+        
         self.center().setLatitude(latitude)
         self.setCenter(self.center())
     
+    centerLatitude = pyqtProperty(float, getCenterLatitude, setCenterLatitude)
+    
+    
+    def getCenterLongitude(self):
+        #return self._animTest
+        return self.center().longitude()
+    
     def setCenterLongitude(self, longitude):
-        self.center().setLongitude(longitude)
-        self.setCenter(self.center())
+        print "lon: {0}".format(longitude)
+        #self._animTest = longitude
+        #return
+#        center = GeoCoordinate(self.center())
+        center = self.center()
+        center.setLongitude(longitude)
+        self.setCenter(center)
+    
+    centerLongitude = pyqtProperty(float, getCenterLongitude, setCenterLongitude)
     
     def mousePressEvent(self, event):
         self.panActive = True
         self._markerPressed = False
+        self._clickedWithoutMove = True
         objects = self.mapObjectsAtScreenPosition(event.pos())
+        #print self.screenPositionToCoordinate(QPointF(event.pos())), event.pos()
         if len(objects) > 0:
             self.pressed = objects[0]
             self._markerPressed = True
         self.setFocus()
         event.accept()
+        
     
     def mouseReleaseEvent(self, event):
         self.panActive = False
+        if self._clickedWithoutMove:
+            coord = self.screenPositionToCoordinate(QPointF(event.pos()))
+            coordStr = str(coord)
+            print coordStr
+            self.mapsWidget.statusBarItem.showText(coordStr)
+            
         if self._markerPressed:
             objects = self.mapObjectsAtScreenPosition(event.pos())
             if self.pressed in objects:
@@ -64,6 +92,7 @@ class GeoMap(GraphicsGeoMap):
         event.accept()
     
     def mouseMoveEvent(self, event):
+        self._clickedWithoutMove = False
         if self.panActive:
             delta = event.lastPos() - event.pos()
             self.pan(delta.x(), delta.y())
@@ -98,34 +127,37 @@ class GeoMap(GraphicsGeoMap):
         if eventKey in (Qt.Key_4, Qt.Key_Left):
             center = self.screenPositionToCoordinate(QPointF(width/2.0 - width/5.0,
                                                              height/2.0))
-            anim = QPropertyAnimation(self, 'centerLongitude') 
-            anim.setEndValue(center.longitude())
-            anim.setDuration(200)
-            anim.start(QAbstractAnimation.DeleteWhenStopped)
+            self.anim = QPropertyAnimation(self, 'centerLongitude') 
+            self.anim.setEndValue(center.longitude())
+            self.anim.setDuration(200)
+            self.anim.start(QAbstractAnimation.DeleteWhenStopped)
         
         elif eventKey in (Qt.Key_6, Qt.Key_Right):
             center = self.screenPositionToCoordinate(QPointF(width/2.0 + width/5.0,
                                                              height/2.0))
-            anim = QPropertyAnimation(self, 'centerLongitude') 
-            anim.setEndValue(center.longitude())
-            anim.setDuration(200)
-            anim.start(QAbstractAnimation.DeleteWhenStopped)
+            self.anim = QPropertyAnimation(self, 'centerLongitude')
+            self.anim.setEndValue(center.longitude())
+            self.anim.setDuration(200)
+            self.anim.start(QAbstractAnimation.DeleteWhenStopped)
+            
     
         elif eventKey in (Qt.Key_2, Qt.Key_Up):
             center = self.screenPositionToCoordinate(QPointF(width/2.0,
                                                              height/2.0 - height/5.0))
-            anim = QPropertyAnimation(self, 'centerLatitude') 
-            anim.setEndValue(center.latitude())
-            anim.setDuration(200)
-            anim.start(QAbstractAnimation.DeleteWhenStopped)
+            self.anim = QPropertyAnimation(self, 'centerLatitude') 
+            self.anim.setEndValue(center.latitude())
+            self.anim.setDuration(200)
+            self.anim.start(QAbstractAnimation.DeleteWhenStopped)
+            
         
         elif eventKey in (Qt.Key_8, Qt.Key_Down):
             center = self.screenPositionToCoordinate(QPointF(width/2.0,
                                                              height/2.0 + height/5.0))
-            anim = QPropertyAnimation(self, 'centerLatitude') 
-            anim.setEndValue(center.latitude())
-            anim.setDuration(200)
-            anim.start(QAbstractAnimation.DeleteWhenStopped)
+            self.anim = QPropertyAnimation(self, 'centerLatitude') 
+            self.anim.setEndValue(center.latitude())
+            self.anim.setDuration(200)
+            self.anim.start(QAbstractAnimation.DeleteWhenStopped)
+            
             
         elif eventKey == Qt.Key_1:
             if self.zoomLevel() > self.minimumZoomLevel():
@@ -188,10 +220,11 @@ class ZoomButtonItem(QGraphicsRectItem):
         
         self.map.setFocus()
         event.accept()
+        
     
     def isTopHalf(self, point):
         return QRectF(self.rect().x(), self.rect().y(),
-                      self.width(), self.rect().height()/2).contains(point)
+                      self.rect().width(), self.rect().height()/2).contains(point)
     
     def isBottomHalf(self, point):
         return QRectF(self.rect().x(), self.rect().y() + self.rect().height()/2.0,
@@ -212,10 +245,32 @@ class ZoomButtonItem(QGraphicsRectItem):
     def mouseMoveEvent(self, event):
         event.accept()
     
-
+class StatusBarNotifier(QObject):
+    def __init__(self, statusBarItem):
+        QObject.__init__(self, None)
+        self._offset = 0
+        self.item = statusBarItem
+        
+    def getOffset(self):
+        return self._offset
+    
+    def setOffset(self, offset):
+        self._offset = offset
+        self.item.setOffset(self._offset)
+    
+    offset = pyqtProperty(int, getOffset, setOffset)
+    
+    @pyqtSlot()
+    def hide(self):
+        self.item.hide()
+    
+    
 class StatusBarItem(QGraphicsRectItem):
     def __init__(self, parent=None):
+        
         QGraphicsRectItem.__init__(self, parent)
+        
+        self._offsetNotifier = StatusBarNotifier(self)
         self._offset = 0
         
         self.setPen(QPen(QBrush(),0))
@@ -224,15 +279,16 @@ class StatusBarItem(QGraphicsRectItem):
         self.textItem = QGraphicsSimpleTextItem(self)
         self.textItem.setBrush(QBrush(Qt.white))
         
-        self.setText("")
+        #self.setText("Hallo")
     
     def setText(self, text):
+        text = QString.fromUtf8(text)
         self.textItem.setText(text)
         rect = self.textItem.boundingRect()
         delta = self.rect().center() - rect.center()
         self.textItem.setPos(delta.x(), delta.y())
     
-    def offset(self):
+    def getOffset(self):
         return self._offset
     
     def setRect(self, x, y, w, h):
@@ -243,26 +299,30 @@ class StatusBarItem(QGraphicsRectItem):
         self.setY(self.y() - self._offset + offset)
         self._offset = offset
     
-    def showText(self, text, timeout):
+    offset = pyqtProperty(int, getOffset, setOffset)
+    
+    def showText(self, text, timeout=3000):
         self.setText(text)
         self.show()
-        QTimer.singleShot(timeout, self, SLOT('hide()'))
+        QTimer.singleShot(timeout, self._offsetNotifier, SLOT('hide()'))
     
     @pyqtSlot()
     def show(self):
-        anim = QPropertyAnimation(self, "offset")
-        anim.setStartValue(0)
-        anim.setEndValue(-1 * self.rect().height())
-        anim.setDuration(500)
-        anim.start(QAbstractAnimation.DeleteWhenStopped)
+        self.anim = QPropertyAnimation(self._offsetNotifier, "offset")
+        #anim.setPropertyName("offset")
+        
+        self.anim.setStartValue(0)
+        self.anim.setEndValue(-1 * self.rect().height())
+        self.anim.setDuration(500)
+        self.anim.start(QAbstractAnimation.DeleteWhenStopped)
     
     @pyqtSlot()
     def hide(self):
-        anim = QPropertyAnimation(self, "offset")
-        anim.setStartValue(self._offset)
-        anim.setEndValue(0)
-        anim.setDuration(500)
-        anim.start(QAbstractAnimation.DeleteWhenStopped)
+        self.anim = QPropertyAnimation(self._offsetNotifier, "offset")
+        self.anim.setStartValue(self._offsetNotifier._offset)
+        self.anim.setEndValue(0)
+        self.anim.setDuration(500)
+        self.anim.start(QAbstractAnimation.DeleteWhenStopped)
     
     
 class FixedGraphicsView(QGraphicsView):
@@ -270,6 +330,11 @@ class FixedGraphicsView(QGraphicsView):
         pass
 
 class MapsWidget(QWidget):
+    
+    markerClicked = pyqtSignal(Marker)
+    
+    mapPanned = pyqtSignal()
+    
     def __init__(self, parent=None):
         QWidget.__init__(self, parent)
         self.map = None
@@ -283,29 +348,41 @@ class MapsWidget(QWidget):
         if self.markerManager:
             self.markerManager.setMap(map)
         
-        self.map.clicked.connect(self.markerClicked)
-        self.map.panned.connect(self.mapPanned)
+        #self.map.clicked.connect(self.markerClicked)
+        #self.map.panned.connect(self.mapPanned)
         
         sc = QGraphicsScene()
         sc.addItem(self.map)
         
+        
         self.map.setPos(0.0,0.0)
-        self.map.resize(self.size())
+        self.map.resize(QSizeF(self.size()))
         self.view = FixedGraphicsView(self)
         self.view.setVisible(True)
         self.view.setInteractive(True)
         self.view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.view.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.view.setScene(sc)
+#        self.view.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
         
         self.statusBarItem = StatusBarItem()
         sc.addItem(self.statusBarItem)
         
+        self.zoomButtonItem = ZoomButtonItem(self.map)
+        sc.addItem(self.zoomButtonItem)
+        
+        
         self.view.resize(self.size())
         self.view.centerOn(self.map)
         self.resizeEvent(None)
-        self.map.setCenter(GeoCoordinate(-27.5796, 153.1))
-        self.map.setZoomLevel(15)
+        self.map.centerChanged.connect(self.onCenterChanged)
+        #self.map.setCenter(GeoCoordinate(-27.5796, 153.1))
+        #self.map.setCenter(GeoCoordinate(48.31321, 8.33554))
+        self.map.setCenter(GeoCoordinate(48.525759, 8.5659))
+        #48.525759,8.5659
+        #self.map.setCenter(GeoCoordinate(21.1813, -86.8455))
+        self.map.setZoomLevel(15.0)
+        self.statusBarItem.setText("Hallo was geht")
     
     def resizeEvent(self, event):
         if self.view and self.map:
@@ -317,6 +394,10 @@ class MapsWidget(QWidget):
                                         (self.height()-2)/2.0 - (self.height()-2)/6.0,
                                         (self.width()-2)/10.0,
                                         (self.height()-2/3.0))
+    
+    def onCenterChanged(self, coord):
+        #print coord
+        pass
         
     def animatedPanTo(self, center):
         if not self.map:

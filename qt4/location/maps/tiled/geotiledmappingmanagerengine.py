@@ -5,7 +5,7 @@ Created on 04.11.2011
 '''
 from PyQt4.QtCore import QSize
 
-from lib.ems.qt4.location.maps.geomappingmanagerengine import GeoMappingManagerEngine 
+from ems.qt4.location.maps.geomappingmanagerengine import GeoMappingManagerEngine 
 from geotiledmapdata import GeoTiledMapData #@UnresolvedImport
 
 class GeoTiledMappingManagerEngine(GeoMappingManagerEngine):
@@ -46,7 +46,7 @@ class GeoTiledMappingManagerEngine(GeoMappingManagerEngine):
         '''
         GeoMappingManagerEngine.__init__(self, parent)
         self._tileSize = QSize(0,0)
-        self.setSupportCustomMapObjects(True)
+        self._setSupportsCustomMapObjects(True)
     
     ''' Requests the map tiled specified by \a request.
 

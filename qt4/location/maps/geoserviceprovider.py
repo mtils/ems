@@ -91,6 +91,7 @@ class GeoServiceProvider(object):
         @param parameters: The params
         @type parameters: dict
         '''
+        self.__factory = None
         self.__loadPlugin(providerName, parameters)
         self.__parameterMap = parameters
         
@@ -106,7 +107,6 @@ class GeoServiceProvider(object):
         self.__routingError = self.NoError
         self.__routingErrorString = ""
         
-        self.__factory = None
         
         self.__error = self.NoError
         self.__errorString = ""
@@ -139,10 +139,10 @@ class GeoServiceProvider(object):
         if not self.__searchManager:
             engine = self.__factory.createSearchManagerEngine(self.__parameterMap,
                                                               self.__searchError,
-                                                              self._searchErrorString)
+                                                              self.__searchErrorString)
             if engine:
-                engine.setManagerName(self.__factory.providerName())
-                engine.setManagerVersion(self.__factory.providerVersion())
+                engine._setManagerName(self.__factory.providerName())
+                engine._setManagerVersion(self.__factory.providerVersion())
                 self.__searchManager = GeoSearchManager(engine)
             else:
                 self.__searchError = self.NotSupportedError
@@ -183,10 +183,10 @@ class GeoServiceProvider(object):
             engine = self.__factory.createMappingManagerEngine(self.__parameterMap,
                                                self.__mappingError,
                                                self.__mappingErrorString)
-    
+            print engine
             if engine:
-                engine.setManagerName(self.__factory.providerName())
-                engine.setManagerVersion(self.__factory.providerVersion())
+                engine._setManagerName(self.__factory.providerName())
+                engine._setManagerVersion(self.__factory.providerVersion())
                 self.__mappingManager = GeoMappingManager(engine)
             else:
                 self.__mappingError = GeoServiceProvider.NotSupportedError;
@@ -232,8 +232,8 @@ class GeoServiceProvider(object):
                                                self.__routingErrorString)
     
             if engine:
-                engine.setManagerName(self.__factory.providerName())
-                engine.setManagerVersion(self.__factory.providerVersion())
+                engine._setManagerName(self.__factory.providerName())
+                engine._setManagerVersion(self.__factory.providerVersion())
                 self.__routingManager = GeoRoutingManager(engine)
             else:
                 self.__routingError = GeoServiceProvider.NotSupportedError
@@ -280,6 +280,7 @@ class GeoServiceProvider(object):
         @param parameters: Params for the plugin
         @type parameters: dict
         '''
+        
         if not providerName in self.plugins().keys():
             self.__error = GeoServiceProvider.NotSupportedError
             self.__errorString = "The geoservices provider %1 is not supported.".format(providerName)
@@ -290,11 +291,12 @@ class GeoServiceProvider(object):
         self.__error = GeoServiceProvider.NoError
         self.__errorString = ""
         
-        canditates = self.__plugins
+        canditates = GeoServiceProvider._plugins
         
         versionFound = -1
         
-        for candidate in canditates:
+        for candidateName in canditates:
+            candidate = GeoServiceProvider._plugins[candidateName]
             if (candidate.providerName() == providerName) and\
                (candidate.providerVersion() > versionFound):
                 self.__factory = candidate
@@ -306,17 +308,18 @@ class GeoServiceProvider(object):
         
         if not GeoServiceProvider._alreadyDiscovered:
             staticPlugins = GeoServiceProvider.loadStaticPlugins()
-            dynamicPlugins = GeoServiceProvider.loadDynamicPlugins()
-            staticPlugins.update(dynamicPlugins)
+            #dynamicPlugins = GeoServiceProvider.loadDynamicPlugins()
+            #staticPlugins.update(dynamicPlugins)
             GeoServiceProvider._alreadyDiscovered = True
         
-        return
+        return GeoServiceProvider._plugins
     
     @staticmethod
     def loadStaticPlugins():
         plugins = {}
     
-    def addPlugin(self, plugin):
+    @staticmethod
+    def addPlugin(plugin):
         GeoServiceProvider._plugins[plugin.providerName()] = plugin
         
             

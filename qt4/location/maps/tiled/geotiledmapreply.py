@@ -51,7 +51,7 @@ class GeoTiledMapReply(QObject):
     UnknownError = 3
     'An error occurred which does not fit into any of the other categories.'
     
-    finishes = pyqtSignal()
+    finished = pyqtSignal()
     '''This signal is emitted when this reply has finished processing.
 
     If error() equals QGeoTiledMapReply::NoError then the processing

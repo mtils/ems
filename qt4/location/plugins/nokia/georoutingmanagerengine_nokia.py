@@ -11,7 +11,6 @@ from ems.qt4.location.maps.georoutingmanagerengine import GeoRoutingManagerEngin
 from ems.qt4.location.maps.georouterequest import GeoRouteRequest #@UnresolvedImport
 from ems.qt4.location.maps.georoutereply import GeoRouteReply #@UnresolvedImport
 
-from ems.qt4.location.plugins.nokia.geoserviceproviderfactory_nokia import GeoServiceProviderFactoryNokia #@UnresolvedImport
 from ems.qt4.location.plugins.nokia.georoutereply_nokia import GeoRouteReplyNokia #@UnresolvedImport
 
 class GeoRoutingManagerEngineNokia(GeoRoutingManagerEngine):
@@ -28,6 +27,9 @@ class GeoRoutingManagerEngineNokia(GeoRoutingManagerEngine):
         GeoRoutingManagerEngine.__init__(self, parameters)
         
         self._m_host = "prd.lbsp.navteq.com"
+        from ems.qt4.location.plugins.nokia.geoserviceproviderfactory_nokia \
+            import GeoServiceProviderFactoryNokia #@UnresolvedImport
+        
         self._m_token = GeoServiceProviderFactoryNokia.defaultToken
         self._m_referer = GeoServiceProviderFactoryNokia.defaultReferer
         

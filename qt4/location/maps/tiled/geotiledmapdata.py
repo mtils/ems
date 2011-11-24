@@ -4,6 +4,7 @@ Created on 31.10.2011
 @author: michi
 '''
 import math
+#import random
 
 from PyQt4.QtCore import qRound, QPointF, QPoint, qAbs, QRectF, Qt, pyqtSlot,\
     QRect, QTimer, SLOT, QSize
@@ -28,7 +29,7 @@ from ems.qt4.location.maps.geomapobjectengine import GeoMapObjectEngine
 from geotiledmaprequest import GeoTiledMapRequest #@UnresolvedImport
 
 def rmod(a, b):
-    div = float(a) / float(b)
+    div = int(float(a) / float(b))
     return float(a) - div * float(b)
 
 class GeoTileIterator(object):
@@ -66,7 +67,7 @@ class GeoTileIterator(object):
         x = (self._screenRect.topLeft().x() / self._tileSize.width())
         y = (self._screenRect.topLeft().y() / self._tileSize.height())
         
-        self._width = self._tileSize.width() * (1 << self._zoomLevel)
+        self._width = self._tileSize.width() * (1 << int(self._zoomLevel))
         
         self._currTopLeft.setX(x * self._tileSize.width())
         self._currTopLeft.setY(y * self._tileSize.height())
@@ -75,9 +76,9 @@ class GeoTileIterator(object):
         return not self._atEnd
     
     def next_(self):
-        numCols = 1 << self._zoomLevel
-        col = int((self._currTopLeft.x() / self._tileSize.width()) % numCols)
-        row = int((self._currTopLeft.y() / self._tileSize.height()) % numCols)
+        numCols = 1 << int(self._zoomLevel)
+        self._col = int((self._currTopLeft.x() / self._tileSize.width()) % numCols)
+        self._row = int((self._currTopLeft.y() / self._tileSize.height()) % numCols)
         self._tileRect.moveTopLeft(self._currTopLeft)
         
         if self._tileRect.left() >= self._width:
@@ -91,6 +92,9 @@ class GeoTileIterator(object):
             self._currTopLeft.setX(x * self._tileSize.width())
             #self._currTopLeft.ry() += self._tileSize.height()
             self._currTopLeft.setY(self._currTopLeft.y() + self._tileSize.height())
+        
+        if self._currTopLeft.y() > self._screenRect.bottom():
+            self._atEnd = True
         
         return GeoTiledMapRequest(self._connectivityMode, self._mapType,
                                   self._zoomLevel, self._row, self._col,
@@ -134,10 +138,12 @@ class GeoTiledMapData(GeoMapData):
         @param engine: The MappingManagerEngine
         @type engine: GeoMappingManagerEngine
         '''
+        
+        super(GeoTiledMapData, self).__init__(engine)
         self.tileEngine = engine
         
         self.setBlockPropertyChangeSignals(True)
-        self.setZoomLevel(8.0)
+        
         
         self._worldReferenceViewportCenter = QRect()
         self._worldReferenceSize = (1 << qRound(self.tileEngine.maximumZoomLevel())) * self.tileEngine.tileSize()
@@ -146,19 +152,27 @@ class GeoTiledMapData(GeoMapData):
         self._worldReferenceViewportRectLeft = QRect()
         self._worldReferenceViewportRectRight = QRect()
         
-        self._requestRects = []
-        self._replyRects = []
+        self._requestRects = set()
+        self._replyRects = set()
         
         self._requests = []
-        self._replies = []
+        self._replies = set()
         
         self.cache = {}
+        self._requestsByCacheId = {}
         self.zoomCache = {}
+        self._zoomRequestsByCacheId = {}
+        
+        
         
         self._zoomFactor = 0
+        
         self._oe = GeoMapObjectEngine(self, self)
         self.spherical = "+proj=latlon +ellps=sphere"
         self.wgs84 = "+proj=latlon +ellps=WGS84"
+        
+        
+        self.setZoomLevel(8.0)
         #self._tileSize = 0
     
     def __del__(self):
@@ -179,9 +193,9 @@ class GeoTiledMapData(GeoMapData):
         
         pos = self._coordinateToWorldReferencePosition(lon, lat)
         
-        x = pos.x() - self.worldReferenceViewportRect.left()
+        x = pos.x() - self._worldReferenceViewportRect.left()
         
-        y = pos.y() - self.worldReferenceViewportRect.top()
+        y = pos.y() - self._worldReferenceViewportRect.top()
         
         posF = QPointF(offset.x() + int(x) / self._zoomFactor, offset.y() + int(y) / self._zoomFactor)
         
@@ -203,12 +217,12 @@ class GeoTiledMapData(GeoMapData):
         pos = QPointF(screenPosition.x() - offset.x(),
                       screenPosition.y() - offset.y())
         
-        worldX = int(self.worldReferenceViewportRect.left() + pos.x() * self._zoomFactor + 0.5) % self._worldReferenceSize.width()
-        worldY = int(self.worldReferenceViewportRect.top() + pos.y() * self._zoomFactor + 0.5) % self._worldReferenceSize.height()
+        worldX = int(self._worldReferenceViewportRect.left() + pos.x() * self._zoomFactor + 0.5) % self._worldReferenceSize.width()
+        worldY = int(self._worldReferenceViewportRect.top() + pos.y() * self._zoomFactor + 0.5) % self._worldReferenceSize.height()
         
         return QPointF(worldX, worldY)
     
-    def _coordinateToWorldReferencePosition(self, lngOrCoord, lat):
+    def _coordinateToWorldReferencePosition(self, lngOrCoord, lat=None):
         '''
         Converts the coordinate \a coordinate to a pixel position on the entire
         map at the maximum zoom level.
@@ -233,7 +247,7 @@ class GeoTiledMapData(GeoMapData):
         lat = min(1.0, lat)
         
         x = lng * self._worldReferenceSize.width()
-        y = lng * self._worldReferenceSize.height()
+        y = lat * self._worldReferenceSize.height()
         
         if x > 0:
             x += 0.5
@@ -259,8 +273,8 @@ class GeoTiledMapData(GeoMapData):
         @param pixel: The pixel on screen
         @type pixel: QPoint
         '''
-        fx = pixel.x() / self._worldReferenceSize.width()
-        fy = pixel.y() / self._worldReferenceSize.height()
+        fx = float(pixel.x()) / float(self._worldReferenceSize.width())
+        fy = float(pixel.y()) / float(self._worldReferenceSize.height())
         
         if fy < 0.0:
             fy = 0.0
@@ -272,13 +286,14 @@ class GeoTiledMapData(GeoMapData):
         elif fy == 1.0:
             lat = -90.0
         else:
-            lat = (180.0 / math.pi) * (2.0 * math.atan(math.exp(math.pi * (1.0 - 2.0 * fy))) - (math.pi / 2.0))
+            lat = ((180.0 / math.pi) * (2.0 * math.atan(math.exp(math.pi * (1.0 - 2.0 * fy))) - (math.pi / 2.0)))
         
         if fx >= 0:
             lng = rmod(fx, 1.0)
         else:
             lng = rmod(1.0 - rmod(-1.0 * fx, 1.0), 1.0)
-        
+            
+        #lng = fx
     
         lng = lng * 360.0 - 180.0
         
@@ -287,10 +302,12 @@ class GeoTiledMapData(GeoMapData):
     def setCenter(self, center):
         changed = (self._center != center)
         if not changed:
+            print "Center not changed"
             return
         self._worldReferenceViewportCenter = self._coordinateToWorldReferencePosition(center)
         self._updateScreenRect()
-        self.updateMapDisplay.emit()
+        #self.updateMapDisplay.emit()
+        self._updateMapDisplay()
         self.centerChanged.emit(center)
         
         self._updateMapImage()
@@ -305,7 +322,9 @@ class GeoTiledMapData(GeoMapData):
         self._clearRequests()
         self.cache.clear()
         self.zoomCache.clear()
-        self.updateMapDisplay.emit()
+        self._zoomRequestsByCacheId.clear()
+        self._requestsByCacheId.clear()
+        self._updateMapDisplay()
         self.mapTypeChanged.emit(self._mapType)
         self._updateMapImage()
     
@@ -341,7 +360,7 @@ class GeoTiledMapData(GeoMapData):
         if zoomDiff == 0:
             return
         
-        self._zoomFactor = 1 << qRound(self._engine.maximumZoomLevel() - self._zoomLevel)
+        self._zoomFactor = 1 << int(qRound(self._engine.maximumZoomLevel() - self._zoomLevel))
         tileSize = self.tileEngine.tileSize()
         
         self._updateScreenRect()
@@ -352,10 +371,10 @@ class GeoTiledMapData(GeoMapData):
             return
         
         #scale old image
-        target = oldImage.rect()
+        target = QRectF(oldImage.rect())
         
-        width = target.width() / (1 << qAbs(zoomDiff))
-        height = target.height() / (1 << qAbs(zoomDiff))
+        width = target.width() / (1 << int(qAbs(zoomDiff)))
+        height = target.height() / (1 << int(qAbs(zoomDiff)))
         x = target.x() + ((target.width() - width) / 2.0)
         y = target.y() + ((target.height() - height) / 2.0)
         source = QRectF(x, y, width, height)
@@ -371,25 +390,28 @@ class GeoTiledMapData(GeoMapData):
         
         painter2.end()
         
-        self.zoomCache = {}
+        self.zoomCache.clear()
+        self._zoomRequestsByCacheId.clear()
         
         it = GeoTileIterator(self)
         offset = self.windowOffset()
         
         while it.hasNext():
-            req = it.next()
+            req = it.next_()
             tileRect = req.tileRect()
-            
-            if self.cache.has_key(req):
+            cacheId = req.cacheId()
+#            if self.cache.has_key(req):
+#                continue
+            if self._requestsByCacheId.has_key(cacheId):
                 continue
             
             if not self.intersectsScreen(tileRect):
                 continue
             
             overlaps = self.intersectedScreen(tileRect)
-            for i in range(len(overlaps)):
-                s = overlaps[i].first
-                t = overlaps[i].second
+            for overlap in overlaps:
+                s = overlap[0]
+                t = overlap[1]
                 
                 source = QRectF(offset.x() + int(t.left()) / self._zoomFactor,
                                 offset.y() + int(t.top()) / self._zoomFactor,
@@ -398,6 +420,7 @@ class GeoTiledMapData(GeoMapData):
                 
                 tile = QPixmap(tileSize)
                 tile.fill(Qt.lightGray)
+                #tile.fill(Qt.black)
                 
                 target = QRectF(int(s.left()) / self._zoomFactor,
                                 int(s.top()) / self._zoomFactor,
@@ -409,13 +432,17 @@ class GeoTiledMapData(GeoMapData):
                 painter3.end()
                 
                 self.zoomCache[req] = tile
+                self._zoomRequestsByCacheId[req.cacheId()] = req
         
-        self.updateMapDisplay.emit()
+        
+        self._updateMapDisplay()
         
         self._clearRequests()
         self._updateMapImage()
         
         self.zoomLevelChanged.emit(self._zoomLevel)
+        #call again
+        GeoMapData.setZoomLevel(self, zoomLevel)
     
     def setWindowSize(self, size):
         '''
@@ -427,6 +454,7 @@ class GeoTiledMapData(GeoMapData):
             return
         
         GeoMapData.setWindowSize(self, size)
+        
         
         self._oe.invalidatePixelsForViewport()
         self._oe.trimPixelTransforms()
@@ -444,6 +472,7 @@ class GeoTiledMapData(GeoMapData):
         @param dy: y panning
         @type dy: int
         '''
+        
         x = self._worldReferenceViewportCenter.x()
         y = self._worldReferenceViewportCenter.y()
         
@@ -460,7 +489,7 @@ class GeoTiledMapData(GeoMapData):
         
         self._worldReferenceViewportCenter.setX(x)
         self._worldReferenceViewportCenter.setY(y)
-        
+        #print "pan {0} {1}".format(x, y)
         centerCoord = self.center()
         
         GeoMapData.setCenter(self, centerCoord)
@@ -532,22 +561,59 @@ class GeoTiledMapData(GeoMapData):
             return None
     @pyqtSlot()
     def _processRequests(self):
+#        print "_processRequests"
+        i = 0
         for reply in self._replies:
+            i += 1
+            
             if not self.intersectsScreen(reply.request().tileRect()) \
-                or (self.zoomLevel() != reply.request().zoomLevel()) \
-                or (self.mapType() != reply.request().mapType()) \
-                or (self.connectivityMode() != reply.request().connectivityMode()):
-                self._replyRects.remove(reply.request().tileRect())
-                del self.zoomCache[reply.request()]
+                or (self._zoomLevel != reply.request().zoomLevel()) \
+                or (self._mapType != reply.request().mapType()) \
+                or (self._connectivityMode != reply.request().connectivityMode()):
+                try:
+                    self._replyRects.remove(reply.request().tileRect())
+                    #print "Removed {0}".format(reply.request().tileRect())
+                except KeyError:
+                    pass
+                req = reply.request()
+                cacheId = req.cacheId()
+                if self._zoomRequestsByCacheId.has_key(cacheId):
+                    try:
+                        del self.zoomCache[self._zoomRequestsByCacheId[req.cacheId()]]
+                    except KeyError:
+                        pass
+                    try:
+                        del self._zoomRequestsByCacheId[req.cacheId()]
+                    except KeyError:
+                        pass
+                    
         
         tiledEngine = self._engine
         
+        processedRequests = set()
+        i = 0
+#        addedRects = set()
         for req in self._requests:
-            self._requestRects.remove(req.tileRect())
+            i += 1
+            tileRect = req.tileRect()
+            try:
+                self._requestRects.remove(tileRect)
+            except KeyError:
+                pass
             
-            if (req.tileRect() in self._replyRects) or\
-                not self._intersectsScreen(req.tileRect()):
+            if (tileRect in self._replyRects) or\
+                not self.intersectsScreen(tileRect):
                 continue
+            
+#            if (tileRect in self._replyRects):
+#                continue
+            
+#            if (tileRect in addedRects) or\
+#                not self.intersectsScreen(tileRect):
+#                continue
+            
+#            if not self.intersectsScreen(tileRect):
+#                continue
             
             reply = tiledEngine.getTileImage(req)
             
@@ -558,16 +624,23 @@ class GeoTiledMapData(GeoMapData):
                 self.tileError(reply.error(), reply.errorString())
                 reply.deleteLater()
                 del self.zoomCache[reply.request()]
+                del self._zoomRequestsByCacheId[reply.request()]
                 continue
             
             reply.finished.connect(self._tileFinished)
-            reply.error.connect(self.tileError)
+            reply.errorOccured.connect(self.tileError)
             
-            self._replies.append(reply)
-            self._replyRects.append(reply.request.tileRect())
+            self._replies.add(reply)
+            self._replyRects.add(reply.request().tileRect())
+#            addedRects.add(reply.request().tileRect())
             
             if reply.isFinished():
                 self._replyFinished(reply)
+            processedRequests.add(req)
+        for req in processedRequests:
+            self._requests.remove(req)
+            
+        
     
     @pyqtSlot()
     def _tileFinished(self):
@@ -582,9 +655,29 @@ class GeoTiledMapData(GeoMapData):
     
     @pyqtSlot(GeoTiledMapReply)
     def _replyFinished(self, reply):
-        self._replyRects.remove(reply.request().tileRect())
-        self._replies.remove(reply)
-        del self.zoomCache[reply.request()]
+        
+        req = reply.request()
+        
+        tileRect = req.tileRect()
+        if tileRect in self._replyRects:
+            self._replyRects.remove(req.tileRect())
+            
+        if reply in self._replies:
+            self._replies.remove(reply)
+        
+        cacheId = req.cacheId()
+        if self._zoomRequestsByCacheId.has_key(cacheId):
+            try:
+                del self.zoomCache[self._zoomRequestsByCacheId[cacheId]]
+            except KeyError:
+                pass
+            try:
+                del self._zoomRequestsByCacheId[cacheId]
+            except KeyError:
+                pass
+            
+#            if self.zoomCache.has_key(req):
+#                del self.zoomCache[req]
         
         if reply.error() != GeoTiledMapReply.NoError:
             if len(self._requests) > 0:
@@ -592,9 +685,9 @@ class GeoTiledMapData(GeoMapData):
             reply.deleteLater()
             return
         
-        if self.zoomLevel() != reply.request().zoomLevel()\
-            or self.mapType() != reply.request().mapType()\
-            or self.connectivityMode() != reply.request().connectivityMode():
+        if self.zoomLevel() != req.zoomLevel()\
+            or self.mapType() != req.mapType()\
+            or self.connectivityMode() != req.connectivityMode():
             if len(self._requests) > 0:
                 QTimer.singleShot(0, self, SLOT("_processRequests()"))
             reply.deleteLater()
@@ -602,7 +695,7 @@ class GeoTiledMapData(GeoMapData):
         
         tile = QImage()
         
-        if not tile.loadFromData(reply.mapImageData(), reply.mapImageFormat().toAscii()):
+        if not tile.loadFromData(reply.mapImageData(), reply.mapImageFormat()):
             del tile
             if len(self._requests) > 0:
                 QTimer.singleShot(0, self, SLOT('_processRequests()'))
@@ -616,22 +709,27 @@ class GeoTiledMapData(GeoMapData):
             reply.deleteLater()
             return
         
-        self.cache[reply.request()] = tile
+        self.cache[req] = tile
+        self._requestsByCacheId[req.cacheId()] = req
+        
+        #tile.save("/tmp/maptiles/{0}_{1}.png".format(req.row(), req.column() ) )
         
         self._cleanupCaches()
         
-        tileRect = reply.request.tileRect()
+        tileRect = req.tileRect()
         offset = self.windowOffset()
         
         overlaps = self.intersectedScreen(tileRect)
         
         for overlap in overlaps:
-            t = overlap.second
+            t = overlap[1]
             target = QRectF(offset.x() + int(t.left()) / self._zoomFactor,
                             offset.y() + int(t.top()) / self._zoomFactor,
                             int(t.width()) / self._zoomFactor,
-                            int(t.height()) / self._zoomFactor);
+                            int(t.height()) / self._zoomFactor)
+            #print target
             self.updateMapDisplay.emit(target)
+        #self.triggerUpdateMapDisplay()
         
         if len(self._requests) > 0:
             QTimer.singleShot(0, self, SLOT("_processRequests()"))
@@ -639,7 +737,7 @@ class GeoTiledMapData(GeoMapData):
         reply.deleteLater()
     
     def tileError(self, error, errorString):
-        pass
+        print "Tiling Error {0}:{1}".format(error, errorString)
     
     def mapObjectsAtScreenPosition(self, screenPosition):
         if screenPosition.isNull():
@@ -788,38 +886,46 @@ class GeoTiledMapData(GeoMapData):
         self.updateMapDisplay.emit(target)
     
     def windowOffset(self):
-        offsetX = ((self._windowSize.width() * self._zoomFactor) - self._worldReferenceViewportRect.width()) / 2.0
+        offsetX = ((float(self._windowSize.width()) * float(self._zoomFactor)) - float(self._worldReferenceViewportRect.width())) / 2.0
         if offsetX < 0.0:
             offsetX = 0.0
-        offsetX /= self._zoomFactor
+        offsetX /= float(self._zoomFactor)
         
-        offsetY = ((self._windowSize.height() * self._zoomFactor) - self._worldReferenceViewportRect.height()) / 2.0
+        offsetY = ((float(self._windowSize.height()) * float(self._zoomFactor)) - float(self._worldReferenceViewportRect.height())) / 2.0
         if offsetY < 0.0:
             offsetY = 0.0
-        offsetY /= self._zoomFactor;
+        offsetY /= float(self._zoomFactor);
     
         return QPointF(offsetX, offsetY)
     
     def _updateMapImage(self):
+        #print "_updateMapImage"
         if self._zoomLevel == -1.0 or not self._windowSize.isValid():
             return
         wasEmpty = (len(self._requests) == 0)
         it = GeoTileIterator(self)
         
+        i = 0
         while it.hasNext():
-            req = it.next()
+            #print "Iteration {0}".format(i)
+            i += 1
+            req = it.next_()
             tileRect = req.tileRect()
-            if not self.cache.has_key(req):
+            if not self._requestsByCacheId.has_key(req.cacheId()):
+            #if not self.cache.has_key(req):
+#                print "cache has not req {0} {1}".format(req.row(), req.column())
+                #TODO: Wieder rein
                 if not (tileRect in self._requestRects) and not (tileRect in self._replyRects):
+                    #print "_requestRect has not req {0}".format(tileRect)
                     self._requests.append(req)
-                    self._requestRects.append(tileRect)
+                    self._requestRects.add(tileRect)
         
         if wasEmpty and len(self._requests) > 0:
             QTimer.singleShot(0, self, SLOT("_processRequests()"))
     
     def _clearRequests(self):
         self._requests = []
-        self._requestRects = []
+        self._requestRects = set()
     
     def paintMap(self, painter, option):
         '''
@@ -831,15 +937,17 @@ class GeoTiledMapData(GeoMapData):
         offset = self.windowOffset()
         
         it = GeoTileIterator(self)
-        
+        i = 0
         while it.hasNext():
-            req = it.next()
+            #print "Iteration {0}".format(i)
+            i += 1
+            req = it.next_()
             tileRect = req.tileRect()
             
             overlaps = self.intersectedScreen(tileRect)
             for overlap in overlaps:
-                s = overlap.first
-                t = overlap.second
+                s = overlap[0]
+                t = overlap[1]
                 
                 source = QRectF(int(s.left()) / self._zoomFactor,
                                 int(s.top()) / self._zoomFactor,
@@ -851,13 +959,25 @@ class GeoTiledMapData(GeoMapData):
                                 int(t.width()) / self._zoomFactor,
                                 int(t.height()) / self._zoomFactor)
                 
-                if self.cache.has_key(req):
-                    painter.drawImage(target, self.cache[req], source)
+                cacheKeys = self.cache.keys()
+                zoomKeys = self.zoomCache.keys()
+                cacheId = req.cacheId()
+                
+                if self._requestsByCacheId.has_key(cacheId):
+                #if self.cache.has_key(req):
+                    painter.drawImage(target,
+                                      self.cache[self._requestsByCacheId[cacheId]],
+                                      source)
                 else:
-                    if self.zoomCache.has_key(req):
-                        painter.drawPixmap(target, self.zoomCache[req], source)
+                    if self._zoomRequestsByCacheId.has_key(cacheId):
+                        painter.drawPixmap(target,
+                                           self.zoomCache[self._zoomRequestsByCacheId[cacheId]],
+                                           source)
                     else:
                         painter.fillRect(target, Qt.lightGray)
+                        #painter.fillRect(target, Qt.red)
+                        pass
+
     
     def paintObjects(self, painter, option):
         '''
@@ -866,11 +986,12 @@ class GeoTiledMapData(GeoMapData):
         @param option: The StyleOption
         @type option: QStyleOptionGraphicsItem
         '''
+        
         painter.save()
-        painter.setRenderingHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.Antialiasing)
         
         if option:
-            target = option.rect
+            target = QRectF(option.rect)
         else:
             target = QRectF(QPointF(0,0), self._windowSize)
         
@@ -944,12 +1065,17 @@ class GeoTiledMapData(GeoMapData):
         
         keys = self.cache.keys()
         for key in keys:
-            tileRect = keys[key].tileRect()
+            #tileRect = self.cache[key].tileRect()
+            tileRect = key.tileRect()
             if not cacheRect1.intersects(tileRect):
-                if cacheRect2.isNull() or not cacheRect2.intersects(tileRect):
+                if cacheRect2.isNull() or not cacheRect2.intersects(QRectF(tileRect)):
                     del self.cache[key]
+                    try:
+                        del self._requestsByCacheId[key.cacheId()]
+                    except KeyError:
+                        pass
     
-    def screenRectForZoomFactor(self, factor):
+    def _screenRectForZoomFactor(self, factor):
         viewportWidth = self._windowSize.width()
         viewportHeight = self._windowSize.height()
         
@@ -974,18 +1100,18 @@ class GeoTiledMapData(GeoMapData):
         if (y + height) >= self._worldReferenceSize.height():
             y = self._worldReferenceSize.height() - height
         
-        return QRectF(x, y, width, height)
+        return QRect(x, y, width, height)
     
     def _updateScreenRect(self):
-        worldReferenceViewportRect = self.screenRectForZoomFactor(self._zoomFactor)
+        self._worldReferenceViewportRect = self._screenRectForZoomFactor(self._zoomFactor)
         
-        x = worldReferenceViewportRect.x()
-        y = worldReferenceViewportRect.y()
-        width = worldReferenceViewportRect.width()
-        height = worldReferenceViewportRect.height()
+        x = self._worldReferenceViewportRect.x()
+        y = self._worldReferenceViewportRect.y()
+        width = self._worldReferenceViewportRect.width()
+        height = self._worldReferenceViewportRect.height()
         
         if x + width < self._worldReferenceSize.width():
-            self._worldReferenceViewportRectLeft = worldReferenceViewportRect
+            self._worldReferenceViewportRectLeft = self._worldReferenceViewportRect
             self._worldReferenceViewportRectRight = QRect()
         else:
             widthLeft = self._worldReferenceSize.width() - x
@@ -999,6 +1125,7 @@ class GeoTiledMapData(GeoMapData):
                     and self._worldReferenceViewportRectRight.contains(point)))
     
     def intersectsScreen(self, rect):
+        #print "world: {0} test: {1}".format(self._worldReferenceViewportRectLeft, rect)
         return (self._worldReferenceViewportRectLeft.intersects(rect)
                 or (self._worldReferenceViewportRectRight.isValid()
                     and self._worldReferenceViewportRectRight.intersects(rect)))
@@ -1014,17 +1141,18 @@ class GeoTiledMapData(GeoMapData):
             
             result.append((source, target))
             
-            if self._worldReferenceViewportRectRight.isValid():
-                rectR = rect.intersected(self._worldReferenceViewportRectRight)
-                if not rectR.isEmpty():
-                    source = QRect(rectR.topLeft() - rect.topLeft(), rectR.size())
-                    target = QRect(rectR.topLeft() - \
-                                   self._worldReferenceViewportRectRight.topLeft(),
-                                   rectR.size())
-                    if translateToScreen:
-                        target.translate(self._worldReferenceViewportRectLeft.width,
-                                         0)
-                    result.append((source, target))
+        if self._worldReferenceViewportRectRight.isValid():
+            rectR = rect.intersected(self._worldReferenceViewportRectRight)
+            if not rectR.isEmpty():
+                print "I make something new"
+                source = QRect(rectR.topLeft() - rect.topLeft(), rectR.size())
+                target = QRect(rectR.topLeft() - \
+                               self._worldReferenceViewportRectRight.topLeft(),
+                               rectR.size())
+                if translateToScreen:
+                    target.translate(self._worldReferenceViewportRectLeft.width(),
+                                     0)
+                result.append((source, target))
         return result
     
     def addObject(self, obj):

@@ -68,7 +68,8 @@ class GeoCoordinate(object):
         if altitude is None:
             if longitude is None:
                 if isinstance(latitudeOrCoordinate, GeoCoordinate):
-                    return self.__ilshift__(self, latitudeOrCoordinate)
+                    self.__ilshift__(latitudeOrCoordinate)
+                    return
                 elif latitudeOrCoordinate is None:
                     pass
                 else:
@@ -116,6 +117,8 @@ class GeoCoordinate(object):
         @type other: GeoCoordinate
         @return:  bool
         '''
+        if not isinstance(other, GeoCoordinate):
+            return False
         latEqual = ((self.lat is None) and (other.lat is None)) or \
                    (self.lat == other.lat)
         lngEqual = ((self.lng is None) and (self.lng is None)) or \
@@ -436,11 +439,11 @@ class GeoCoordinate(object):
             latSec = (latMin - int(latMin)) * 60.0
             lngSec = (lngMin - int(lngMin)) * 60.0
             
-            latStr = u"{0}° {1} {2}' {3:.1f}".format(int(absLat),
+            latStr = u"{0}° {1}' {2:.1f}".format(int(absLat),
                                                      int(latMin),
                                                      latSec)
             
-            longStr = u"{0}° {1} {2}' {3:.1f}".format(int(absLng),
+            longStr = u"{0}° {1}' {2:.1f}".format(int(absLng),
                                                       int(lngMin),
                                                       lngSec)
             

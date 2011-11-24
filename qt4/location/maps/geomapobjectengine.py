@@ -5,7 +5,7 @@ Created on 03.11.2011
 '''
 import math
 
-from PyQt4.QtCore import QObject, QPointF, Qt
+from PyQt4.QtCore import QObject, QPointF, Qt, QRectF
 from PyQt4.QtGui import QGraphicsScene, QGraphicsPolygonItem, \
     QGraphicsEllipseItem, QGraphicsPathItem, QPolygonF, QTransform, \
     QPainterPath
@@ -767,7 +767,7 @@ class GeoMapObjectEngine(QObject):
             GeoMapObjectEngine._zoomDepsRecurse(self, self.mdp._containerObject)
     
     
-    def invalidatePixelsForViewport(self, updateNow):
+    def invalidatePixelsForViewport(self, updateNow=True):
         view = self.latLonViewport()
 
         itemsInView = []
@@ -781,7 +781,7 @@ class GeoMapObjectEngine(QObject):
                 self.objectsForPixelUpdate.append(obj)
         
         if updateNow:
-            self.mdp.emitUpdateDisplay()
+            self.mdp.updateMapDisplay.emit(QRectF())
     
     def trimPixelTransforms(self):
         view = self.latLonViewport()
@@ -811,7 +811,7 @@ class GeoMapObjectEngine(QObject):
             del self.pixelTrans[obj]
             del self.pixelItemsRev[obj]
         
-        self.mdp.emitUpdateMapDisplay()
+        self.mdp.updateMapDisplay.emit(QRectF())
     
     def invalidateObject(self, obj):
         '''
@@ -1089,15 +1089,18 @@ class GeoMapObjectEngine(QObject):
         offset = 0.0
         
         c = viewport.bottomLeft()
-        view << QPointF(c.longitude() * 3600.0, c.latitude() * 3600.0)
-        c2 = viewport.bottomRight()
-        if c2.longitude() < c.longitude():
-            offset = 360.0 * 3600.0
-        view << QPointF(c2.longitude() * 3600.0 + offset, c2.latitude() * 3600.0)
-        c = viewport.topRight();
-        view << QPointF(c.longitude() * 3600.0 + offset, c.latitude() * 3600.0)
-        c = viewport.topLeft();
-        view << QPointF(c.longitude() * 3600.0, c.latitude() * 3600.0)
+        try:
+            view << QPointF(c.longitude() * 3600.0, c.latitude() * 3600.0)
+            c2 = viewport.bottomRight()
+            if c2.longitude() < c.longitude():
+                offset = 360.0 * 3600.0
+            view << QPointF(c2.longitude() * 3600.0 + offset, c2.latitude() * 3600.0)
+            c = viewport.topRight();
+            view << QPointF(c.longitude() * 3600.0 + offset, c.latitude() * 3600.0)
+            c = viewport.topLeft();
+            view << QPointF(c.longitude() * 3600.0, c.latitude() * 3600.0)
+        except TypeError:
+            pass 
     
         return view
     

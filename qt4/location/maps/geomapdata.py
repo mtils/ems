@@ -51,15 +51,15 @@ class GeoMapData(QObject):
     '''This signal is emitted when the size of the window which contains
     the map has changed.'''
     
-    zoomLevelChanged = pyqtSignal(int)
+    zoomLevelChanged = pyqtSignal(float)
     '''This signal is emitted when the zoom level of the map has changed.
     The new value is zoomLevel.'''
     
-    bearingChanged = pyqtSignal(int)
+    bearingChanged = pyqtSignal(float)
     '''This signal is emitted when the bearing of the map has changed.
     The new value is \a bearing.'''
     
-    tiltChanged = pyqtSignal(int)
+    tiltChanged = pyqtSignal(float)
     '''This signal is emitted when the tilt of the map has changed.
     The new value is tilt.'''
     
@@ -84,11 +84,14 @@ class GeoMapData(QObject):
     
     
     def __init__(self, engine):
+        QObject.__init__(self, None)
         self._engine = engine
         if len(engine.supportedConnectivityModes()) > 0:
             self.setConnectivityMode(engine.supportedConnectivityModes()[0])
         else:
             self.setConnectivityMode(GraphicsGeoMap.NoConnectivity)
+        self._windowSize = QSizeF()
+        
     
     
     def init(self):
@@ -155,8 +158,9 @@ class GeoMapData(QObject):
         maximumZoomLevel() then maximumZoomLevel() will be used.
         
         @param zoomLevel: The zoomLevel
-        @type zoomLevel: int
+        @type zoomLevel: float
         '''
+        zoomLevel = float(zoomLevel)
         zoomLevel = min(zoomLevel, self._engine.maximumZoomLevel())
         zoomLevel = max(zoomLevel, self._engine.minimumZoomLevel())
         
@@ -174,7 +178,7 @@ class GeoMapData(QObject):
         Larger values of the zoom level correspond to more detailed views of the
         map.
         
-        @return: int 
+        @return: float 
         '''
         return self._zoomLevel
     
@@ -360,7 +364,7 @@ class GeoMapData(QObject):
         self._connectivityMode = mode
         
         if not self.__blockPropertyChangeSignals:
-            self.connectivityModeChanged(self._connectivityMode)
+            self.connectivityModeChanged.emit(self._connectivityMode)
     
     def connectivityMode(self):
         '''
@@ -702,4 +706,8 @@ class GeoMapData(QObject):
             self._removeObject(obj)
             del obj
             
+    def emitUpdateDisplay(self, rect=QRectF()):
+        self.updateMapDisplay.emit(rect)
     
+    def _updateMapDisplay(self, rect=QRectF()):
+        self.updateMapDisplay.emit(rect)
