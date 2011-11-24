@@ -55,6 +55,8 @@ class GeoMapPixmapObject(GeoMapObject):
         @param pixmap: Optional Pixmap
         @type pixmap: QPixmap
         '''
+        GeoMapObject.__init__(self)
+        
         if coordinate is not None:
             self.setOrigin(coordinate)
             

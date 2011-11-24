@@ -193,9 +193,15 @@ class ZoomButtonItem(QGraphicsRectItem):
     def setRect(self, x, y, w, h):
         QGraphicsRectItem.setRect(self, x, y, w, h)
         
+        x = float(x)
+        y = float(y)
+        w = float(w)
+        h = float(h)
+        
         f = QFont()
+        #f.setFamily("Monospace")
         f.setFixedPitch(True)
-        f.setPixelSize(h/5.0)
+        f.setPixelSize(w+0.2)
         self.plusText.setFont(f)
         self.minusText.setFont(f)
         
@@ -203,11 +209,13 @@ class ZoomButtonItem(QGraphicsRectItem):
         plusCenter = QPointF(x+w/2.0, y+h/4.0)
         plusDelta = plusCenter - plusBound.center()
         self.plusText.setPos(plusDelta)
+        #print "plus:", plusDelta
         
         minusBound = self.minusText.boundingRect()
-        minusCenter = QPointF(x+w/2.0, y+3.0*h/4.0)
+        minusCenter = QPointF(x+w/2.0, y+(2.0*h/4.0))
         minusDelta = minusCenter - minusBound.center()
         self.minusText.setPos(minusDelta)
+        #print "minus:",minusDelta
         
     
     def mousePressEvent(self, event):
@@ -337,14 +345,15 @@ class MapsWidget(QWidget):
     
     def __init__(self, parent=None):
         QWidget.__init__(self, parent)
-        self.map = None
+        self._map = None
         self.view = None
         self.markerManager = None
         self.statusBarItem = None
         self.zoomButtonItem = None
+        self._markerManager = None
     
     def initialize(self, manager):
-        self.map = GeoMap(manager, self)
+        self._map = GeoMap(manager, self)
         if self.markerManager:
             self.markerManager.setMap(map)
         
@@ -352,11 +361,11 @@ class MapsWidget(QWidget):
         #self.map.panned.connect(self.mapPanned)
         
         sc = QGraphicsScene()
-        sc.addItem(self.map)
+        sc.addItem(self._map)
         
         
-        self.map.setPos(0.0,0.0)
-        self.map.resize(QSizeF(self.size()))
+        self._map.setPos(0.0,0.0)
+        self._map.resize(QSizeF(self.size()))
         self.view = FixedGraphicsView(self)
         self.view.setVisible(True)
         self.view.setInteractive(True)
@@ -368,55 +377,75 @@ class MapsWidget(QWidget):
         self.statusBarItem = StatusBarItem()
         sc.addItem(self.statusBarItem)
         
-        self.zoomButtonItem = ZoomButtonItem(self.map)
-        sc.addItem(self.zoomButtonItem)
+        self.zoomButtonItem = ZoomButtonItem(self._map)
+        #sc.addItem(self.zoomButtonItem)
         
         
         self.view.resize(self.size())
-        self.view.centerOn(self.map)
+        self.view.centerOn(self._map)
         self.resizeEvent(None)
-        self.map.centerChanged.connect(self.onCenterChanged)
+        self._map.centerChanged.connect(self.onCenterChanged)
         #self.map.setCenter(GeoCoordinate(-27.5796, 153.1))
         #self.map.setCenter(GeoCoordinate(48.31321, 8.33554))
-        self.map.setCenter(GeoCoordinate(48.525759, 8.5659))
+        self._map.setCenter(GeoCoordinate(48.525759, 8.5659))
         #48.525759,8.5659
         #self.map.setCenter(GeoCoordinate(21.1813, -86.8455))
-        self.map.setZoomLevel(15.0)
-        self.statusBarItem.setText("Hallo was geht")
+        self._map.setZoomLevel(15.0)
+        #self.statusBarItem.setText("Hallo was geht")
     
     def resizeEvent(self, event):
-        if self.view and self.map:
+        if self.view and self._map:
             self.view.resize(self.size())
-            self.map.resize(self.width()-2, self.height()-2)
-            self.view.centerOn(self.map)
-            self.statusBarItem.setRect(0, self.height()-2, self.width()-2, 20)
-            self.zoomButtonItem.setRect((self.width()-2)-(self.width()-2)/10.0,
-                                        (self.height()-2)/2.0 - (self.height()-2)/6.0,
-                                        (self.width()-2)/10.0,
-                                        (self.height()-2/3.0))
+            self._map.resize(self.width()-2, self.height()-2)
+            self.view.centerOn(self._map)
+            self.statusBarItem.setRect(0, self.height()-2, self.width()-2, 20.0)
+            self.zoomButtonItem.setRect((self.width()-2.0)-(self.width()-2.0)/10.0,
+                                        (self.height()-2.0)/2.0 - (self.height()-2.0)/6.0,
+                                        (self.width()-2.0)/10.0,
+                                        (self.height()-2.0/3.0))
     
     def onCenterChanged(self, coord):
         #print coord
         pass
         
     def animatedPanTo(self, center):
-        if not self.map:
+        if not self._map:
             return
-        latAnim = QPropertyAnimation(self.map, "centerLatitude")
-        latAnim.setEndValue(center.latitude())
-        latAnim.setDuration(200)
+        self.latAnim = QPropertyAnimation(self._map, "centerLatitude")
+        self.latAnim.setEndValue(center.latitude())
+        self.latAnim.setDuration(200)
         
-        lonAnim = QPropertyAnimation(self.map, "centerLongitude")
-        lonAnim.setEndValue(center.longitude())
-        lonAnim.setDuration(200)
+        self.lonAnim = QPropertyAnimation(self._map, "centerLongitude")
+        self.lonAnim.setEndValue(center.longitude())
+        self.lonAnim.setDuration(200)
         
-        group = QParallelAnimationGroup()
-        group.addAnimation(latAnim)
-        group.addAnimation(lonAnim)
-        group.start(QAbstractAnimation.DeleteWhenStopped)
+        self.group = QParallelAnimationGroup()
+        self.group.addAnimation(self.latAnim)
+        self.group.addAnimation(self.lonAnim)
+        self.group.start(QAbstractAnimation.DeleteWhenStopped)
     
     def showEvent(self, even):
         self.resizeEvent(None)
+    
+    def setMyLocation(self, location, center=True):
+        if self._markerManager:
+            self._markerManager.setMyLocation(location)
+        if self._map and center:
+            self._map.setCenter(location)
+    
+    def map_(self):
+        return self._map
+    
+    def statusBar(self):
+        return self.statusBarItem
+    
+    def markerManager(self):
+        return self._markerManager
+    
+    def setMarkerManager(self, markerManager):
+        self._markerManager = markerManager
+        if self._map:
+            self._markerManager.setMap(self._map)
     
     
         

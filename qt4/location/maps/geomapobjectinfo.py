@@ -41,6 +41,7 @@ class GeoMapObjectInfo(QObject):
         @param mapObject: The mapObject
         @type mapObject: GeoMapObject
         '''
+        QObject.__init__(self, mapObject)
         self._mapData = mapData
         self._mapObject = mapObject
     

@@ -1027,7 +1027,7 @@ class GeoTiledMapData(GeoMapData):
                     for trans in self._oe.pixelTrans[obj]:
                         painter.setTransform(trans * baseTrans)
                         item.paint(painter, style)
-                        for child in gItem.children():
+                        for child in gItem.childItems():
                             painter.setTransform(child.transform() * trans * baseTrans)
                             painter.translate(child.pos())
                             child.paint(painter, style)
@@ -1144,7 +1144,7 @@ class GeoTiledMapData(GeoMapData):
         if self._worldReferenceViewportRectRight.isValid():
             rectR = rect.intersected(self._worldReferenceViewportRectRight)
             if not rectR.isEmpty():
-                print "I make something new"
+                
                 source = QRect(rectR.topLeft() - rect.topLeft(), rectR.size())
                 target = QRect(rectR.topLeft() - \
                                self._worldReferenceViewportRectRight.topLeft(),

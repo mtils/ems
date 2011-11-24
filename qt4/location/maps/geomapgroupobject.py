@@ -151,7 +151,7 @@ class GeoMapGroupObject(GeoMapObject):
         '''
         Returns the children of this object.
         
-        @return: QList
+        @return: list
         '''
         return self._children
     

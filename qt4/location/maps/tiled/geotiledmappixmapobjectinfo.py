@@ -3,12 +3,14 @@ Created on 02.11.2011
 
 @author: michi
 '''
+from PyQt4.QtCore import QPointF
 from PyQt4.QtGui import QGraphicsPixmapItem
 
 from geotiledmapobjectinfo import GeoTiledMapObjectInfo #@UnresolvedImport
 
 class GeoTiledMapPixmapObjectInfo(GeoTiledMapObjectInfo):
     def __init__(self, mapData, mapObject):
+        GeoTiledMapObjectInfo.__init__(self, mapData, mapObject)
         self.pixmap = mapObject
         
         self.pixmap.pixmapChanged.connect(self.pixmapChanged)
@@ -28,7 +30,7 @@ class GeoTiledMapPixmapObjectInfo(GeoTiledMapObjectInfo):
         self.updateItem()
     
     def offsetChanged(self, offset):
-        self.pixmapItem.setOffset(self.pixmap.offset())
+        self.pixmapItem.setOffset(QPointF(self.pixmap.offset()))
         self.updateItem()
     
     

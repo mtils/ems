@@ -45,7 +45,7 @@ class GeoTiledMapGroupObjectInfo(GeoTiledMapObjectInfo):
             #we do this in order to keep the same order of operations that we had previously
             childObject.zValueChanged.disconnect(info.zValueChanged)
             info.graphicsItem.setParentItem(self.graphicsItem)
-            self._mapData._update(self.mapObject())
+            self._mapData.update(self.mapObject())
     
     @pyqtSlot(GeoMapObject)
     def childUpdated(self, childObject):

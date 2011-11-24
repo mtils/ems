@@ -482,7 +482,7 @@ class GraphicsGeoMap(QGraphicsWidget):
         if not mapObject or not self.mapData:
             return
         
-        if (mapObject.type() == mapObject.CustomType) and not \
+        if (mapObject.type_() == mapObject.CustomType) and not \
             self.supportsCustomMapObjects():
             return
         

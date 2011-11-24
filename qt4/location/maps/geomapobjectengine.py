@@ -60,7 +60,7 @@ class GeoMapObjectEngine(QObject):
     
     def addObject(self, obj):
         self.objectsForLatLonUpdate.append(obj)
-        self.objectsForPixelUpdate.append(obj)
+        self.append(obj)
         self.updateTransforms()
         self.rebuildScenes()
     
@@ -699,7 +699,7 @@ class GeoMapObjectEngine(QObject):
                 
                 pi = self.pathCopy(pathItem)
                 pi.setPath(mpath)
-                self.pixelExact.insertMulti(obj, pi);
+                #self.pixelExact.insertMulti(obj, pi);
                 if self.pixelExact.has_key(obj):
                     self.pixelExact[obj].append(pi)
                 else:
@@ -733,12 +733,12 @@ class GeoMapObjectEngine(QObject):
             pixelOrigin = self.mdp.coordinateToScreenPosition(o.x(), o.y())
             pixel.translate(pixelOrigin.x(), pixelOrigin.y())
             
-            if self.pixelExact.has_key(obj):
-                self.pixelExact[obj].append(pixel)
+            if self.pixelTrans.has_key(obj):
+                self.pixelTrans[obj].append(pixel)
             else:
-                self.pixelExact[obj] = [pixel]
+                self.pixelTrans[obj] = [pixel]
             
-            polys.append(pixel.map(localRect))
+            polys.append(QPolygonF(pixel.mapRect(localRect)))
     
     '''
     ****************************************************************************
@@ -776,9 +776,10 @@ class GeoMapObjectEngine(QObject):
         
         
         for latLonItem in itemsInView:
-            obj = latLonItem.value(self.latLonItems[latLonItem])
-            if not obj in self.objectsForPixelUpdate:
-                self.objectsForPixelUpdate.append(obj)
+            for obj in self.latLonItems[latLonItem]:
+            #obj = self.latLonItems[latLonItem]
+                if not obj in self.objectsForPixelUpdate:
+                    self.objectsForPixelUpdate.append(obj)
         
         if updateNow:
             self.mdp.updateMapDisplay.emit(QRectF())
@@ -791,8 +792,9 @@ class GeoMapObjectEngine(QObject):
         
         shouldBe = set()
         for latLonItem in itemsInView:
-            obj = self.latLonItems[latLonItem]
-            shouldBe.add(obj)
+            for obj in self.latLonItems[latLonItem]:
+            #obj = self.latLonItems[latLonItem]
+                shouldBe.add(obj)
         
         itemsInPixels = self.pixelScene.items()
 
@@ -808,8 +810,14 @@ class GeoMapObjectEngine(QObject):
                 self.pixelScene.removeItem(item)
                 del self.pixelItems[item]
                 del item
-            del self.pixelTrans[obj]
-            del self.pixelItemsRev[obj]
+            try:
+                del self.pixelTrans[obj]
+            except KeyError:
+                pass
+            try:
+                del self.pixelItemsRev[obj]
+            except KeyError:
+                pass
         
         self.mdp.updateMapDisplay.emit(QRectF())
     
@@ -940,12 +948,20 @@ class GeoMapObjectEngine(QObject):
         # skip any objects with invalid bounds
         if not localRect.isValid() or localRect.isEmpty() or localRect.isNull():
             return
+        trans = item.transform()
         
-        local = localRect * item.transform()
+        local = QPolygonF(localRect) * item.transform()
+        #local = item.transform().mapRect(localRect)
+        #local = item.transform() * localRect
+        
+        #local = localRect * trans
         
         polys = []
         
-        del self.latLonTrans[obj]
+        try:
+            del self.latLonTrans[obj]
+        except KeyError:
+            pass 
         
         if obj.transformType() == GeoMapObject.BilinearTransform or\
             obj.units() == GeoMapObject.PixelUnit:
@@ -958,7 +974,7 @@ class GeoMapObjectEngine(QObject):
             elif obj.units() == GeoMapObject.PixelUnit:
                 self.bilinearPixelsToSeconds(origin, item, local, latLon)
             
-            polys.append(latLon.map(localRect))
+            polys.append(QPolygonF(latLon.mapRect(localRect)))
             if self.latLonTrans.has_key(obj):
                 self.latLonTrans[obj].append(latLon)
             else:
@@ -968,7 +984,7 @@ class GeoMapObjectEngine(QObject):
             latLonWest.translate(360.0 * 3600.0, 0.0)
             latLonWest = latLon * latLonWest
             
-            polys.append(latLonWest.map(localRect))
+            polys.append(QPolygonF(latLonWest.mapRect(localRect)))
             if self.latLonTrans.has_key(obj):
                 self.latLonTrans[obj].append(latLonWest)
             else:
@@ -978,7 +994,7 @@ class GeoMapObjectEngine(QObject):
             latLonEast.translate(-360.0 * 3600.0, 0.0)
             latLonEast = latLon * latLonEast
             
-            polys.append(latLonEast.map(localRect))
+            polys.append(QPolygonF(latLonEast.mapRect(localRect)))
             if self.latLonTrans.has_key(obj):
                 self.latLonTrans[obj].append(latLonEast)
             else:
@@ -994,21 +1010,28 @@ class GeoMapObjectEngine(QObject):
                     return
             else:
                 return
-        
-        items = self.latLonItemsRev[obj]
+        try:
+            items = self.latLonItemsRev[obj]
+        except KeyError:
+            items = []
         if len(items) != len(polys):
             for item in items:
                 self.latLonScene.removeItem(item)
                 del self.latLonItems[item]
                 del item
-            
-            del self.latLonItemsRev[obj]
+            try:
+                del self.latLonItemsRev[obj]
+            except KeyError:
+                pass
             
             for poly in polys:
                 item = QGraphicsPolygonItem(poly)
                 item.setZValue(obj.zValue())
                 item.setVisible(True)
-                self.latLonItems[item] = [obj]
+                if self.latLonItems.has_key(item):
+                    self.latLonItems[item].append(obj)
+                else:
+                    self.latLonItems[item] = [obj]
                 if self.latLonItemsRev.has_key(obj):
                     self.latLonItemsRev[obj].append(item)
                 else:
@@ -1022,11 +1045,11 @@ class GeoMapObjectEngine(QObject):
                 
                 item.setPolygon(polys[i])
                 i += 1
-                object
+                
     
     def updatePixelTransform(self, obj):
-        origin = object.origin()
-        item = self.graphicsItemFromMapObject(object)
+        origin = obj.origin()
+        item = self.graphicsItemFromMapObject(obj)
         
         # skip any objects without graphicsitems
         if not item:
@@ -1040,17 +1063,23 @@ class GeoMapObjectEngine(QObject):
         
         polys = []
         
-        del self.pixelTrans[obj]
+        try:
+            del self.pixelTrans[obj]
+        except KeyError:
+            pass
         
         if obj.transformType() == GeoMapObject.BilinearTransform:
             self.bilinearSecondsToScreen(origin, obj, polys)
         elif obj.transformType() == GeoMapObject.ExactTransform:
-            if object.units() == GeoMapObject.PixelUnit:
+            if obj.units() == GeoMapObject.PixelUnit:
                 self.pixelShiftToScreen(origin, obj, polys)
             else:
                 self.exactPixelMap(origin, obj, polys)
         
-        items = self.pixelItemsRev[obj]
+        try:
+            items = self.pixelItemsRev[obj]
+        except KeyError:
+            items = []
         
         if len(items) != len(polys):
             for item in items:
@@ -1058,17 +1087,21 @@ class GeoMapObjectEngine(QObject):
                 self.pixelScene.removeItem(item)
                 del item
             
-            del self.pixelItemsRev[obj]
+            try:
+                del self.pixelItemsRev[obj]
+            except KeyError:
+                pass
+            
             for poly in polys:
                 item = QGraphicsPolygonItem(poly)
                 
                 item.setVisible(True)
                 self.pixelItems[item] = obj
-                self.pixelItemsRev.insertMulti(object, item);
+                #self.pixelItemsRev.insertMulti(obj, item);
                 if self.pixelItemsRev.has_key(obj):
-                    self.pixelItemsRev[obj].append(obj)
+                    self.pixelItemsRev[obj].append(item)
                 else:
-                    self.pixelItemsRev[obj] = [obj]
+                    self.pixelItemsRev[obj] = [item]
                 self.pixelScene.addItem(item)
         else:
             for i in range(len(polys)):

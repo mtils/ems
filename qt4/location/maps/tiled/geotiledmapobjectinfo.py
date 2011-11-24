@@ -11,9 +11,10 @@ from ems.qt4.location.geoboundingbox import GeoBoundingBox #@UnresolvedImport
 
 class GeoTiledMapObjectInfo(GeoMapObjectInfo):
     def __init__(self, mapData, mapObject):
-        
-        GeoMapObjectInfo.__init__(self, mapData, mapObject)
         self.inited = False
+        GeoMapObjectInfo.__init__(self, mapData, mapObject)
+        
+        
         self.updateAfterInit = False
         self.graphicsItem = None
         self.tiledMapData = mapData

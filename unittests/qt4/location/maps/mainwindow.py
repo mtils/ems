@@ -12,6 +12,7 @@ from mapswidget import MapsWidget #@UnresolvedImport
 from ems.qt4.location.maps.geoserviceprovider import GeoServiceProvider #@UnresolvedImport
 from ems.unittests.qt4.location.maps.navigatedialog import NavigateDialog #@UnresolvedImport
 from ems.unittests.qt4.location.maps.searchDialog import SearchDialog #@UnresolvedImport
+from marker import MarkerManager
 
 class MainWindow(QMainWindow):
     
@@ -112,6 +113,13 @@ class MainWindow(QMainWindow):
             return
         
         self._mapsWidget.initialize(self._serviceProvider.mappingManager())
+        
+        iconPath = "/home/michi/Downloads/qt-mobility-opensource-src-1.2.0/examples/mapsdemo/icons"
+        self._markerManager = MarkerManager(iconPath, self._serviceProvider.searchManager())
+        self._mapsWidget.setMarkerManager(self._markerManager)
+        
+        
+        
         self._mapsWidget.markerClicked.connect(self._showMarkerDialog)
         self._mapsWidget.mapPanned.connect(self._disableTracking)
     

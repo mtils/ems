@@ -132,9 +132,11 @@ class GeoMapObject(QObject):
         @param mapData: The mapData
         @type mapData: GeoMapData
         '''
+        QObject.__init__(self, None)
+        
         if mapData is not None:
             self.setMapData(mapData)
-        QObject.__init__(self, None)
+        
         
     
     def type_(self):
