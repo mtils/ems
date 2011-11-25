@@ -904,10 +904,16 @@ class GeoMapObjectEngine(QObject):
             if obj.type_() == GeoMapObject.GroupType:
                 GeoMapObjectEngine.addGroupToScene(eng, obj)
             else:
-                for i in eng.latLonItemsRev[obj]:
-                    eng.latLonScene.addItem(i)
-                for i in eng.pixelItemsRev[obj]:
-                    eng.pixelScene.addItem(i)
+                try:
+                    for i in eng.latLonItemsRev[obj]:
+                        eng.latLonScene.addItem(i)
+                except KeyError:
+                    pass
+                try:
+                    for i in eng.pixelItemsRev[obj]:
+                        eng.pixelScene.addItem(i)
+                except KeyError:
+                    pass
         
     def rebuildScenes(self):
         for i in self.latLonScene.items():
