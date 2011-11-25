@@ -9,10 +9,10 @@ from PyQt4.QtCore import pyqtSignal, QPropertyAnimation, Qt, QPointF,\
 from PyQt4.QtGui import QGraphicsRectItem, QGraphicsSimpleTextItem, QPen,\
     QBrush, QColor, QFont, QGraphicsView, QWidget, QGraphicsScene
 
-from ems.qt4.location.maps.graphicsgeomap import GraphicsGeoMap
-from ems.qt4.location.maps.geomappingmanager import GeoMappingManager
-from ems.qt4.location.maps.geomapobject import GeoMapObject
-from ems.qt4.location.geocoordinate import GeoCoordinate
+from ems.qt4.location.maps.graphicsgeomap import GraphicsGeoMap #@UnresolvedImport
+from ems.qt4.location.maps.geomappingmanager import GeoMappingManager #@UnresolvedImport
+from ems.qt4.location.maps.geomapobject import GeoMapObject #@UnresolvedImport
+from ems.qt4.location.geocoordinate import GeoCoordinate #@UnresolvedImport
 from marker import Marker #@UnresolvedImport
 
 class GeoMap(GraphicsGeoMap):
@@ -38,10 +38,10 @@ class GeoMap(GraphicsGeoMap):
     
     
     def setCenterLatitude(self, latitude):
-        print "lat:{0}".format(latitude)
-        
-        self.center().setLatitude(latitude)
-        self.setCenter(self.center())
+        #print "lat:{0}".format(latitude)
+        center = self.center() 
+        center.setLatitude(latitude)
+        self.setCenter(center)
     
     centerLatitude = pyqtProperty(float, getCenterLatitude, setCenterLatitude)
     
@@ -51,7 +51,7 @@ class GeoMap(GraphicsGeoMap):
         return self.center().longitude()
     
     def setCenterLongitude(self, longitude):
-        print "lon: {0}".format(longitude)
+        #print "lon: {0}".format(longitude)
         #self._animTest = longitude
         #return
 #        center = GeoCoordinate(self.center())

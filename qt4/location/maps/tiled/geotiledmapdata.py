@@ -302,7 +302,6 @@ class GeoTiledMapData(GeoMapData):
     def setCenter(self, center):
         changed = (self._center != center)
         if not changed:
-            print "Center not changed"
             return
         self._worldReferenceViewportCenter = self._coordinateToWorldReferencePosition(center)
         self._updateScreenRect()

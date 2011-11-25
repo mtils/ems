@@ -10,12 +10,12 @@ from PyQt4.QtGui import QGraphicsScene, QGraphicsPolygonItem, \
     QGraphicsEllipseItem, QGraphicsPathItem, QPolygonF, QTransform, \
     QPainterPath
     
-from ems.qt4.location.maps.geomapobject import GeoMapObject
-from ems.qt4.location.geocoordinate import GeoCoordinate
-from ems.qt4.location.projwrapper import ProjCoordinateSystem,\
-    ProjCoordinate, ProjPolygon
+from ems.qt4.location.maps.geomapobject import GeoMapObject #@UnresolvedImport
+from ems.qt4.location.geocoordinate import GeoCoordinate #@UnresolvedImport
+from ems.qt4.location.projwrapper import \
+ProjCoordinateSystem, ProjCoordinate, ProjPolygon #@UnresolvedImport
 from geomaprouteobject import GeoMapRouteObject #@UnresolvedImport
-from geomapgroupobject import GeoMapGroupObject
+from geomapgroupobject import GeoMapGroupObject #@UnresolvedImport
 
 class GeoMapObjectEngine(QObject):
     def __init__(self, mapData, mapDataP=None):
@@ -956,7 +956,8 @@ class GeoMapObjectEngine(QObject):
             return
         trans = item.transform()
         
-        local = QPolygonF(localRect) * item.transform()
+        #local = QPolygonF(localRect) * item.transform()
+        local = QPolygonF(item.transform().mapRect(localRect))
         #local = item.transform().mapRect(localRect)
         #local = item.transform() * localRect
         

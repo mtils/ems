@@ -3,6 +3,7 @@ Created on 29.10.2011
 
 @author: michi
 '''
+import os.path
 from PyQt4.QtCore import SLOT, pyqtSlot
 from PyQt4.QtGui import QMainWindow, QMenuBar, QApplication, QMenu, QMessageBox,\
     QDialog
@@ -12,7 +13,7 @@ from mapswidget import MapsWidget #@UnresolvedImport
 from ems.qt4.location.maps.geoserviceprovider import GeoServiceProvider #@UnresolvedImport
 from ems.unittests.qt4.location.maps.navigatedialog import NavigateDialog #@UnresolvedImport
 from ems.unittests.qt4.location.maps.searchDialog import SearchDialog #@UnresolvedImport
-from marker import MarkerManager
+from marker import MarkerManager #@UnresolvedImport
 
 class MainWindow(QMainWindow):
     
@@ -74,8 +75,10 @@ class MainWindow(QMainWindow):
     
     @pyqtSlot()
     def _goToMyLocation(self):
-        #self._mapsWidget.animatedPanTo(center)
-        self._mapsWidget.map.setFocus()
+        coord = self._markerManager.myLocation()
+        print coord
+        self._mapsWidget.animatedPanTo(coord)
+        self._mapsWidget.map_().setFocus()
         self.tracking = True
     
     def initialize(self):
@@ -114,7 +117,9 @@ class MainWindow(QMainWindow):
         
         self._mapsWidget.initialize(self._serviceProvider.mappingManager())
         
-        iconPath = "/home/michi/Downloads/qt-mobility-opensource-src-1.2.0/examples/mapsdemo/icons"
+        #iconPath = "/home/michi/Downloads/qt-mobility-opensource-src-1.2.0/examples/mapsdemo/icons"
+        iconPath = os.path.join(os.path.dirname(__file__),'images')
+        
         self._markerManager = MarkerManager(iconPath, self._serviceProvider.searchManager())
         self._mapsWidget.setMarkerManager(self._markerManager)
         

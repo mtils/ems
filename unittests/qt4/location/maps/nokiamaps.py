@@ -8,7 +8,7 @@ import sys
 from PyQt4.QtGui import QApplication
 
 from mainwindow import MainWindow #@UnresolvedImport
-from ems.qt4.location.maps.geoserviceprovider import GeoServiceProvider
+from ems.qt4.location.maps.geoserviceprovider import GeoServiceProvider #@UnresolvedImport
 
 
 if __name__ == '__main__':
@@ -16,7 +16,7 @@ if __name__ == '__main__':
     app.setOrganizationName('Nokia')
     app.setApplicationName('MapsDemo')
     from ems.qt4.location.plugins.nokia.geoserviceproviderfactory_nokia import \
-        GeoServiceProviderFactoryNokia
+        GeoServiceProviderFactoryNokia #@UnresolvedImport
     GeoServiceProvider.addPlugin(GeoServiceProviderFactoryNokia())
     
     mw = MainWindow()
