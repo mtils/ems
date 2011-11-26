@@ -243,7 +243,7 @@ class GeoMapObjectEngine(QObject):
             if self.latLonExact.has_key(obj):
                 self.latLonExact[obj].append(pi)
             else:
-                self.latLonExact[obj] = [pi,]
+                self.latLonExact[obj] = [pi]
                 
             polys.append(pi.boundingRect())
             
@@ -513,11 +513,10 @@ class GeoMapObjectEngine(QObject):
         flip = QTransform()
         flip.scale(1, -1)
     
-        latLon = flip * item.transform() * latLon
+        return flip * item.transform() * latLon
     
     def bilinearPixelsToSeconds(self, origin, item, local, latLon):
-        pixelOrigin = self.mdp.coordinateToScreenPosition(origin.longitude(),
-                                                          origin.latitude())
+        pixelOrigin = self.mdp.coordinateToScreenPosition(origin)
         
         wgs = QPolygonF()
         for pt in local:
@@ -540,12 +539,16 @@ class GeoMapObjectEngine(QObject):
             bottomRight.setX(bottomRight.x() + 360.0 * 3600.0)
             wgs.replace(2, bottomRight)
         
+        
         ok = QTransform.quadToQuad(local, wgs, latLon)
+#        for i in range(len(local)):
+#            print local.at(i), wgs.at(i)
+#        print self.md._worldReferenceViewportRect
         if not ok:
             raise TypeError("QGeoMapData: bilinear transform from meters to arc-seconds " +
                             "failed: could not obtain a transformation matrix");
     
-        latLon = item.transform() * latLon
+        return item.transform() * latLon
     
     def bilinearSecondsToScreen(self, origin, obj, polys):
         
@@ -591,7 +594,7 @@ class GeoMapObjectEngine(QObject):
         @param polys: List of QPolygonF
         @type polys: list
         '''
-        
+#        print "exactPixelMap!!"
         latLonItems = self.latLonExact[obj]
         
         for i in self.pixelExact[obj]:
@@ -738,7 +741,13 @@ class GeoMapObjectEngine(QObject):
             else:
                 self.pixelTrans[obj] = [pixel]
             
-            polys.append(QPolygonF(pixel.mapRect(localRect)))
+            polys.append(pixel.map(QPolygonF(localRect)))
+        
+#        print "PixelShift2Screen"
+#        for poly in polys:
+#            print "Next Poly"
+#        for p in polys[0]:
+#            print p                
     
     '''
     ****************************************************************************
@@ -868,6 +877,7 @@ class GeoMapObjectEngine(QObject):
         self.objectsForPixelUpdate = []
 
         if groupUpdated:
+            #pass
             self.rebuildScenes()
     
     def updatePixelsForGroup(self, group):
@@ -954,15 +964,18 @@ class GeoMapObjectEngine(QObject):
         # skip any objects with invalid bounds
         if not localRect.isValid() or localRect.isEmpty() or localRect.isNull():
             return
-        trans = item.transform()
+        
         
         #local = QPolygonF(localRect) * item.transform()
-        local = QPolygonF(item.transform().mapRect(localRect))
+        local = QPolygonF(localRect) * item.transform()
+        #local = localRect * item.transform() 
+        #local = QPolygonF(item.transform().mapRect(localRect))
         #local = item.transform().mapRect(localRect)
         #local = item.transform() * localRect
         
         #local = localRect * trans
-        
+#        for i in local:
+#            print i
         polys = []
         
         try:
@@ -975,13 +988,13 @@ class GeoMapObjectEngine(QObject):
             latLon = QTransform()
             
             if obj.units() == GeoMapObject.MeterUnit:
-                self.bilinearMetersToSeconds(origin, item, local, latLon);
+                latLon = self.bilinearMetersToSeconds(origin, item, local, latLon);
             elif obj.units() == GeoMapObject.RelativeArcSecondUnit:
                 latLon.translate(origin.longitude() * 3600.0, origin.latitude() * 3600.0)
             elif obj.units() == GeoMapObject.PixelUnit:
-                self.bilinearPixelsToSeconds(origin, item, local, latLon)
+                latLon = self.bilinearPixelsToSeconds(origin, item, local, latLon)
             
-            polys.append(QPolygonF(latLon.mapRect(localRect)))
+            polys.append(latLon.map(QPolygonF(localRect)))
             if self.latLonTrans.has_key(obj):
                 self.latLonTrans[obj].append(latLon)
             else:
@@ -991,7 +1004,7 @@ class GeoMapObjectEngine(QObject):
             latLonWest.translate(360.0 * 3600.0, 0.0)
             latLonWest = latLon * latLonWest
             
-            polys.append(QPolygonF(latLonWest.mapRect(localRect)))
+            polys.append(latLonWest.map(QPolygonF(localRect)))
             if self.latLonTrans.has_key(obj):
                 self.latLonTrans[obj].append(latLonWest)
             else:
@@ -1001,7 +1014,7 @@ class GeoMapObjectEngine(QObject):
             latLonEast.translate(-360.0 * 3600.0, 0.0)
             latLonEast = latLon * latLonEast
             
-            polys.append(QPolygonF(latLonEast.mapRect(localRect)))
+            polys.append(latLonEast.map(QPolygonF(localRect)))
             if self.latLonTrans.has_key(obj):
                 self.latLonTrans[obj].append(latLonEast)
             else:
@@ -1017,6 +1030,10 @@ class GeoMapObjectEngine(QObject):
                     return
             else:
                 return
+#        for poly in polys:
+#            print "Next Poly"
+#            for p in poly:
+#                print p
         try:
             items = self.latLonItemsRev[obj]
         except KeyError:
@@ -1033,12 +1050,9 @@ class GeoMapObjectEngine(QObject):
             
             for poly in polys:
                 item = QGraphicsPolygonItem(poly)
-                item.setZValue(obj.zValue())
+                #item.setZValue(obj.zValue())
                 item.setVisible(True)
-                if self.latLonItems.has_key(item):
-                    self.latLonItems[item].append(obj)
-                else:
-                    self.latLonItems[item] = [obj]
+                self.latLonItems[item] = [obj]
                 if self.latLonItemsRev.has_key(obj):
                     self.latLonItemsRev[obj].append(item)
                 else:
@@ -1129,19 +1143,31 @@ class GeoMapObjectEngine(QObject):
         offset = 0.0
         
         c = viewport.bottomLeft()
-        try:
-            view << QPointF(c.longitude() * 3600.0, c.latitude() * 3600.0)
-            c2 = viewport.bottomRight()
-            if c2.longitude() < c.longitude():
+        #try:
+        cLatitude = c.latitude()
+        cLongitude = c.longitude()
+        
+        c2 = viewport.bottomRight()
+        c2Latitude = c2.latitude()
+        c2Longitude = c2.longitude()
+        
+        if isinstance(cLatitude, float):
+            view << QPointF(cLongitude * 3600.0, cLatitude * 3600.0)
+            
+            if c2Longitude < cLongitude:
                 offset = 360.0 * 3600.0
-            view << QPointF(c2.longitude() * 3600.0 + offset, c2.latitude() * 3600.0)
-            c = viewport.topRight();
-            view << QPointF(c.longitude() * 3600.0 + offset, c.latitude() * 3600.0)
-            c = viewport.topLeft();
-            view << QPointF(c.longitude() * 3600.0, c.latitude() * 3600.0)
-        except TypeError:
-            pass 
-    
+            view << QPointF(c2Longitude * 3600.0 + offset, c2Latitude * 3600.0)
+            c3 = viewport.topRight();
+            view << QPointF(c3.longitude() * 3600.0 + offset, c3.latitude() * 3600.0)
+            c4 = viewport.topLeft();
+            view << QPointF(c4.longitude() * 3600.0, c4.latitude() * 3600.0)
+        #except TypeError:
+        #   pass 
+        
+#        print "latLonViewport"
+#        for i in view:
+#            print i
+        
         return view
     
     def polyToScreen(self, poly):

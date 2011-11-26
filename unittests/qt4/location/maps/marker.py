@@ -151,7 +151,7 @@ class MarkerManager(QObject):
         
         self._myLocation = Marker(iconPath, Marker.MyLocationMarker)
         self._myLocation.setOrigin(GeoCoordinate(48.525759, 8.5659))
-        self._myLocation.setName("me")
+        self._myLocation.setName("Heimatfleck")
         
         self._myLocation.coordinateChanged.connect(self._myLocationChanged)
         self._searchManager.finished.connect(self._replyFinished)

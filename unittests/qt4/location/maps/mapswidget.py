@@ -77,9 +77,12 @@ class GeoMap(GraphicsGeoMap):
     def mouseReleaseEvent(self, event):
         self.panActive = False
         if self._clickedWithoutMove:
+            #print "screenPos: {0}".format(event.pos())
             coord = self.screenPositionToCoordinate(QPointF(event.pos()))
             coordStr = str(coord)
-            print coordStr
+            #print "Coordinate: {0}".format(coordStr)
+            #print "Back to ScreenPos: {0}".format(self.coordinateToScreenPosition(coord))
+            #print coordStr
             self.mapsWidget.statusBarItem.showText(coordStr)
             
         if self._markerPressed:

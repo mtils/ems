@@ -23,15 +23,20 @@ class GeoTiledMapPixmapObjectInfo(GeoTiledMapObjectInfo):
         self.pixmapChanged(self.pixmap.pixmap())
         self.offsetChanged(self.pixmap.offset())
         
+        
+        
     
     def pixmapChanged(self, pixmap):
+        #print "pixmap Changed to {0} empty:{1}".format(pixmap, pixmap.isNull())
         self.pixmapItem.setPixmap(self.pixmap.pixmap())
+        #self.pixmapItem.setPixmap(pixmap)
         self.pixmapItem.setScale(1.0)
         self.updateItem()
     
     def offsetChanged(self, offset):
         self.pixmapItem.setOffset(QPointF(self.pixmap.offset()))
         self.updateItem()
+    
     
     
     

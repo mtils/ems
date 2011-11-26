@@ -182,12 +182,12 @@ class GeoTiledMapData(GeoMapData):
         if self._oe:
             del self._oe
     
-    def coordinateToScreenPosition(self, coordOrLat, lon=0.0):
-        if isinstance(coordOrLat, GeoCoordinate):
-            lon = coordOrLat.longitude()
-            lat = coordOrLat.latitude()
+    def coordinateToScreenPosition(self, coordOrLon, lat=0.0):
+        if isinstance(coordOrLon, GeoCoordinate):
+            lon = coordOrLon.longitude()
+            lat = coordOrLon.latitude()
         else:
-            lat = coordOrLat
+            lon = coordOrLon
             
         offset = self.windowOffset()
         
@@ -197,7 +197,8 @@ class GeoTiledMapData(GeoMapData):
         
         y = pos.y() - self._worldReferenceViewportRect.top()
         
-        posF = QPointF(offset.x() + int(x) / self._zoomFactor, offset.y() + int(y) / self._zoomFactor)
+        posF = QPointF(float(offset.x()) + float(x) / float(self._zoomFactor),
+                       float(offset.y()) + float(y) / float(self._zoomFactor))
         
         return posF
     
@@ -381,6 +382,7 @@ class GeoTiledMapData(GeoMapData):
         newImage = QPixmap(oldImage.size())
         newImage.fill(Qt.lightGray)
         painter2 = QPainter(newImage)
+        painter2.setRenderHint(QPainter.SmoothPixmapTransform, True)
         
         if zoomDiff < 0:
             painter2.drawPixmap(source, oldImage, target)
@@ -753,7 +755,7 @@ class GeoTiledMapData(GeoMapData):
                                                Qt.AscendingOrder)
         
         for item in pixelItems:
-            obj = self._oe.pixelItems.value(item)
+            obj = self._oe.pixelItems[item]
             
             if obj.isVisible() and (obj not in considered):
                 contains = False
@@ -770,8 +772,7 @@ class GeoTiledMapData(GeoMapData):
                     trans = self._oe.pixelTrans[obj]
                     
                     for t in trans:
-                        unused = False 
-                        inv, ok = t.inverted(unused)
+                        inv, ok = t.inverted()
                         if ok:
                             testPt = screenPosition * inv
                             
@@ -818,8 +819,7 @@ class GeoTiledMapData(GeoMapData):
                     if gItem:
                         trans = self._oe.pixelTrans[obj]
                         for t in trans:
-                            unused = False
-                            inv, ok = t.inverted(unused)
+                            inv, ok = t.inverted()
                             if ok:
                                 testPoly = screenRect * inv
                                 
