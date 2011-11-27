@@ -7,6 +7,7 @@ from PyQt4.QtNetwork import QNetworkReply
 
 from ems.qt4.location.maps.geosearchreply import GeoSearchReply
 from ems.qt4.location.plugins.nokia.georoutexmlparser import GeoRouteXmlParser
+from ems.qt4.location.plugins.nokia.geocodexmlparser import GeoCodeXmlParser
 
 class GeoSearchReplyNokia(GeoSearchReply):
     
@@ -17,11 +18,11 @@ class GeoSearchReplyNokia(GeoSearchReply):
         self._m_reply = reply
         
         self._m_reply.finished.connect(self._networkFinished)
-        self._m_reply.error.connect(self.networkError)
+        self._m_reply.error.connect(self._networkError)
         
-        self.setLimit(limit)
-        self.setOffset(offset)
-        self.setViewport(viewport)
+        self._setLimit(limit)
+        self._setOffset(offset)
+        self._setViewport(viewport)
         
     
     def abort(self):
@@ -39,7 +40,8 @@ class GeoSearchReplyNokia(GeoSearchReply):
         if self._m_reply.error() != QNetworkReply.NoError:
             return
         
-        parser = GeoRouteXmlParser()
+        #parser = GeoRouteXmlParser()
+        parser = GeoCodeXmlParser()
         if parser.parse(self._m_reply):
             places = parser.results()
             bounds = self.viewport();

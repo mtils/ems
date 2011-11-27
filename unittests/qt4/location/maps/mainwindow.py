@@ -150,7 +150,14 @@ class MainWindow(QMainWindow):
         print "MarkerDialog should be showed now"
     
     def _showSearchDialog(self):
-        sd = SearchDialog()
+        sd = SearchDialog(self)
+        sd.show()
+        if sd.exec_() == QDialog.Accepted:
+            if self._markerManager:
+                self._markerManager.removeSearchMarkers()
+                self._markerManager.search(sd.searchTerms(),
+                                           sd.radius())
+                self._mapsWidget.map_().setFocus()
         return
     
     def _showErrorMessage(self, err, msg):

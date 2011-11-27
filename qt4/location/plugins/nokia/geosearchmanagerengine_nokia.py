@@ -13,6 +13,7 @@ from ems.qt4.location.geoboundingbox import GeoBoundingBox
 from ems.qt4.location.maps.geosearchreply import GeoSearchReply
 from ems.qt4.location.plugins.nokia.geosearchreply_nokia import GeoSearchReplyNokia #@UnresolvedImport
 from ems.qt4.location.plugins.nokia.marclanguagecodes import marc_language_code_list
+from ems.qt4.location.geoboundingarea import GeoBoundingArea
 
 class GeoSearchManagerEngineNokia(GeoSearchManagerEngine):
     
@@ -172,7 +173,7 @@ class GeoSearchManagerEngineNokia(GeoSearchManagerEngine):
             requestStrings.append(self._languageToMarc(self._locale().language()))
         
             requestStrings.append("&obloc=")
-            requestStrings.append(searchString)
+            requestStrings.append(unicode(searchString))
         
             if limit > 0:
                 requestStrings.append("&total=")
@@ -187,13 +188,13 @@ class GeoSearchManagerEngineNokia(GeoSearchManagerEngine):
             return self.search("".join(requestStrings), bounds, limit, offset)
             
         #bounds passed
-        elif isinstance(searchTypesOrBounds, GeoBoundingBox):
+        elif isinstance(searchTypesOrBounds, GeoBoundingArea):
             bounds = searchTypesOrBounds
             networkReply = self._m_networkManager.get(QNetworkRequest(QUrl(searchString)))
             reply = GeoSearchReplyNokia(networkReply, limit, offset, bounds, self)
             
             reply.finished.connect(self._placesFinished)
-            reply.error.connect(self._placesError)
+            reply.errorOccured.connect(self._placesError)
             return reply
     
     @staticmethod

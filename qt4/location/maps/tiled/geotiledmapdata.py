@@ -1006,7 +1006,7 @@ class GeoTiledMapData(GeoMapData):
                                           Qt.IntersectsItemShape,
                                           Qt.AscendingOrder)
         
-        objsDone = []
+        objsDone = set()
         
         baseTrans = painter.transform()
         
@@ -1025,13 +1025,13 @@ class GeoTiledMapData(GeoMapData):
                     gItem = self._oe.graphicsItemFromMapObject(obj)
                     for trans in self._oe.pixelTrans[obj]:
                         painter.setTransform(trans * baseTrans)
-                        item.paint(painter, style)
+                        gItem.paint(painter, style, None)
                         for child in gItem.childItems():
                             painter.setTransform(child.transform() * trans * baseTrans)
                             painter.translate(child.pos())
                             child.paint(painter, style)
             
-            objsDone.append(obj)
+            objsDone.add(obj)
         painter.restore()
         del style
     

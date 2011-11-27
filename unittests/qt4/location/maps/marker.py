@@ -46,8 +46,8 @@ class Marker(GeoMapPixmapObject):
     movableChanged = pyqtSignal(bool)
     
     def __init__(self, iconpath, type_):
-        self._iconPath = iconpath
         GeoMapPixmapObject.__init__(self)
+        self._iconPath = iconpath
         
         self.setMarkerType(type_)
         
@@ -143,6 +143,7 @@ class MarkerManager(QObject):
         @param parent: parent QObject
         @type parent: QObject
         '''
+        QObject.__init__(self, parent)
         self._searchManager = sm
         self._status = None
         self._revGeoCodeRunning = False
