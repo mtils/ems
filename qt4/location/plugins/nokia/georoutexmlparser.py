@@ -221,26 +221,26 @@ class GeoRouteXmlParser(object):
                 
             segment = self._segments[i].segment
             if (maneuverIndex < len(self._maneuvers)) and \
-                self._segments[i].id == self._maneuvers[maneuverIndex].toId:
+                self._segments[i].id_ == self._maneuvers[maneuverIndex].toId:
                 segment.setManeuver(self._maneuvers[maneuverIndex].maneuver)
                 maneuverIndex += 1
             routeSegments.append(segment)
         
         compactedRouteSegments = []
-        compactedRouteSegments.append(routeSegments[0])
-        routeSegments.pop(0)
+        compactedRouteSegments.append(routeSegments.pop(0))
         
         while len(routeSegments) > 0:
             segment = routeSegments.pop(0)
-            lastIndex = len(routeSegments)-1
-            if lastIndex < 0:
-                break
-            lastSegment = routeSegments[lastIndex]
+            
+            lastIndex = len(compactedRouteSegments)-1
+#            if lastIndex < 0:
+#                break
+            lastSegment = compactedRouteSegments[lastIndex]
             
             if lastSegment.maneuver().isValid():
                 compactedRouteSegments.append(segment)
             else:
-                compactedRouteSegments.pop(len(compactedRouteSegments)-1)
+                compactedRouteSegments.pop()
                 lastSegment.setDistance(lastSegment.distance() + segment.distance())
                 lastSegment.setTravelTime(lastSegment.travelTime() + segment.travelTime())
                 path = lastSegment.path()
@@ -370,42 +370,42 @@ class GeoRouteXmlParser(object):
                     coordinates = GeoCoordinate()
                     if self._parseCoordinates(coordinates):
                         maneuverContainter.maneuver.setPosition(coordinates)
-                    elif self._m_reader.name() == "Instruction":
-                        maneuverContainter.maneuver.setInstructionText(self._m_reader.readElementText())
-                    elif self._m_reader.name() == "ToLink":
-                        maneuverContainter.toId = self._m_reader.readElementText()
-                    elif self._m_reader.name() == "TravelTime":
-                        maneuverContainter.maneuver.setTimeToNextInstruction(self._m_reader.readElementText().toInt())
-                    elif self._m_reader.name() == "Length":
-                        maneuverContainter.maneuver.setDistanceToNextInstruction(self._m_reader.readElementText().toDouble())
-                    elif self._m_reader.name() == "Direction":
-                        value = self._m_reader.readElementText()
-                        if value == "forward":
-                            maneuverContainter.maneuver.setDirection(GeoManeuver.DirectionForward)
-                        elif value == "bearRight":
-                            maneuverContainter.maneuver.setDirection(GeoManeuver.DirectionBearRight)
-                        elif value == "lightRight":
-                            maneuverContainter.maneuver.setDirection(GeoManeuver.DirectionLightRight)
-                        elif value == "right":
-                            maneuverContainter.maneuver.setDirection(GeoManeuver.DirectionRight)
-                        elif value == "hardRight":
-                            maneuverContainter.maneuver.setDirection(GeoManeuver.DirectionHardRight)
-                        elif value == "uTurnRight":
-                            maneuverContainter.maneuver.setDirection(GeoManeuver.DirectionUTurnRight)
-                        elif value == "uTurnLeft":
-                            maneuverContainter.maneuver.setDirection(GeoManeuver.DirectionUTurnLeft)
-                        elif value == "hardLeft":
-                            maneuverContainter.maneuver.setDirection(GeoManeuver.DirectionHardLeft)
-                        elif value == "left":
-                            maneuverContainter.maneuver.setDirection(GeoManeuver.DirectionLeft)
-                        elif value == "lightLeft":
-                            maneuverContainter.maneuver.setDirection(GeoManeuver.DirectionLightLeft)
-                        elif value == "bearLeft":
-                            maneuverContainter.maneuver.setDirection(GeoManeuver.DirectionBearLeft)
-                        else:
-                            maneuverContainter.maneuver.setDirection(GeoManeuver.NoDirection)
+                elif self._m_reader.name() == "Instruction":
+                    maneuverContainter.maneuver.setInstructionText(self._m_reader.readElementText())
+                elif self._m_reader.name() == "ToLink":
+                    maneuverContainter.toId = self._m_reader.readElementText()
+                elif self._m_reader.name() == "TravelTime":
+                    maneuverContainter.maneuver.setTimeToNextInstruction(self._m_reader.readElementText().toInt())
+                elif self._m_reader.name() == "Length":
+                    maneuverContainter.maneuver.setDistanceToNextInstruction(self._m_reader.readElementText().toDouble()[0])
+                elif self._m_reader.name() == "Direction":
+                    value = self._m_reader.readElementText()
+                    if value == "forward":
+                        maneuverContainter.maneuver.setDirection(GeoManeuver.DirectionForward)
+                    elif value == "bearRight":
+                        maneuverContainter.maneuver.setDirection(GeoManeuver.DirectionBearRight)
+                    elif value == "lightRight":
+                        maneuverContainter.maneuver.setDirection(GeoManeuver.DirectionLightRight)
+                    elif value == "right":
+                        maneuverContainter.maneuver.setDirection(GeoManeuver.DirectionRight)
+                    elif value == "hardRight":
+                        maneuverContainter.maneuver.setDirection(GeoManeuver.DirectionHardRight)
+                    elif value == "uTurnRight":
+                        maneuverContainter.maneuver.setDirection(GeoManeuver.DirectionUTurnRight)
+                    elif value == "uTurnLeft":
+                        maneuverContainter.maneuver.setDirection(GeoManeuver.DirectionUTurnLeft)
+                    elif value == "hardLeft":
+                        maneuverContainter.maneuver.setDirection(GeoManeuver.DirectionHardLeft)
+                    elif value == "left":
+                        maneuverContainter.maneuver.setDirection(GeoManeuver.DirectionLeft)
+                    elif value == "lightLeft":
+                        maneuverContainter.maneuver.setDirection(GeoManeuver.DirectionLightLeft)
+                    elif value == "bearLeft":
+                        maneuverContainter.maneuver.setDirection(GeoManeuver.DirectionBearLeft)
                     else:
-                        self._m_reader.skipCurrentElement()
+                        maneuverContainter.maneuver.setDirection(GeoManeuver.NoDirection)
+                else:
+                    self._m_reader.skipCurrentElement()
                 
             self._m_reader.readNext()
             

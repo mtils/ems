@@ -14,6 +14,7 @@ from ems.qt4.location.maps.geomappingmanager import GeoMappingManager #@Unresolv
 from ems.qt4.location.maps.geomapobject import GeoMapObject #@UnresolvedImport
 from ems.qt4.location.geocoordinate import GeoCoordinate #@UnresolvedImport
 from marker import Marker #@UnresolvedImport
+from ems.qt4.location.maps.geomaprouteobject import GeoMapRouteObject
 
 class GeoMap(GraphicsGeoMap):
 #    centerLatitude = 0.0
@@ -72,6 +73,8 @@ class GeoMap(GraphicsGeoMap):
                 self.pressed = objects[0]
                 self._markerPressed = True
                 self.panActive = False
+            elif isinstance(objects[0], GeoMapRouteObject):
+                print objects[0]
             
         self.setFocus()
         event.accept()

@@ -52,6 +52,7 @@ class GeoTiledMapRouteObjectInfo(GeoTiledMapObjectInfo):
             oldy = 0.0
             firstIteration = True
             for coord in path:
+                #print coord.latitude(), coord.longitude() 
                 x = coord.longitude() * 3600.0
                 y = coord.latitude() * 3600.0
                 if firstIteration:

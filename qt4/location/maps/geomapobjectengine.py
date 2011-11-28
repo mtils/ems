@@ -70,19 +70,29 @@ class GeoMapObjectEngine(QObject):
                 self.removeObject(child)
         else:
             rectsToUpdate = []
-            for item in self.pixelItemsRev[obj]:
-                rectsToUpdate.append(item.boundingRect())
-                
-            for item in self.pixelItemsRev[obj]:
-                try:
-                    del self.latLonItems[item]
-                except KeyError:
-                    pass
-                self.latLonScene.removeItem(item)
-                del item
+            try:
+                for item in self.pixelItemsRev[obj]:
+                    rectsToUpdate.append(item.boundingRect())
+            except KeyError:
+                pass
+            try:
+                for item in self.pixelItemsRev[obj]:
+                    try:
+                        del self.latLonItems[item]
+                    except KeyError:
+                        pass
+                    self.latLonScene.removeItem(item)
+                    del item
+            except KeyError:
+                pass
+            
             del self.latLonItemsRev[obj]
             
-            del self.pixelTrans[obj]
+            try:
+                del self.pixelTrans[obj]
+            except KeyError:
+                pass
+            
             for item in self.pixelItemsRev[obj]:
                 del self.pixelItems[item]
                 self.pixelScene.removeItem(item)
