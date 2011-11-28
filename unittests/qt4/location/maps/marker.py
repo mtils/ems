@@ -82,6 +82,9 @@ class Marker(GeoMapPixmapObject):
         self.setPixmap(QPixmap(filePath).scaledToWidth(scale,
                                                        Qt.SmoothTransformation))
     
+    def address(self):
+        return self._address
+    
     def setAddress(self, addr):
         if self._address != addr:
             self._address = addr
@@ -91,7 +94,11 @@ class Marker(GeoMapPixmapObject):
         return self._type
     
     def name(self):
-        return self._name
+        if self._name:
+            return self._name
+        if self.nokiaName:
+            return self.nokiaName
+        
     
     def setName(self, name):
         name = QString.fromUtf8(name)
@@ -136,7 +143,7 @@ class MarkerManager(QObject):
     _reverseReplies = set()
     
     
-    def __init__(self, iconPath, sm, parent=None):
+    def __init__(self, iconPath, sm, myLocationCoord = None, parent=None):
         '''
         @param sm: GeoSearchManager
         @type sm: GeoSearchManager
@@ -150,8 +157,10 @@ class MarkerManager(QObject):
         self._myLocHasMoved = False
         self._iconPath = iconPath
         
+        if myLocationCoord is None:
+            myLocationCoord = GeoCoordinate(48.525759, 8.5659) # Pfalzgrafenweiler
         self._myLocation = Marker(iconPath, Marker.MyLocationMarker)
-        self._myLocation.setOrigin(GeoCoordinate(48.525759, 8.5659))
+        self._myLocation.setOrigin(myLocationCoord)
         self._myLocation.setName("Heimatfleck")
         
         self._myLocation.coordinateChanged.connect(self._myLocationChanged)
@@ -183,10 +192,10 @@ class MarkerManager(QObject):
         if self._status:
             self._status.showText("Suchen...")
         
-        if reply.isFinished:
+        if reply.isFinished():
             self._replyFinished(reply)
         else:
-            reply.errorOccured.connect(self._searchError)
+            reply.errorOccured.connect(self.searchError)
     
     def removeSearchMarkers(self):
         for m in self._searchMarkers:
@@ -237,8 +246,11 @@ class MarkerManager(QObject):
                 lm = Landmark(place)
                 m.setName(lm.name())
             else:
-                m.setName("{0}, {1}".format(place.address().street(),
-                                            place.address().city()))
+                try:
+                    m.setName(m.nokiaName)
+                except AttributeError:
+                    m.setName("{0}, {1}".format(place.address().street(),
+                                                place.address().city()))
             
             m.setAddress(place.address())
             m.setMoveable(False)
@@ -257,3 +269,9 @@ class MarkerManager(QObject):
         self.searchFinished.emit()
         if self._status:
             self._status.hide()
+    
+    def _searchError(self, msg, fett=None):
+        print msg, fett
+    
+    def searchManager(self):
+        return self._searchManager

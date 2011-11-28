@@ -74,7 +74,10 @@ class GeoMapObjectEngine(QObject):
                 rectsToUpdate.append(item.boundingRect())
                 
             for item in self.pixelItemsRev[obj]:
-                del self.latLonItems[item]
+                try:
+                    del self.latLonItems[item]
+                except KeyError:
+                    pass
                 self.latLonScene.removeItem(item)
                 del item
             del self.latLonItemsRev[obj]
@@ -87,7 +90,7 @@ class GeoMapObjectEngine(QObject):
             del self.pixelItemsRev[obj]
             
             for rect in rectsToUpdate:
-                self.mdp.emitUpdateMapDisplay(rect)
+                self.mdp.triggerUpdateMapDisplay(rect)
     
     '''
     ****************************************************************************
@@ -386,9 +389,12 @@ class GeoMapObjectEngine(QObject):
             oy = origin.latitude() * 3600.0;
             toAbs.translate(ox, oy)
         
-        for i in self.latLonExact[obj]:
-            del i
-        del self.latLonExact[obj]
+        try:
+            for i in self.latLonExact[obj]:
+                del i
+            del self.latLonExact[obj]
+        except KeyError:
+            pass
         
         if isinstance(item,QGraphicsPolygonItem):
             polyItem = item
@@ -443,7 +449,7 @@ class GeoMapObjectEngine(QObject):
             else:
                 self.latLonExact[obj] = [pi]
             originalBounds = pi.boundingRect()
-            polys.append(originalBounds)
+            polys.append(QPolygonF(originalBounds))
             
             westPath = path * west
             pi = self.pathCopy(pathItem);
@@ -452,7 +458,7 @@ class GeoMapObjectEngine(QObject):
                 self.latLonExact[obj].append(pi)
             else:
                 self.latLonExact[obj] = [pi]
-            polys.append(originalBounds * west)
+            polys.append(QPolygonF(originalBounds) * west)
             
             eastPath = path * east
             pi = self.pathCopy(pathItem)
@@ -461,7 +467,7 @@ class GeoMapObjectEngine(QObject):
                 self.latLonExact[obj].append(pi)
             else:
                 self.latLonExact[obj] = [pi]
-            polys.append(originalBounds * east)
+            polys.append(QPolygonF(originalBounds) * east)
             
             return True
         return False
@@ -597,9 +603,12 @@ class GeoMapObjectEngine(QObject):
 #        print "exactPixelMap!!"
         latLonItems = self.latLonExact[obj]
         
-        for i in self.pixelExact[obj]:
-            del i
-        del self.pixelExact[obj]
+        try:
+            for i in self.pixelExact[obj]:
+                del i
+            del self.pixelExact[obj]
+        except KeyError:
+            pass
         
         tolerance = self.exactMappingTolerance
         
@@ -849,7 +858,7 @@ class GeoMapObjectEngine(QObject):
         
         if needsPixelUpdate:
             self.objectsForPixelUpdate.append(obj)
-            self.mdp.emitUpdateMapDisplay()
+            self.mdp.triggerUpdateMapDisplay()
         
     def updateTransforms(self):
         '''

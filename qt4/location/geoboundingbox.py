@@ -52,10 +52,11 @@ class GeoBoundingBox(GeoBoundingArea):
                 self._topLeft = centerOrTopLeftOrBoundingBox.topLeft()
                 self._bottomRight = centerOrTopLeftOrBoundingBox.bottomRight()
             else:
-                self.__init__(centerOrTopLeftOrBoundingBox,
-                              centerOrTopLeftOrBoundingBox)
-                self.setWidth(degreesWidthOrBottomRight)
-                self.setHeight(degreesHeight)
+#                self.__init__(centerOrTopLeftOrBoundingBox,
+#                              centerOrTopLeftOrBoundingBox)
+#                self.setWidth(degreesWidthOrBottomRight)
+#                self.setHeight(degreesHeight)
+                pass
     
     def __ilshift__(self, other):
         '''

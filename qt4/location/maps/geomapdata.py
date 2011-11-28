@@ -405,7 +405,7 @@ class GeoMapData(QObject):
         @param mapObject: The GeoMapObject which will be deleted
         @type mapObject: GeoMapObject
         '''
-        self._removeMapObject(mapObject)
+        self._removeObject(mapObject)
     
     def clearMapObjects(self):
         '''

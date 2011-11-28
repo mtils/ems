@@ -14,6 +14,7 @@ from ems.qt4.location.maps.geosearchreply import GeoSearchReply
 from ems.qt4.location.plugins.nokia.geosearchreply_nokia import GeoSearchReplyNokia #@UnresolvedImport
 from ems.qt4.location.plugins.nokia.marclanguagecodes import marc_language_code_list
 from ems.qt4.location.geoboundingarea import GeoBoundingArea
+from ems.qt4.location.geoboundingcircle import GeoBoundingCircle
 
 class GeoSearchManagerEngineNokia(GeoSearchManagerEngine):
     
@@ -184,8 +185,11 @@ class GeoSearchManagerEngineNokia(GeoSearchManagerEngine):
                 requestStrings.append("&offset=")
                 requestStrings.append(unicode(offset))
             
-        
-            return self.search("".join(requestStrings), bounds, limit, offset)
+            httpQueryStr ="".join(requestStrings)
+            print httpQueryStr
+            if bounds is None:
+                bounds = GeoBoundingCircle()
+            return self.search(httpQueryStr, bounds, limit, offset)
             
         #bounds passed
         elif isinstance(searchTypesOrBounds, GeoBoundingArea):
@@ -195,6 +199,7 @@ class GeoSearchManagerEngineNokia(GeoSearchManagerEngine):
             
             reply.finished.connect(self._placesFinished)
             reply.errorOccured.connect(self._placesError)
+                
             return reply
     
     @staticmethod
@@ -221,9 +226,9 @@ class GeoSearchManagerEngineNokia(GeoSearchManagerEngine):
         if not reply:
             return
     
-        if self.receivers(SIGNAL('finished(PyQt_PyObject)')) == 0:
-            reply.deleteLater()
-            return;
+#        if self.receivers(SIGNAL('finished(PyQt_PyObject)')) == 0:
+#            reply.deleteLater()
+#            return;
         
     
         self.finished.emit(reply)
@@ -247,7 +252,8 @@ class GeoSearchManagerEngineNokia(GeoSearchManagerEngine):
         self.error.emit(reply, error, errorString)
     
     def _languageToMarc(self, language):
-        offset = 3 * int(language)
+        #offset = 3 * int(language)
+        offset = int(language)
         if language == QLocale.C or offset + 3 > len(marc_language_code_list):
             return "eng"
         

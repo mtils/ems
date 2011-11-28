@@ -23,6 +23,10 @@ class GeoSearchReplyNokia(GeoSearchReply):
         self._setLimit(limit)
         self._setOffset(offset)
         self._setViewport(viewport)
+    
+    def _xmlError(self, errorMsg):
+        self._setError(GeoSearchReply.ParseError,
+                       unicode(errorMsg))
         
     
     def abort(self):
@@ -42,13 +46,19 @@ class GeoSearchReplyNokia(GeoSearchReply):
         
         #parser = GeoRouteXmlParser()
         parser = GeoCodeXmlParser()
+        parser.setErrorCallback(self._xmlError)
         if parser.parse(self._m_reply):
             places = parser.results()
-            bounds = self.viewport();
-            if bounds:
-                for i in range(len(places)):
-                    if not bounds.contains(places[i].coordinate()):
-                        places.remove(i)
+            bounds = self.viewport()
+            if bounds.isValid():
+                notContained = set()
+                for place in places:
+                    if not bounds.contains(place.coordinate()):
+                        notContained.add(place)
+                
+                for place in notContained:
+                    places.remove(place)
+            
 
             self._setPlaces(places)
             self._setFinished(True);

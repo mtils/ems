@@ -241,7 +241,7 @@ class GeoSearchReply(QObject):
 
         This will do nothing if the reply is finished.
         '''
-        if not self.isFinished():
+        if not self._isFinished:
             self._setFinished(True)
     
     def limit(self):

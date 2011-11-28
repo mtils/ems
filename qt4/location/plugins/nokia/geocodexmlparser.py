@@ -16,6 +16,12 @@ class GeoCodeXmlParser(object):
     
     def __init__(self):
         self._m_reader = QXmlStreamReader()
+        self._errorCallback = None
+    
+    def setErrorCallback(self, callback):
+        if callable(callback):
+            self._errorCallback = callback
+            
     
     def parse(self, source):
         '''
@@ -35,6 +41,13 @@ class GeoCodeXmlParser(object):
         self._m_errorString = "";
     
         return True
+    
+    def _raiseError(self, errorMsg):
+        self._m_reader.raiseError(QString(errorMsg))
+        #return
+        #print "ich bin dat"
+        if callable(self._errorCallback):
+            self._errorCallback(errorMsg)
     
     def results(self):
         '''
@@ -78,11 +91,11 @@ class GeoCodeXmlParser(object):
                         if resultDesc.isEmpty():
                             resultDesc = "The attribute \"resultCode\" of the element \"places\" indicates that the request failed."
                         
-                        self._m_reader.raiseError(QString(resultDesc))
+                        self._raiseError(resultDesc)
                         
                         return False
                     elif result != "OK":
-                        self._m_reader.raiseError(QString("The attribute \"resultCode\" of the element \"places\" has an unknown value (value was %1).").arg(result.toString()))
+                        self._raiseError("The attribute \"resultCode\" of the element \"places\" has an unknown value (value was {0}).".format(result.toString()))
                 
                 while self._m_reader.readNextStartElement():
                     if self._m_reader.name() == "place":
@@ -93,17 +106,17 @@ class GeoCodeXmlParser(object):
                         
                         self._m_results.append(place)
                     else:
-                        self._m_reader.raiseError(QString("The element \"places\" did not expect a child element named \"%1\".").arg(self._m_reader.name().toString()))
+                        self._raiseError("The element \"places\" did not expect a child element named \"{0}\".".format(self._m_reader.name().toString()))
                         return False
             else:
-                self._m_reader.raiseError(QString("The root element is expected to have the name \"places\" (root element was named \"%1\").").arg(self._m_reader.name().toString()))
+                self._raiseError("The root element is expected to have the name \"places\" (root element was named \"{0}\").".format(self._m_reader.name().toString()))
                 return False      
         else:
-            self._m_reader.raiseError("Expected a root element named \"places\" (no root element found).")
+            self._raiseError("Expected a root element named \"places\" (no root element found).")
             return False
         
         if (self._m_reader.readNextStartElement()):
-            self._m_reader.raiseError(QString("A single root element named \"places\" was expected (second root element was named \"%1\")").arg(self._m_reader.name().toString()))
+            self._raiseError("A single root element named \"places\" was expected (second root element was named \"{0}\")".format(self._m_reader.name().toString()))
             return False
         
         return True
@@ -133,17 +146,19 @@ class GeoCodeXmlParser(object):
             raise TypeError("Place is no startelement or not place tag")
         
         if not self._m_reader.attributes().hasAttribute("title"):
-            self._m_reader.raiseError("The element \"place\" did not have the required attribute \"title\".")
+            self._raiseError("The element \"place\" did not have the required attribute \"title\".")
             return False
+        
+        place.nokiaName = self._m_reader.attributes().value("title")
         
         if not self._m_reader.attributes().hasAttribute("language"):
             pass
-            #self._m_reader.raiseError("The element \"place\" did not have the required attribute \"language\".")
+            #self._raiseError("The element \"place\" did not have the required attribute \"language\".")
             #return False
         else:
             lang = self._m_reader.attributes().value("language").toString()
             if lang.size() != 3:
-                self._m_reader.raiseError(QString("The attribute \"language\" of the element \"place\" was not of length 3 (length was %1).").arg(lang.length()))
+                self._raiseError("The attribute \"language\" of the element \"place\" was not of length 3 (length was {0}).".format(lang.length()))
                 return False
         
         parsedLocation = False
@@ -154,8 +169,8 @@ class GeoCodeXmlParser(object):
             name = self._m_reader.name().toString()
             if name == "location":
                 if parsedLocation:
-                    self._m_reader.raiseError("The element \"place\" has multiple child elements named \"location\" (exactly one expected)")
-                return False
+                    self._raiseError("The element \"place\" has multiple child elements named \"location\" (exactly one expected)")
+                    return False
             
                 if not self._parseLocation(place):
                     return False
@@ -163,7 +178,7 @@ class GeoCodeXmlParser(object):
                 parsedLocation = True
             elif name == "address":
                 if parsedAddress:
-                    self._m_reader.raiseError("The element \"place\" has multiple child elements named \"address\" (at most one expected)")
+                    self._raiseError("The element \"place\" has multiple child elements named \"address\" (at most one expected)")
                     return False
                 
                 address = GeoAddress()
@@ -175,7 +190,7 @@ class GeoCodeXmlParser(object):
                     parsedAddress = True
             elif name == "alternatives":
                 if parsedAlternatives:
-                    self._m_reader.raiseError("The element \"place\" has multiple child elements named \"alternatives\" (at most one expected)")
+                    self._raiseError("The element \"place\" has multiple child elements named \"alternatives\" (at most one expected)")
                     return False
                 
                 # skip alternatives for now
@@ -185,11 +200,11 @@ class GeoCodeXmlParser(object):
                 
                 parsedAlternatives = True
             else:
-                self._m_reader.raiseError(QString("The element \"place\" did not expect a child element named \"%1\".").arg(self._m_reader.name().toString()))
+                self._raiseError("The element \"place\" did not expect a child element named \"{0}\".".format(self._m_reader.name().toString()))
                 return False
             
         if not parsedLocation:
-            self._m_reader.raiseError("The element \"place\" has no child elements named \"location\" (exactly one expected)")
+            self._raiseError("The element \"place\" has no child elements named \"location\" (exactly one expected)")
             return False
         
         return True
@@ -223,7 +238,7 @@ class GeoCodeXmlParser(object):
             name = self._m_reader.name().toString()
             if name == "position":
                 if parsedPosition:
-                    self._m_reader.raiseError("The element \"location\" has multiple child elements named \"position\" (exactly one expected)")
+                    self._raiseError("The element \"location\" has multiple child elements named \"position\" (exactly one expected)")
                     return False
                 
                 coord = GeoCoordinate()
@@ -235,7 +250,7 @@ class GeoCodeXmlParser(object):
                 parsedPosition = True
             elif name == "boundingBox":
                 if parsedBounds:
-                    self._m_reader.raiseError("The element \"location\" has multiple child elements named \"boundingBox\" (at most one expected)")
+                    self._raiseError("The element \"location\" has multiple child elements named \"boundingBox\" (at most one expected)")
                     return False
                 
                 bounds = GeoBoundingBox()
@@ -247,11 +262,11 @@ class GeoCodeXmlParser(object):
                 
                 parsedBounds = True
             else:
-                self._m_reader.raiseError(QString("The element \"location\" did not expect a child element named \"%1\".").arg(self._m_reader.name().toString()))
+                self._raiseError("The element \"location\" did not expect a child element named \"{0}\".".format(self._m_reader.name().toString()))
                 return False
             
         if not parsedPosition:
-            self._m_reader.raiseError("The element \"location\" has no child elements named \"position\" (exactly one expected)")
+            self._raiseError("The element \"location\" has no child elements named \"position\" (exactly one expected)")
             return False
         return True
     
@@ -287,7 +302,7 @@ class GeoCodeXmlParser(object):
         @param address: The address
         @type address: GeoAddress
         '''
-        if not self._m_reader.isStartElement() or self._m_reader.name() != 'location':
+        if not self._m_reader.isStartElement() or self._m_reader.name() != 'address':
             raise TypeError("Place is no startelement or not location tag")
         
         if not self._m_reader.readNextStartElement():
@@ -295,12 +310,14 @@ class GeoCodeXmlParser(object):
         
         if self._m_reader.name() == "country":
             address.setCountry(self._m_reader.readElementText())
+            if not self._m_reader.readNextStartElement():
+                return True
         
         if self._m_reader.name() == "countryCode":
             address.setCountryCode(self._m_reader.readElementText())
     
             if address.countryCode().length() != 3:
-                self._m_reader.raiseError(QString("The text of the element \"countryCode\" was not of length 3 (length was %1).").arg(address.countryCode().length()))
+                self._raiseError("The text of the element \"countryCode\" was not of length 3 (length was {0}).".format(address.countryCode().length()))
                 return False
             
     
@@ -343,7 +360,7 @@ class GeoCodeXmlParser(object):
                     inThoroughfare = False
             
             if inThoroughfare:
-                self._m_reader.raiseError(QString("The element \"thoroughFare\" did not expect the child element \"%1\" at this point (unknown child element or child element out of order).").arg(self._m_reader.name().toString()))
+                self._raiseError("The element \"thoroughFare\" did not expect the child element \"{0}\" at this point (unknown child element or child element out of order).".format(self._m_reader.name().toString()))
                 return False
             
             if not self._m_reader.readNextStartElement():
@@ -354,7 +371,7 @@ class GeoCodeXmlParser(object):
             if not self._m_reader.readNextStartElement():
                 return True
         
-        self._m_reader.raiseError(QString("The element \"address\" did not expect the child element \"%1\" at this point (unknown child element or child element out of order).").arg(self._m_reader.name().toString()))
+        self._raiseError("The element \"address\" did not expect the child element \"{0}\" at this point (unknown child element or child element out of order).".format(self._m_reader.name().toString()))
         return False
     
     def _parseBoundingBox(self, bounds):
@@ -373,7 +390,7 @@ class GeoCodeXmlParser(object):
             raise TypeError("Place is no startelement or not boundingBox tag")
         
         if not self._m_reader.readNextStartElement():
-            self._m_reader.raiseError("The element \"boundingBox\" was expected to have 2 child elements (0 found)")
+            self._raiseError("The element \"boundingBox\" was expected to have 2 child elements (0 found)")
             return False
         
         nw = GeoCoordinate()
@@ -382,11 +399,11 @@ class GeoCodeXmlParser(object):
             if not self._parseCoordinate(nw, "northWest"):
                 return False
         else:
-            self._m_reader.raiseError(QString("The element \"boundingBox\" expected this child element to be named \"northWest\" (found an element named \"%1\")").arg(self._m_reader.name().toString()))
+            self._raiseError("The element \"boundingBox\" expected this child element to be named \"northWest\" (found an element named \"{0}\")".format(self._m_reader.name().toString()))
             return False
         
         if not self._m_reader.readNextStartElement():
-            self._m_reader.raiseError("The element \"boundingBox\" was expected to have 2 child elements (1 found)")
+            self._raiseError("The element \"boundingBox\" was expected to have 2 child elements (1 found)")
             return False
         
         se = GeoCoordinate()
@@ -395,11 +412,11 @@ class GeoCodeXmlParser(object):
             if not self._parseCoordinate(se, "southEast"):
                 return False
         else:
-            self._m_reader.raiseError(QString("The element \"boundingBox\" expected this child element to be named \"southEast\" (found an element named \"%1\")").arg(self._m_reader.name().toString()))
+            self._raiseError("The element \"boundingBox\" expected this child element to be named \"southEast\" (found an element named \"{0}\")".format(self._m_reader.name().toString()))
             return False
         
         if self._m_reader.readNextStartElement():
-            self._m_reader.raiseError("The element \"boundingBox\" was expected to have 2 child elements (more than 2 found)")
+            self._raiseError("The element \"boundingBox\" was expected to have 2 child elements (more than 2 found)")
             return False
         
         
@@ -440,7 +457,7 @@ class GeoCodeXmlParser(object):
             raise TypeError("{0} is no startelement or not {1} tag".format(elementName, elementName))
         
         if not self._m_reader.readNextStartElement():
-            self._m_reader.raiseError(QString("The element \"%1\" was expected to have 2 child elements (0 found)").arg(elementName))
+            self._raiseError("The element \"{0}\" was expected to have 2 child elements (0 found)".format(elementName))
             return False
         
         if self._m_reader.name() == "latitude":
@@ -449,15 +466,15 @@ class GeoCodeXmlParser(object):
             lat = float(unicode(s))
             
             if lat < -90.0 or 90.0 < lat:
-                self._m_reader.raiseError(QString("The element \"latitude\" expected a value between -90.0 and 90.0 inclusive (value was %1)").arg(lat))
+                self._raiseError("The element \"latitude\" expected a value between -90.0 and 90.0 inclusive (value was {0})".format(lat))
                 return False
             
             coordinate.setLatitude(lat)
         else:
-            self._m_reader.raiseError(QString("The element \"%1\" expected this child element to be named \"latitude\" (found an element named \"%2\")").arg(elementName).arg(self._m_reader.name().toString()))
+            self._raiseError("The element \"{0}\" expected this child element to be named \"latitude\" (found an element named \"{1}\")".format(elementName, self._m_reader.name().toString()))
         
         if not self._m_reader.readNextStartElement():
-            self._m_reader.raiseError(QString("The element \"%1\" was expected to have 2 child elements (1 found)").arg(elementName))
+            self._raiseError("The element \"{0}\" was expected to have 2 child elements (1 found)".format(elementName))
             return False
         
         if self._m_reader.name() == "longitude":
@@ -466,16 +483,16 @@ class GeoCodeXmlParser(object):
             lng = float(s)
             
             if lng < -180.0 or 180.0 < lng:
-                self._m_reader.raiseError(QString("The element \"longitude\" expected a value between -180.0 and 180.0 inclusive (value was %1)").arg(lng))
+                self._raiseError("The element \"longitude\" expected a value between -180.0 and 180.0 inclusive (value was {0})".format(lng))
                 return False
         
             coordinate.setLongitude(lng)
         
         else:
-            self._m_reader.raiseError(QString("The element \"%1\" expected this child element to be named \"longitude\" (found an element named \"%2\")").arg(elementName).arg(self._m_reader.name().toString()))
+            self._raiseError("The element \"{0}\" expected this child element to be named \"longitude\" (found an element named \"{1}\")".format(elementName, self._m_reader.name().toString()))
         
         if self._m_reader.readNextStartElement():
-            self._m_reader.raiseError(QString("The element \"%1\" was expected to have 2 child elements (more than 2 found)").arg(elementName))
+            self._raiseError("The element \"{0}\" was expected to have 2 child elements (more than 2 found)".format(elementName))
             return False
         
         return True

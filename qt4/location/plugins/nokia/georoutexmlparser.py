@@ -13,14 +13,18 @@ from ems.qt4.location.geoboundingbox import GeoBoundingBox
 from ems.qt4.location.geocoordinate import GeoCoordinate
 
 class GeoManeuverContainer(object):
-    maneuver = GeoManeuver
+    maneuver = GeoManeuver()
     id_ = ""
     toId = ""
+    def __init__(self):
+        self.maneuver = GeoManeuver()
 
 class GeoRouteSegmentContainer(object):
-    segment = GeoRouteSegment
+    segment = GeoRouteSegment()
     id_ = ""
     maneuverId = ""
+    def __init__(self):
+        self.segment = GeoRouteSegment()
     
 class GeoRouteXmlParser(object):
     
@@ -104,7 +108,7 @@ class GeoRouteXmlParser(object):
                 route.setRequest(self._m_request)
                 if updateroute:
                     route.setTravelMode(int(self._m_request.travelModes()))
-                if not self._parseRoute(route):
+                if not self.parseRoute(route):
                     continue #route parsing failed move on to the next
                 self._m_results.append(route)
             elif self._m_reader.name() == 'Progress':
@@ -131,8 +135,11 @@ class GeoRouteXmlParser(object):
         self._m_reader.readNext()
         succeeded = True
         
+        
         while not (self._m_reader.tokenType() == QXmlStreamReader.EndElement \
                    and self._m_reader.name() == "Route"):
+#            print "    {0}".format(self._m_reader.name())
+            elementSkipped = False
             if self._m_reader.tokenType() == QXmlStreamReader.StartElement and succeeded:
                 if self._m_reader.name() == "RouteId":
                     route.setRouteId(self._m_reader.readElementText())
@@ -156,7 +163,10 @@ class GeoRouteXmlParser(object):
                     succeeded = self._parseSummary(route)
                 else:
                     self._m_reader.skipCurrentElement()
-            self._m_reader.readNext()
+                    elementSkipped = True
+                    
+            if not elementSkipped:
+                self._m_reader.readNext()
         
         if succeeded:
             succeeded = self._postProcessRoute(route)
@@ -222,28 +232,35 @@ class GeoRouteXmlParser(object):
         
         while len(routeSegments) > 0:
             segment = routeSegments.pop(0)
-            
-            lastSegment = routeSegments[len(routeSegments)]
+            lastIndex = len(routeSegments)-1
+            if lastIndex < 0:
+                break
+            lastSegment = routeSegments[lastIndex]
             
             if lastSegment.maneuver().isValid():
                 compactedRouteSegments.append(segment)
             else:
-                compactedRouteSegments.remove(len(routeSegments))
+                compactedRouteSegments.pop(len(compactedRouteSegments)-1)
                 lastSegment.setDistance(lastSegment.distance() + segment.distance())
                 lastSegment.setTravelTime(lastSegment.travelTime() + segment.travelTime())
                 path = lastSegment.path()
-                path.append(segment.path())
+                #print type(path)
+                for coord in segment.path():
+                    path.append(coord)
+                #path.append(segment.path())
                 lastSegment.setPath(path)
                 lastSegment.setManeuver(segment.maneuver())
                 compactedRouteSegments.append(lastSegment)
     
         if len(compactedRouteSegments) > 0:
             route.setFirstRouteSegment(compactedRouteSegments[0])
-            for i in range(len(compactedRouteSegments)):
+            for i in range(len(compactedRouteSegments)-1):
                 compactedRouteSegments[i].setNextRouteSegment(compactedRouteSegments[i + 1])
         
         self._maneuvers = []
         self._segments = []
+        
+        return True
     
     def _parseMode(self, route):
         '''
@@ -254,9 +271,11 @@ class GeoRouteXmlParser(object):
         elementName = "Mode"
         if not self._m_reader.isStartElement() or self._m_reader.name() != elementName:
             raise TypeError("{0} is no startelement or not {1} tag".format(elementName, elementName))
-        
+        self._m_reader.readNext()
         while not (self._m_reader.tokenType() == QXmlStreamReader.EndElement \
                    and self._m_reader.name() == "Mode"):
+#            print "        {0}".format(self._m_reader.name())
+            #elementSkipped = False
             if self._m_reader.tokenType() == QXmlStreamReader.StartElement:
                 if self._m_reader.name() == "TransportModes":
                     value = self._m_reader.readElementText()
@@ -274,6 +293,7 @@ class GeoRouteXmlParser(object):
                         return False
                 else:
                     self._m_reader.skipCurrentElement()
+                    #elementSkipped = True
             
             self._m_reader.readNext()
             
@@ -339,7 +359,7 @@ class GeoRouteXmlParser(object):
             return False
         
         maneuverContainter = GeoManeuverContainer()
-        maneuverContainter.id = self._m_reader.attributes().value("id").toString()
+        maneuverContainter.id_ = self._m_reader.attributes().value("id").toString()
         
         self._m_reader.readNext()
         
@@ -407,7 +427,7 @@ class GeoRouteXmlParser(object):
                    and self._m_reader.name() == "Link"):
             if self._m_reader.tokenType() == QXmlStreamReader.StartElement:
                 if self._m_reader.name() == "LinkId":
-                    segmentContainer.id = self._m_reader.readElementText()
+                    segmentContainer.id_ = self._m_reader.readElementText()
                 elif self._m_reader.name() == "Shape":
                     elementName = self._m_reader.name().toString()
                     path = []
@@ -435,10 +455,10 @@ class GeoRouteXmlParser(object):
         '''
         rawPoints = strPoints.split(' ')
         
-        for i in range(rawPoints.length()):
+        for i in range(len(rawPoints)):
             coords = rawPoints[i].split(',')
             
-            if coords.length() != 2:
+            if len(coords) != 2:
                 self._m_reader.raiseError(QString("Each of the space separated values of \"%1\" is expected to be a comma separated pair of coordinates (value was \"%2\")").arg(elementName).arg(rawPoints[i]))
                 return False
             

@@ -10,11 +10,12 @@ from geotiledmapobjectinfo import GeoTiledMapObjectInfo #@UnresolvedImport
 
 class GeoTiledMapRouteObjectInfo(GeoTiledMapObjectInfo):
     def __init__(self, mapData, mapObject):
+        GeoTiledMapObjectInfo.__init__(self, mapData, mapObject)
         self.route = mapObject
         
         self.route.routeChanged.connect(self.routeChanged)
         self.route.penChanged.connect(self.penChanged)
-        self.route.detailLevelChanged(self.detailLevelChanged)
+        self.route.detailLevelChanged.connect(self.detailLevelChanged)
         
         self.pathItem = QGraphicsPathItem()
         self.graphicsItem = self.pathItem
@@ -39,7 +40,9 @@ class GeoTiledMapRouteObjectInfo(GeoTiledMapObjectInfo):
         
         segment = self.route.route().firstRouteSegment()
         while segment.isValid():
-            path.append(segment.path())
+            #path.append(segment.path())
+            for coord in segment.path():
+                path.append(coord)
             segment = segment.nextRouteSegment()
         
         pth = QPainterPath()

@@ -105,6 +105,7 @@ class GeoRoutingManagerEngineNokia(GeoRoutingManagerEngine):
         '''
         
         reqString = self._calculateRouteRequestString(request)
+        print reqString
         
         if not len(reqString):
             reply = GeoRouteReply(GeoRouteReply.UnsupportedOptionError,
@@ -118,7 +119,7 @@ class GeoRoutingManagerEngineNokia(GeoRoutingManagerEngine):
         reply = GeoRouteReplyNokia(request, networkReply, self)
         
         reply.finished.connect(self._routeFinished)
-        reply.error.connect(self.routeError)
+        reply.errorOccured.connect(self._routeError)
         
         return reply
     
@@ -172,7 +173,7 @@ class GeoRoutingManagerEngineNokia(GeoRoutingManagerEngine):
             return False
     
     
-        if (request.maneuverDetail() & self.supportedManeuverDetails()) != request.maneuverDetail():
+        if (request.maneuverDetail() & self._supportedManeuverDetails) != request.maneuverDetail():
             return False
     
         if (request.segmentDetail() & self.supportedSegmentDetails()) != request.segmentDetail():
@@ -218,9 +219,9 @@ class GeoRoutingManagerEngineNokia(GeoRoutingManagerEngine):
             requestStrings.append("&waypoint")
             requestStrings.append(unicode(i))
             requestStrings.append("=")
-            requestStrings.append(self._trimDouble(request.waypoints()[i].latitude()))
+            requestStrings.append(GeoRoutingManagerEngineNokia._trimDouble(request.waypoints()[i].latitude()))
             requestStrings.append(",")
-            requestStrings.append(self._trimDouble(request.waypoints()[i].longitude()))
+            requestStrings.append(GeoRoutingManagerEngineNokia._trimDouble(request.waypoints()[i].longitude()))
         
     
         requestStrings.append(self._modesRequestString(request, request.travelModes()))
@@ -357,13 +358,13 @@ class GeoRoutingManagerEngineNokia(GeoRoutingManagerEngine):
                 else:
                     requestStrings.append(";")
                 box = request.excludeAreas()[i]
-                requestStrings.append(self._trimDouble(box.topLeft().latitude()))
+                requestStrings.append(GeoRoutingManagerEngineNokia._trimDouble(box.topLeft().latitude()))
                 requestStrings.append(",")
-                requestStrings.append(self._trimDouble(box.topLeft().longitude()))
+                requestStrings.append(GeoRoutingManagerEngineNokia._trimDouble(box.topLeft().longitude()))
                 requestStrings.append(",")
-                requestStrings.append(self._trimDouble(box.bottomRight().latitude()))
+                requestStrings.append(GeoRoutingManagerEngineNokia._trimDouble(box.bottomRight().latitude()))
                 requestStrings.append(",")
-                requestStrings.append(self._trimDouble(box.bottomRight().longitude()))
+                requestStrings.append(GeoRoutingManagerEngineNokia._trimDouble(box.bottomRight().longitude()))
         
         legAttributes = []
         if request.segmentDetail() & GeoRouteRequest.BasicSegmentData:
@@ -395,7 +396,7 @@ class GeoRoutingManagerEngineNokia(GeoRoutingManagerEngine):
         return "".join(requestStrings)
     
     @staticmethod
-    def _trimDouble(degree, decimalDigits):
+    def _trimDouble(degree, decimalDigits=10):
         '''
         @param degree: float
         @type degree: float

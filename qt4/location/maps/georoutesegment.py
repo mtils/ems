@@ -46,6 +46,8 @@ class GeoRouteSegment(object):
         @param other: Another RouteSegment (optional)
         @type other: GeoRouteSegment
         '''
+        self._maneuver = GeoManeuver()
+        
         if isinstance(other, GeoRouteSegment):
             self.__ilshift__(other)
     

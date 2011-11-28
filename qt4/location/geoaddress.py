@@ -61,7 +61,9 @@ class GeoAddress(object):
         @param other: The right operand
         @type other: GeoAddress
         '''
-        for prop in ('_sCountry', '_sCountryCode', '_sState', 'sCounty',
+        if not isinstance(other, GeoAddress):
+            return False
+        for prop in ('_sCountry', '_sCountryCode', '_sState', '_sCounty',
                      '_sCity', '_sDistrict', '_sStreet', '_sPostCode'):
             if self.__getattribute__(prop) != other.__getattribute__(prop):
                 return False

@@ -152,7 +152,7 @@ class GeoRouteRequest(object):
     _maneuverDetail = 0x0001
     
     
-    def __init__(self, waypointsOrOriginOrOther, destination=None):
+    def __init__(self, waypointsOrOriginOrOther=[], destination=None):
         '''
         This signatures are included:
         
@@ -230,7 +230,7 @@ class GeoRouteRequest(object):
         '''
         return not self.__eq__(other)
     
-    def setWayPoints(self, waypoints):
+    def setWaypoints(self, waypoints):
         '''
         Sets \a waypoints as the waypoints that the route should pass through.
 

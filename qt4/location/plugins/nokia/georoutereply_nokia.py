@@ -49,7 +49,7 @@ class GeoRouteReplyNokia(GeoRouteReply):
         parser = GeoRouteXmlParser(self.request())
         if parser.parse(self._m_reply):
             self._setRoutes(parser.results())
-            self._setFinished()
+            self._setFinished(True)
         else:
             self._setError(GeoRouteReply.ParseError,
                            "The response from the service was not in a recognisable format.")

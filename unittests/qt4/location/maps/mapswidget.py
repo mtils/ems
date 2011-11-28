@@ -68,29 +68,35 @@ class GeoMap(GraphicsGeoMap):
         objects = self.mapObjectsAtScreenPosition(event.pos())
         #print self.screenPositionToCoordinate(QPointF(event.pos())), event.pos()
         if len(objects) > 0:
-            self.pressed = objects[0]
-            self._markerPressed = True
+            if isinstance(objects[0], Marker):
+                self.pressed = objects[0]
+                self._markerPressed = True
+                self.panActive = False
+            
         self.setFocus()
         event.accept()
         
     
     def mouseReleaseEvent(self, event):
         self.panActive = False
-        if self._clickedWithoutMove:
-            #print "screenPos: {0}".format(event.pos())
-            coord = self.screenPositionToCoordinate(QPointF(event.pos()))
-            coordStr = str(coord)
-            #print "Coordinate: {0}".format(coordStr)
-            #print "Back to ScreenPos: {0}".format(self.coordinateToScreenPosition(coord))
-            #print coordStr
-            self.mapsWidget.statusBarItem.showText(coordStr)
-            
+        
         if self._markerPressed:
             objects = self.mapObjectsAtScreenPosition(event.pos())
             if self.pressed in objects:
                 self.clicked.emit(self.pressed)
         
             self._markerPressed = False
+        elif self._clickedWithoutMove:
+            #print "screenPos: {0}".format(event.pos())
+            coord = self.screenPositionToCoordinate(QPointF(event.pos()))
+            coordStr = str(coord)
+            print coord.latitude(), coord.longitude()
+            #print "Coordinate: {0}".format(coordStr)
+            #print "Back to ScreenPos: {0}".format(self.coordinateToScreenPosition(coord))
+            #print coordStr
+            self.mapsWidget.statusBarItem.showText(coordStr)
+            
+        
         self.setFocus()
         event.accept()
     
@@ -346,22 +352,25 @@ class MapsWidget(QWidget):
     
     mapPanned = pyqtSignal()
     
-    def __init__(self, parent=None):
+    def __init__(self, initCoordinate=None, parent=None):
         QWidget.__init__(self, parent)
         self._map = None
         self.view = None
-        self.markerManager = None
+        #self.markerManager = None
         self.statusBarItem = None
         self.zoomButtonItem = None
         self._markerManager = None
+        if initCoordinate is None:
+            initCoordinate = GeoCoordinate(48.525759, 8.5659)
+        self._initCoordinate = initCoordinate
     
     def initialize(self, manager):
         self._map = GeoMap(manager, self)
-        if self.markerManager:
-            self.markerManager.setMap(map)
+        if self._markerManager:
+            self._markerManager.setMap(map)
         
-        #self.map.clicked.connect(self.markerClicked)
-        #self.map.panned.connect(self.mapPanned)
+        self._map.clicked.connect(self.markerClicked)
+        self._map.panned.connect(self.mapPanned)
         
         sc = QGraphicsScene()
         sc.addItem(self._map)
@@ -390,7 +399,7 @@ class MapsWidget(QWidget):
         self._map.centerChanged.connect(self.onCenterChanged)
         #self.map.setCenter(GeoCoordinate(-27.5796, 153.1))
         #self.map.setCenter(GeoCoordinate(48.31321, 8.33554))
-        self._map.setCenter(GeoCoordinate(48.525759, 8.5659))
+        self._map.setCenter(self._initCoordinate)
         #48.525759,8.5659
         #self.map.setCenter(GeoCoordinate(21.1813, -86.8455))
         self._map.setZoomLevel(15.0)

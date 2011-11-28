@@ -62,7 +62,7 @@ class GeoRoutingManagerEngine(QObject):
     _supportedRouteOptimizations = 0
     _supportedSegmentDetails = 0
     _supportedManeuverDetails = 0
-    _locale = QLocale
+    _locale = QLocale()
     
     finished = pyqtSignal(GeoRouteReply)
     '''This signal is emitted when \a reply has finished processing.

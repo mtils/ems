@@ -760,32 +760,32 @@ class GeoTiledMapData(GeoMapData):
             if obj.isVisible() and (obj not in considered):
                 contains = False
             
-            if self._oe.pixelExact.has_key(obj):
-                for item in self._oe.pixelExact[obj]:
-                    if item.shape().contains(screenPosition):
-                        contains = True
-                        break
-            else:
-                item = self._oe.graphicsItemFromMapObject(obj)
-                
-                if item:
-                    trans = self._oe.pixelTrans[obj]
+                if self._oe.pixelExact.has_key(obj):
+                    for item in self._oe.pixelExact[obj]:
+                        if item.shape().contains(screenPosition):
+                            contains = True
+                            break
+                else:
+                    item = self._oe.graphicsItemFromMapObject(obj)
                     
-                    for t in trans:
-                        inv, ok = t.inverted()
-                        if ok:
-                            testPt = screenPosition * inv
-                            
-                            #we have to special case text objects here
-                            #in order to maintain their old (1.1) behaviour
-                            
-                            if obj.type_() == GeoMapObject.TextType:
-                                if item.boundingRect().contains(testPt):
-                                    contains = True
-                                    break
+                    if item:
+                        trans = self._oe.pixelTrans[obj]
+                        
+                        for t in trans:
+                            inv, ok = t.inverted()
+                            if ok:
+                                testPt = screenPosition * inv
+                                
+                                #we have to special case text objects here
+                                #in order to maintain their old (1.1) behaviour
+                                
+                                if obj.type_() == GeoMapObject.TextType:
+                                    if item.boundingRect().contains(testPt):
+                                        contains = True
+                                        break
                                 else:
                                     if item.shape().contains(testPt):
-                                        contains = True;
+                                        contains = True
             if contains:
                 results.append(obj)
             
@@ -1023,13 +1023,14 @@ class GeoTiledMapData(GeoMapData):
                         it.paint(painter, style)
                 else:
                     gItem = self._oe.graphicsItemFromMapObject(obj)
-                    for trans in self._oe.pixelTrans[obj]:
-                        painter.setTransform(trans * baseTrans)
-                        gItem.paint(painter, style, None)
-                        for child in gItem.childItems():
-                            painter.setTransform(child.transform() * trans * baseTrans)
-                            painter.translate(child.pos())
-                            child.paint(painter, style)
+                    if gItem:
+                        for trans in self._oe.pixelTrans[obj]:
+                            painter.setTransform(trans * baseTrans)
+                            gItem.paint(painter, style, None)
+                            for child in gItem.childItems():
+                                painter.setTransform(child.transform() * trans * baseTrans)
+                                painter.translate(child.pos())
+                                child.paint(painter, style)
             
             objsDone.add(obj)
         painter.restore()
