@@ -111,7 +111,7 @@ class GeoRoutingManagerEngineNokia(GeoRoutingManagerEngine):
             reply = GeoRouteReply(GeoRouteReply.UnsupportedOptionError,
                                   "The given route request options are not supported by this service provider.",
                                   self)
-            self.error.emit(reply, reply.error(), reply.errorString())
+            self.error.emit(reply.error(), reply.errorString())
             return reply
         
         
