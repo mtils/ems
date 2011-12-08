@@ -64,7 +64,15 @@ class GeoCoordinate(object):
     DegreesMinutesSecondsWithHemisphere = 5
     "Returns a string representation of the coordinates in degrees-minutes-seconds format, using 'N', 'S', 'E' or 'W' to indicate the hemispheres of the coordinates."
 
-    def __init__(self, latitudeOrCoordinate=None, longitude=None, altitude=None):
+    def __init__(self, latitudeOrCoordinate=None, longitude=None, altitude=None,
+                 projection=None):
+        
+        #Projektion einbauen
+        if projection is None:
+            self.projection = 'wgs84'
+        else:
+            self.projection = projection
+            
         if altitude is None:
             if longitude is None:
                 if isinstance(latitudeOrCoordinate, GeoCoordinate):
@@ -75,12 +83,14 @@ class GeoCoordinate(object):
                 else:
                     raise TypeError("If only one argument is used, it has to be a GeoCoordinate")
             
-            if LocationUtils.isValidLat(latitudeOrCoordinate) and LocationUtils.isValidLong(longitude):
+            if LocationUtils.isValidLat(latitudeOrCoordinate, self.projection) \
+                and LocationUtils.isValidLong(longitude, self.projection):
                 self.lat = latitudeOrCoordinate
                 self.lng = longitude
             
         else:
-            if LocationUtils.isValidLat(latitudeOrCoordinate) and LocationUtils.isValidLong(longitude):
+            if LocationUtils.isValidLat(latitudeOrCoordinate, self.projection) \
+                and LocationUtils.isValidLong(longitude, self.projection):
                 self.lat = latitudeOrCoordinate
                 self.lng = longitude
                 self.alt = altitude
@@ -156,8 +166,8 @@ class GeoCoordinate(object):
         '''
         Returns the type of this coordinate.
         '''
-        if LocationUtils.isValidLat(self.lat) and \
-            LocationUtils.isValidLong(self.lng):
+        if LocationUtils.isValidLat(self.lat, self.projection) and \
+            LocationUtils.isValidLong(self.lng, self.projection):
             if self.alt is None:
                 return self.Coordinate2D
             return self.Coordinate3D
