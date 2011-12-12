@@ -332,6 +332,7 @@ class GeoCoordinate(object):
         azimuthRad = GeoCoordinate.degToRad(azimuth)
         
         ratio = (distance / GeoCoordinate.EARTH_MEAN_RADIUS * 1000.0)
+        
         cosRatio = math.cos(ratio)
         sinRatio = math.sin(ratio)
         
