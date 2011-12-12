@@ -425,6 +425,9 @@ class GeoCoordinate(object):
         if self.type_() == self.InvalidCoordinate:
             return u""
         
+        if self.projection == "utm":
+            return "{0} {1}".format(self.lat, self.lng)
+        
         latStr = ''
         longStr = ''
         

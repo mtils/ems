@@ -11,14 +11,15 @@ from geotiledmapobjectinfo import GeoTiledMapObjectInfo #@UnresolvedImport
 class GeoTiledMapPolyLineObjectInfo(GeoTiledMapObjectInfo):
     def __init__(self, mapData, mapObject):
         self.polyLine = mapObject
+        self.pathItem = QGraphicsPathItem()
+        self.graphicsItem = self.pathItem
         
         self.polyLine.pathChanged.connect(self.pathChanged)
         self.polyLine.penChanged.connect(self.penChanged)
         
-        self.pathItem = QGraphicsPathItem()
-        self.graphicsItem = self.pathItem
+        
         self._mapData = mapData
-        #GeoTiledMapObjectInfo.__init__(self, mapData, mapObject)
+        GeoTiledMapObjectInfo.__init__(self, mapData, mapObject)
         self.penChanged(self.polyLine.pen())
         self.pathChanged(self.polyLine.path())
     
@@ -37,6 +38,7 @@ class GeoTiledMapPolyLineObjectInfo(GeoTiledMapObjectInfo):
         p = QPainterPath()
         if len(path) > 0:
             origin = path[0]
+            
             ox = origin.longitude() * 3600.0
             oy = origin.latitude() * 3600.0
             

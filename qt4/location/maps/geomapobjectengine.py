@@ -18,6 +18,44 @@ from geomaprouteobject import GeoMapRouteObject #@UnresolvedImport
 from geomapgroupobject import GeoMapGroupObject #@UnresolvedImport
 
 class GeoMapObjectEngine(QObject):
+    '''
+     A quick note about how the transforms are set up:
+
+      Each QGeoMapObject has its own "local" coordinate system, whether this
+      a pixel system or meters or whatever.
+    
+      For local systems that are not in pixels, we do a two-stage transform --
+      first we transform the object to arc-seconds, then we transform from
+      arc-seconds to pixels on the screen. This is necessary as QGeoMapData
+      subclasses only provide a mapping from lat/lon coordinates to screen pixels
+      and no other source.
+    
+      For local systems that are in pixels, we simply translate to the screen
+      coordinates. However, we still generate a transform to arc-seconds for these
+      objects, to speed up the drawing process.
+    
+      QGeoMapDataPrivate has two sets of 3 fields that are used here:
+        - xxxTrans
+        - xxxScene
+        - xxxItems
+      (where xxx = [latLon, pixel])
+    
+      xxxTrans = a multi-hash of transforms associated with each QGeoMapObject
+                 (a given map object may appear at more than one coordinate if
+                  it wraps over the dateline)
+      xxxScene = a QGraphicsScene filled with bounding boxes for each object, one
+                 for each entry in xxxTrans
+      xxxItems = a hash taking the items in the xxxScene and giving back the original
+                 QGeoMapObject they were created for
+    
+      the "latLon" entries describe the transformations from local coordinates to
+      arc-seconds, and the "pixel" entries describe the transformations from local
+      coordinates to pixels on screen.
+    
+      Items within latLonScene have their coordinates in arc-seconds, and items
+      within pixelScene have theirs in pixels.
+    '''
+    
     def __init__(self, mapData, mapDataP=None):
         self.md = mapData
         self.mdp = mapData
@@ -813,11 +851,16 @@ class GeoMapObjectEngine(QObject):
             self.mdp.updateMapDisplay.emit(QRectF())
     
     def trimPixelTransforms(self):
+#        print "trimPixelTransforms"
+#        self.mdp.updateMapDisplay.emit(QRectF())
+#        return
         view = self.latLonViewport()
-        
+#        print 'viewport'
+#        for pt in view:
+#            print pt
         itemsInView = self.latLonScene.items(view, Qt.IntersectsItemShape,
                                              Qt.AscendingOrder)
-        
+
         shouldBe = set()
         for latLonItem in itemsInView:
             for obj in self.latLonItems[latLonItem]:
@@ -1162,6 +1205,7 @@ class GeoMapObjectEngine(QObject):
         offset = 0.0
         
         c = viewport.bottomLeft()
+         
         #try:
         cLatitude = c.latitude()
         cLongitude = c.longitude()
@@ -1169,6 +1213,9 @@ class GeoMapObjectEngine(QObject):
         c2 = viewport.bottomRight()
         c2Latitude = c2.latitude()
         c2Longitude = c2.longitude()
+        
+        #print viewport
+        #print c
         
         if isinstance(cLatitude, float):
             view << QPointF(cLongitude * 3600.0, cLatitude * 3600.0)
@@ -1186,7 +1233,7 @@ class GeoMapObjectEngine(QObject):
 #        print "latLonViewport"
 #        for i in view:
 #            print i
-        
+        #print view
         return view
     
     def polyToScreen(self, poly):

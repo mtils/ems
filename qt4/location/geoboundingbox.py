@@ -118,9 +118,9 @@ class GeoBoundingBox(GeoBoundingArea):
         
         @return: bool
         '''
-        return self._topLeft.isValid()\
-               and self._bottomRight.isValid()\
-               and self._topLeft.latitude() >= self._bottomRight.latitude()
+        
+        return self._topLeft.isValid() and self._bottomRight.isValid() and \
+               self._topLeft.latitude() >= self._bottomRight.latitude()
     
     def isEmpty(self):
         '''
@@ -170,8 +170,10 @@ class GeoBoundingBox(GeoBoundingArea):
         
         if not self.isValid():
             return GeoCoordinate()
+        
         return GeoCoordinate(self._topLeft.latitude(),
-                             self._bottomRight.longitude())
+                             self._bottomRight.longitude(),
+                             projection=self._topLeft.projection)
     
     def setBottomLeft(self, bottomLeft):
         '''
@@ -192,7 +194,8 @@ class GeoBoundingBox(GeoBoundingArea):
         if not self.isValid():
             return GeoCoordinate()
         return GeoCoordinate(self._bottomRight.latitude(),
-                             self._topLeft.longitude())
+                             self._topLeft.longitude(),
+                             projection=self._topLeft.projection)
     
     def setBottomRight(self, bottomRight):
         '''
@@ -262,8 +265,8 @@ class GeoBoundingBox(GeoBoundingArea):
             tlLon = -180.0
             brLon = 180.0
         
-        self._topLeft = GeoCoordinate(tlLat, tlLon)
-        self._bottomRight = GeoCoordinate(brLat, brLon)
+        self._topLeft = GeoCoordinate(tlLat, tlLon, projection=center.projection)
+        self._bottomRight = GeoCoordinate(brLat, brLon, projection=center.projection)
     
     def center(self):
         '''
@@ -284,7 +287,7 @@ class GeoBoundingBox(GeoBoundingArea):
         if cLon > 180.0:
             cLon -= 360.0
         
-        return GeoCoordinate(cLat, cLon)
+        return GeoCoordinate(cLat, cLon, projection=self._topLeft.projection)
     
     def setWidth(self, degreesWidth):
         '''
@@ -332,8 +335,8 @@ class GeoBoundingBox(GeoBoundingArea):
         if brLon > 180.0:
             brLon -= 360.0
         
-        self._topLeft = GeoCoordinate(tlLat, tlLon)
-        self._bottomRight = GeoCoordinate(brLat, brLon)
+        self._topLeft = GeoCoordinate(tlLat, tlLon, projection=c.projection)
+        self._bottomRight = GeoCoordinate(brLat, brLon, projection=c.projection)
     
     def width(self):
         '''
@@ -409,8 +412,8 @@ class GeoBoundingBox(GeoBoundingArea):
             tlLat = 2 * c.latitude() + 90.0
             brLat = -90.0
         
-        self._topLeft = GeoCoordinate(tlLat, tlLon)
-        self._bottomRight = GeoCoordinate(brLat, brLon)
+        self._topLeft = GeoCoordinate(tlLat, tlLon, projection=c.projection)
+        self._bottomRight = GeoCoordinate(brLat, brLon, projection=c.projection)
     
     def height(self):
         '''
@@ -575,8 +578,8 @@ class GeoBoundingBox(GeoBoundingArea):
         if brLat < -90.0:
             brLat = -90.0
         
-        self._topLeft = GeoCoordinate(tlLat, tlLon)
-        self._bottomRight = GeoCoordinate(brLat, brLon)
+        self._topLeft = GeoCoordinate(tlLat, tlLon, projection=self._topLeft.projection)
+        self._bottomRight = GeoCoordinate(brLat, brLon, projection=self._topLeft.projection)
     
     def translated(self, degreesLatitude, degreesLongitude):
         '''
@@ -699,7 +702,10 @@ class GeoBoundingBox(GeoBoundingArea):
             left = -180;
             right = 180;
     
-        self._topLeft = GeoCoordinate(top, left);
-        self._bottomRight = GeoCoordinate(bottom, right);
+        self._topLeft = GeoCoordinate(top, left, projection=self._topLeft.projection);
+        self._bottomRight = GeoCoordinate(bottom, right, projection=self._topLeft.projection);
     
         return self;
+    
+    def __str__(self):
+        return "GeoBoundingBox {0}/{1}".format(self._topLeft, self._bottomRight)

@@ -183,7 +183,7 @@ class GeoServiceProvider(object):
             engine = self.__factory.createMappingManagerEngine(self.__parameterMap,
                                                self.__mappingError,
                                                self.__mappingErrorString)
-            print engine
+            
             if engine:
                 engine._setManagerName(self.__factory.providerName())
                 engine._setManagerVersion(self.__factory.providerVersion())

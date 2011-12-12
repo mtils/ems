@@ -98,7 +98,7 @@ class GeoTileIterator(object):
         
         return GeoTiledMapRequest(self._connectivityMode, self._mapType,
                                   self._zoomLevel, self._row, self._col,
-                                  self._tileRect)
+                                  QRect(self._tileRect))
         
 
 class GeoTiledMapData(GeoMapData):
@@ -152,8 +152,8 @@ class GeoTiledMapData(GeoMapData):
         self._worldReferenceViewportRectLeft = QRect()
         self._worldReferenceViewportRectRight = QRect()
         
-        self._requestRects = set()
-        self._replyRects = set()
+        self._requestRects = {}
+        self._replyRects = {}
         
         self._requests = []
         self._replies = set()
@@ -163,11 +163,12 @@ class GeoTiledMapData(GeoMapData):
         self.zoomCache = {}
         self._zoomRequestsByCacheId = {}
         
-        
-        
         self._zoomFactor = 0
         
-        self._oe = GeoMapObjectEngine(self, self)
+        #This allows parent classes to use another GeoMapObjectEngine
+        if not hasattr(self, "_oe") or not isinstance(self._oe, GeoMapObjectEngine):
+            self._oe = GeoMapObjectEngine(self, self)
+            
         self.spherical = "+proj=latlon +ellps=sphere"
         self.wgs84 = "+proj=latlon +ellps=WGS84"
         
@@ -572,12 +573,13 @@ class GeoTiledMapData(GeoMapData):
                 or (self._mapType != reply.request().mapType()) \
                 or (self._connectivityMode != reply.request().connectivityMode()):
                 try:
-                    self._replyRects.remove(reply.request().tileRect())
+                    del self._replyRects[str(reply.request().tileRect())]
                     #print "Removed {0}".format(reply.request().tileRect())
                 except KeyError:
                     pass
                 req = reply.request()
                 cacheId = req.cacheId()
+                #print cacheId
                 if self._zoomRequestsByCacheId.has_key(cacheId):
                     try:
                         del self.zoomCache[self._zoomRequestsByCacheId[req.cacheId()]]
@@ -597,24 +599,25 @@ class GeoTiledMapData(GeoMapData):
         for req in self._requests:
             i += 1
             tileRect = req.tileRect()
+            #print "{0} -> {1} {2}".format(tileRect, req._row, req._column)
             try:
-                self._requestRects.remove(tileRect)
+                del self._requestRects[str(tileRect)]
             except KeyError:
                 pass
             
-            if (tileRect in self._replyRects) or\
+            if self._replyRects.has_key(str(tileRect)) or\
                 not self.intersectsScreen(tileRect):
                 continue
             
-#            if (tileRect in self._replyRects):
-#                continue
+            if self._replyRects.has_key(str(tileRect)):
+                continue
             
 #            if (tileRect in addedRects) or\
 #                not self.intersectsScreen(tileRect):
 #                continue
             
-#            if not self.intersectsScreen(tileRect):
-#                continue
+            if not self.intersectsScreen(tileRect):
+                continue
             
             reply = tiledEngine.getTileImage(req)
             
@@ -632,7 +635,8 @@ class GeoTiledMapData(GeoMapData):
             reply.errorOccured.connect(self.tileError)
             
             self._replies.add(reply)
-            self._replyRects.add(reply.request().tileRect())
+            
+            self._replyRects[str(reply.request().tileRect())] = reply.request().tileRect()
 #            addedRects.add(reply.request().tileRect())
             
             if reply.isFinished():
@@ -658,10 +662,13 @@ class GeoTiledMapData(GeoMapData):
     def _replyFinished(self, reply):
         
         req = reply.request()
-        
+
         tileRect = req.tileRect()
-        if tileRect in self._replyRects:
-            self._replyRects.remove(req.tileRect())
+        
+#        print "{0} -> {1} {2}".format(tileRect, req._row, req._column)
+        
+        if self._replyRects.has_key(str(tileRect)):
+            del self._replyRects[str(tileRect)]
             
         if reply in self._replies:
             self._replies.remove(reply)
@@ -914,17 +921,18 @@ class GeoTiledMapData(GeoMapData):
             #if not self.cache.has_key(req):
 #                print "cache has not req {0} {1}".format(req.row(), req.column())
                 #TODO: Wieder rein
-                if not (tileRect in self._requestRects) and not (tileRect in self._replyRects):
+                if not self._requestRects.has_key(str(tileRect)) and \
+                    not self._replyRects.has_key(str(tileRect)):
                     #print "_requestRect has not req {0}".format(tileRect)
                     self._requests.append(req)
-                    self._requestRects.add(tileRect)
+                    self._requestRects[str(tileRect)] = tileRect
         
         if wasEmpty and len(self._requests) > 0:
             QTimer.singleShot(0, self, SLOT("_processRequests()"))
     
     def _clearRequests(self):
         self._requests = []
-        self._requestRects = set()
+        self._requestRects.clear()
     
     def paintMap(self, painter, option):
         '''
@@ -1006,6 +1014,11 @@ class GeoTiledMapData(GeoMapData):
                                           Qt.IntersectsItemShape,
                                           Qt.AscendingOrder)
         
+#        print "pixelScene: {0}x{1}".format(self._oe.pixelScene.width(),
+#                                           self._oe.pixelScene.height())
+#        print "latLonScene: {0}x{1}".format(self._oe.latLonScene.width(),
+#                                            self._oe.latLonScene.height())
+        
         objsDone = set()
         
         baseTrans = painter.transform()
@@ -1026,6 +1039,7 @@ class GeoTiledMapData(GeoMapData):
                     if gItem:
                         for trans in self._oe.pixelTrans[obj]:
                             painter.setTransform(trans * baseTrans)
+                            #painter.setTransform(baseTrans)
                             gItem.paint(painter, style, None)
                             for child in gItem.childItems():
                                 painter.setTransform(child.transform() * trans * baseTrans)
