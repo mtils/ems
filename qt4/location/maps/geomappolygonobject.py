@@ -51,6 +51,8 @@ class GeoMapPolygonObject(GeoMapObject):
         self._pen = QPen()
         self._pen.setCosmetic(True)
         GeoMapObject.__init__(self, mapData)
+        self.setUnits(GeoMapObject.RelativeArcSecondUnit)
+        self.setTransformType(GeoMapObject.ExactTransform)
     
     def type_(self):
         '''

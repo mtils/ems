@@ -60,7 +60,7 @@ class GeoMapCircleObject(GeoMapObject):
 
     The new value is \a brush.'''
 
-    def __init__(self, circleOrCenter=None, radius=None):
+    def __init__(self, circleOrCenter=None, radius=None, mapData=None):
         
         self._pointCount = 120
         self._pen = QPen()
@@ -69,8 +69,10 @@ class GeoMapCircleObject(GeoMapObject):
         self._radius = 0
         self._brush = QBrush()
         self._circle = GeoBoundingCircle()
+        GeoMapObject.__init__(self, mapData)
         
         self.setUnits(GeoMapObject.MeterUnit)
+        
         self.setTransformType(self.ExactTransform)
         
         if isinstance(circleOrCenter, GeoBoundingCircle):
@@ -78,6 +80,8 @@ class GeoMapCircleObject(GeoMapObject):
         elif isinstance(circleOrCenter, GeoCoordinate):
             self._circle = GeoBoundingCircle()
             self.setOrigin(circleOrCenter)
+        if radius is not None:
+            self.setRadius(radius)
             
     def type_(self):
         return GeoMapObject.CircleType

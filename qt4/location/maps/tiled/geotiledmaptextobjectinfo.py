@@ -11,7 +11,7 @@ from geotiledmapobjectinfo import GeoTiledMapObjectInfo #@UnresolvedImport
 class GeoTiledMapTextObjectInfo(GeoTiledMapObjectInfo):
     def __init__(self, mapData, mapObject):
         self.text = mapObject
-        
+        GeoTiledMapObjectInfo.__init__(self, mapData, mapObject)
         self.text.textChanged.connect(self.textChanged)
         self.text.fontChanged.connect(self.fontChanged)
         self.text.penChanged.connect(self.penChanged)

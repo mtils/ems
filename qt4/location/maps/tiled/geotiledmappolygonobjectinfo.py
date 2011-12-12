@@ -37,7 +37,7 @@ class GeoTiledMapPolygonObjectInfo(GeoTiledMapObjectInfo):
         self.polygonItem.setBrush(self.polygon.brush())
         self.updateItem()
     
-    def _getPoly(self):
+    def _genPoly(self):
         path = self.polygon.path()
         poly = QPolygonF()
         if len(path) > 0:

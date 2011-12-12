@@ -26,12 +26,17 @@ class GeoTiledMapCircleObjectInfo(GeoTiledMapObjectInfo):
         '''
         self.circle = mapObject
         
+        self.ellipseItem = QGraphicsEllipseItem()
+        self.ellipseItem.setPos(0, 0)
+        
+        self.graphicsItem = self.ellipseItem
+        
+        GeoTiledMapObjectInfo.__init__(self, mapData, mapObject)
         self.circle.radiusChanged.connect(self.radiusChanged)
         self.circle.penChanged.connect(self.penChanged)
         self.circle.brushChanged.connect(self.brushChanged)
         
-        self.ellipseItem = QGraphicsEllipseItem()
-        self.ellipseItem.setPos(0, 0)
+        
         
         self.graphicsItem = self.ellipseItem
         

@@ -12,7 +12,7 @@ class GeoTiledMapPolyLineObjectInfo(GeoTiledMapObjectInfo):
     def __init__(self, mapData, mapObject):
         self.polyLine = mapObject
         self.pathItem = QGraphicsPathItem()
-        self.graphicsItem = self.pathItem
+        #self.graphicsItem = self.pathItem
         
         self.polyLine.pathChanged.connect(self.pathChanged)
         self.polyLine.penChanged.connect(self.penChanged)
@@ -20,6 +20,8 @@ class GeoTiledMapPolyLineObjectInfo(GeoTiledMapObjectInfo):
         
         self._mapData = mapData
         GeoTiledMapObjectInfo.__init__(self, mapData, mapObject)
+        
+        self.graphicsItem = self.pathItem
         self.penChanged(self.polyLine.pen())
         self.pathChanged(self.polyLine.path())
     

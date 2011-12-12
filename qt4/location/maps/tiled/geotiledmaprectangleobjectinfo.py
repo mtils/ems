@@ -12,6 +12,7 @@ from ems.qt4.location.geocoordinate import GeoCoordinate
 class GeoTiledMapRectangleObjectInfo(GeoTiledMapObjectInfo):
     
     def __init__(self, mapData, mapObject):
+        GeoTiledMapObjectInfo.__init__(self, mapData, mapObject)
         self.rectangle = mapObject
         self.rectangle.topLeftChanged.connect(self.topLeftChanged)
         self.rectangle.bottomRightChanged.connect(self.bottomRightChanged)
