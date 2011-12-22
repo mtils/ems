@@ -25,4 +25,5 @@ class LocationUtils(object):
         elif projection == "utm":
             #Only germany at the moment 
             #return lng >= 5236000 and lng <= 6106000
-            return lng >= 4236000 and lng <= 8106000
+            #return lng >= 4236000 and lng <= 8106000
+            return lng >= 0 and lng <= 8106000
