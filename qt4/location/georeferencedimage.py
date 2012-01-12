@@ -10,8 +10,8 @@ import sys
 import tempfile
 import os
 
-from PyQt4.QtCore import Qt, QSize, QSizeF, QPoint
-from PyQt4.QtGui import QApplication, QImage, QImageReader
+from PyQt4.QtCore import Qt, QSize, QSizeF, QPoint, QRect, QRectF, QPointF
+from PyQt4.QtGui import QApplication, QImage, QImageReader, QPainter
 
 import gdal, osr
 from gdalconst import *
@@ -19,6 +19,7 @@ from gdalconst import *
 from ems.qt4.location.geocoordinate import GeoCoordinate
 from application.locationplugins.geoboundingbox_utm import GeoBoundingBoxUtm,\
     GeoBoundingBox
+
 
 class GeoReferencedImage(QImage):
     def __init__(self, fileNameOrBoundingBox=None, imageSize=None,
@@ -108,17 +109,21 @@ class GeoReferencedImage(QImage):
             self._onePixelSize = QSizeF(x, y)
         return self._onePixelSize
     
-    def geoBoundingBox(self):
+    def geoBoundingBox(self, rect=None):
         if not self._geoBoundingBox.isValid():
             pass
-        return self._geoBoundingBox
+        if rect is None:
+            return self._geoBoundingBox
+        topLeft = self.pixelPosition2GeoCoordinate(rect.topLeft())
+        bottomRight = self.pixelPosition2GeoCoordinate(rect.bottomRight())
+        return GeoBoundingBoxUtm(topLeft, bottomRight)
     
     def geoSize(self):
         return QSizeF(self._geoBoundingBox.width(), 0 - self._geoBoundingBox.height())
     
     def coordinate2PixelPosition(self, coordinate):
         if not self._geoBoundingBox.contains(coordinate):
-            return QPoint()
+            return QPointF()
         topLeftLat = self._geoBoundingBox.topLeft().latitude()
         bottomRightLon = self._geoBoundingBox.bottomRight().longitude()
         
@@ -130,18 +135,18 @@ class GeoReferencedImage(QImage):
         x = (coordinate.latitude() - topLeftLat) / self.onePixelSize().width()
         y = (coordinate.longitude() - bottomRightLon) / self.onePixelSize().height()
         #print(x,y)
-        result = QPoint(int(round(x)), int(round(self.size().height() + y)))
+        result = QPointF(x, float(self.size().height()) + y)
         
         #Return 499,499 on highest val because there is no 500,500
-        if result.x() == self.size().width():
-            result.setX(self.size().width()-1)
-        if result.y() == self.size().height():
-            result.setY(self.size().height()-1)
+#        if result.x() == self.size().width():
+#            result.setX(self.size().width()-1.0)
+#        if result.y() == self.size().height():
+#            result.setY(self.size().height()-1.0)
         
         return result
     
     def pixelPosition2GeoCoordinate(self, pixelPos):
-        if not self.rect().contains(pixelPos):
+        if not self.rectF().contains(QPointF(pixelPos)):
             return GeoCoordinate()
         
         lat = (pixelPos.x() * self.onePixelSize().width()) + \
@@ -161,11 +166,55 @@ class GeoReferencedImage(QImage):
                                  (abs(pixelSize.height())*sourceSize.height()),
                              projection=projection)
     
-    def rect(self, geoBoundingBox=None):
+    
+    def rectF(self, geoBoundingBox=None):
+        '''
+        Returns the QRect. Reimplemented QImage.rect().
+        With no param it just returns super().rect().
+        Pass a GeoBoundingBox and it will return the
+        intersected rect of this GeoBoundingBox.
+        This means that if you pass a GeoBoundingBox which is not within the
+        boundries of that Image, you will get a invalid QRect.
+        If you pass a GeoBoundingBox which intersects the GeoBoundingBox of
+        this image, it will return the intercection.
+        
+        @param geoBoundingBox: A GeoBoundingBox if a particular rect is requested (Optional)
+        @type geoBoundingBox: GeoBoundingBox
+        @return: A QRect of the whole image if no GeoBoundingBox passed, else intersection
+        @rtype: QRectF
+        '''
         if geoBoundingBox is None:
-            return QImage.rect(self)
+            return QRectF(QImage.rect(self))
         
+        intersected = self._geoBoundingBox.intersected(geoBoundingBox)
+        print("rectF()-intersected: {0}".format(intersected))
+        if intersected.isValid():
+            return QRectF(self.coordinate2PixelPosition(intersected.topLeft()),
+                         self.coordinate2PixelPosition(intersected.bottomRight()))
         
+        return QRectF()
+    
+    def paste(self, otherImage, geoBoundingBox=None):
+        sourceRect = otherImage.rectF(self._geoBoundingBox)
+        intersectedImage = otherImage.copy(QRect(int(round(sourceRect.x())),
+                                                 int(round(sourceRect.y())),
+                                                 int(round(sourceRect.width())),
+                                                 int(round(sourceRect.height())))
+                                           )
+        sourceBoundingBox = otherImage.geoBoundingBox(sourceRect)
+        print("sourceRect: {0}".format(sourceRect))
+        print("sourceBoundingBox: {0}".format(sourceBoundingBox))
+        targetRect = self.rectF(sourceBoundingBox)
+        print("targetRect: {0}".format(targetRect))
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing, True)
+        #painter.setPen(Qt.lightGray)
+        painter.fillRect(self.rect(), Qt.lightGray)
+        painter.drawImage(targetRect, intersectedImage,
+                          QRectF(intersectedImage.rect()),
+                          Qt.AutoColor)
+        
+                
         
         
         
@@ -179,10 +228,18 @@ if __name__ == '__main__':
     app = QApplication([])
     
     
-    tileLeftTop = GeoCoordinate(470007.8125, 5382398.4375, projection="utm")
-    tileBottomRight = GeoCoordinate(470011.710938, 5382394.53906, projection="utm")
-    tileBounds = GeoBoundingBoxUtm(tileLeftTop, tileBottomRight)
+#    tileLeftTop = GeoCoordinate(470007.8125, 5382398.4375, projection="utm")
+#    tileBottomRight = GeoCoordinate(470011.710938, 5382394.53906, projection="utm")
     
+    #Oben bei zoom 10
+    #tileLeftTop = GeoCoordinate(470000.0, 5383000.0, projection="utm")
+    #tileBottomRight = GeoCoordinate(470999.992188, 5382000.00781, projection="utm")
+    
+    #Unten bei Zoom 10
+    tileLeftTop = GeoCoordinate(470000.0, 5382000.0, projection="utm")
+    tileBottomRight = GeoCoordinate(470999.992188, 5381000.00781, projection="utm")
+    
+    tileBounds = GeoBoundingBoxUtm(tileLeftTop, tileBottomRight)
     
     sourceImage = GeoReferencedImage(fileName)
     print("----------SourceImage-------------")
@@ -195,37 +252,42 @@ if __name__ == '__main__':
     targetImage = GeoReferencedImage(tileBounds, QSize(500, 500))
     print("----------TargetImage-------------")
     print("GeoBoundingBox: {0}".format(targetImage.geoBoundingBox()))
-    print("SourceSize: {0}".format(targetImage.size()))
-    print("OnePixelSize: {0}".format(targetImage.onePixelSize()))
-    print("GeoSize: {0}".format(targetImage.geoSize()))
-    print("GeoCoord: {0} = Pos {1} Null: {2}".format(tileLeftTop,
-                                           targetImage.coordinate2PixelPosition(tileLeftTop),
-                                           targetImage.coordinate2PixelPosition(tileLeftTop).isNull()))
-    print("GeoCoord: {0} = Pos {1}".format(tileBottomRight,
-                                           targetImage.coordinate2PixelPosition(tileBottomRight)))
-    
-    center = GeoCoordinate(tileLeftTop.latitude() + tileBounds.width()/2,
-                           tileLeftTop.longitude() - tileBounds.height()/2,
-                           projection="utm")
-    
-    print("GeCoord {0} = Pos {1}".format(center,
-                                         targetImage.coordinate2PixelPosition(center)))
-    
-    print("Pos {0} = Coord {1}".format(QPoint(0,0),
-                                       targetImage.pixelPosition2GeoCoordinate(QPoint(0,0))))
-    
-    print("Pos {0} = Coord {1}".format(QPoint(250,250),
-                                       targetImage.pixelPosition2GeoCoordinate(QPoint(250,250))))
-    
-    
-    print("Pos {0} = Coord {1}".format(QPoint(499,499),
-                                       targetImage.pixelPosition2GeoCoordinate(QPoint(499,499))))
+#    print("SourceSize: {0}".format(targetImage.size()))
+#    print("OnePixelSize: {0}".format(targetImage.onePixelSize()))
+#    print("GeoSize: {0}".format(targetImage.geoSize()))
+#    print("GeoCoord: {0} = Pos {1} Null: {2}".format(tileLeftTop,
+#                                           targetImage.coordinate2PixelPosition(tileLeftTop),
+#                                           targetImage.coordinate2PixelPosition(tileLeftTop).isNull()))
+#    
+#    print("GeoCoord: {0} = Pos {1}".format(tileBottomRight,
+#                                           targetImage.coordinate2PixelPosition(tileBottomRight)))
+#    
+#    center = GeoCoordinate(tileLeftTop.latitude() + tileBounds.width()/2,
+#                           tileLeftTop.longitude() - tileBounds.height()/2,
+#                           projection="utm")
+#    
+#    print("GeCoord {0} = Pos {1}".format(center,
+#                                         targetImage.coordinate2PixelPosition(center)))
+#    
+#    print("Pos {0} = Coord {1}".format(QPoint(0,0),
+#                                       targetImage.pixelPosition2GeoCoordinate(QPoint(0,0))))
+#    
+#    print("Pos {0} = Coord {1}".format(QPoint(250,250),
+#                                       targetImage.pixelPosition2GeoCoordinate(QPoint(250,250))))
+#    
+#    
+#    print("Pos {0} = Coord {1}".format(QPoint(499,499),
+#                                       targetImage.pixelPosition2GeoCoordinate(QPoint(499,499))))
+#    
     
     print("intersected: {0}".format(targetImage.geoBoundingBox().intersected(sourceImage.geoBoundingBox())))
     
+    print("rect: {0}".format(sourceImage.rectF(targetImage.geoBoundingBox())))
     
+    targetImage.paste(sourceImage)
     #result = sourceImage.save("/tmp/gdal-out-qt.png", "PNG")
     #print("Result: {0} isNull:{1}".format(result, sourceImage.isNull()))
+    targetImage.save("/tmp/qt-result-2.png")
     print("Fertig")
     #sys.exit(app.exec_())
     
