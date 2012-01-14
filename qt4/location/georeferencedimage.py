@@ -22,22 +22,23 @@ from application.locationplugins.geoboundingbox_utm import GeoBoundingBoxUtm,\
 
 
 class GeoReferencedImage(QImage):
-    def __init__(self, fileNameOrBoundingBox=None, imageSize=None,
+    def __init__(self, fileName=None, geoBoundingBox=None, imageSize=None,
                  projection='utm'):
         
         self._onePixelSize = QSizeF()
         self._geoBoundingBox = GeoBoundingBoxUtm()
         self._sourceSize = QSize()
         
-        if isinstance(fileNameOrBoundingBox, basestring):
+        if (fileName) and (geoBoundingBox is None):
             
             '''----------------------------------------------------------------
              First open the file with gdal to retrieve geospacial metadata
             ----------------------------------------------------------------'''
-            
-            dataset = gdal.Open(fileNameOrBoundingBox, GA_ReadOnly)
+            if not os.path.exists(fileName):
+                raise IOError("File {0} not found.".format(fileName))
+            dataset = gdal.Open(fileName, GA_ReadOnly)
             if dataset is None:
-                raise IOError("File {0} not found.".format(fileNameOrBoundingBox))
+                raise IOError("File {0} not found.".format(fileName))
             
             self.gdalDriver = dataset.GetDriver()
             self._sourceSize = QSize(dataset.RasterXSize, dataset.RasterYSize)
@@ -53,7 +54,7 @@ class GeoReferencedImage(QImage):
             topLeftCoord = GeoCoordinate(geotransform[0], geotransform[3],
                                          projection=projection)
             
-            bottomRightCoord = self._calcBottomRightCoordinate(topLeftCoord,
+            bottomRightCoord = self.calcBottomRightCoordinate(topLeftCoord,
                                                                self._onePixelSize,
                                                                self._sourceSize,
                                                                projection)
@@ -62,15 +63,15 @@ class GeoReferencedImage(QImage):
                                                      bottomRightCoord)
             
             '''----------------------------------------------------------------
-             Copy the file with gdal to png format because qt crashes here
+             Copy the file with gdal to bmp format because qt crashes here
              after gdal import.
              A memory copy was even slower than the tempfile method (???)
             ----------------------------------------------------------------'''
-            dstFormat = "PNG"
+            dstFormat = "BMP"
             
             targetDriver = gdal.GetDriverByName(dstFormat)
             
-            dstFileName = os.path.join(tempfile.gettempdir(), tempfile.mktemp('.png',
+            dstFileName = os.path.join(tempfile.gettempdir(), tempfile.mktemp('.BMP',
                                                                               'gdal2qimage-'))
             
             
@@ -85,16 +86,20 @@ class GeoReferencedImage(QImage):
             if os.path.exists(dstFileName + '.aux.xml'):
                 os.remove(dstFileName + '.aux.xml')
             
-        elif isinstance(fileNameOrBoundingBox, GeoBoundingBox):
+        elif (geoBoundingBox is not None):
             
-            self._geoBoundingBox = fileNameOrBoundingBox
             
-            if imageSize is None:
-                raise TypeError("If you construct a new GeoReferencedImage" +
-                                "give a imageSize")
+            self._geoBoundingBox = geoBoundingBox
             
-            self._sourceSize = imageSize
-            QImage.__init__(self, imageSize, QImage.Format_RGB32)
+            if not fileName:
+                if imageSize is None:
+                    raise TypeError("If you construct a new GeoReferencedImage" +
+                                    "give a imageSize")
+                
+                self._sourceSize = imageSize
+                QImage.__init__(self, imageSize, QImage.Format_RGB32)
+            else:
+                QImage.__init__(self, fileName)
         
         
         
@@ -157,7 +162,7 @@ class GeoReferencedImage(QImage):
         return GeoCoordinate(lat, lon, projection="utm")
     
     @staticmethod
-    def _calcBottomRightCoordinate(topLeftCoordinate, pixelSize, sourceSize,
+    def calcBottomRightCoordinate(topLeftCoordinate, pixelSize, sourceSize,
                                   projection='utm'):
         
         return GeoCoordinate(topLeftCoordinate.latitude() + \
@@ -220,8 +225,8 @@ class GeoReferencedImage(QImage):
         
 
 if __name__ == '__main__':
-    fileName = '/home/michi/Dokumente/IT/Kontakte/SmartGeomatics/Projekte/Datenlieferungen/2011-11-30 Pfalzgrafenweiler Orthofotos UTM32N/34705383/34705383.tif'
-    #fileName = '/home/michi/Dokumente/IT/Kontakte/SmartGeomatics/Projekte/Datenlieferungen/2011-06-01 Pfalzgrafenweiler Orthos nativ/Orthofotos rgb/34625377.tif'
+    #fileName = '/home/michi/Dokumente/IT/Kontakte/SmartGeomatics/Projekte/Datenlieferungen/2011-12-19 Pfalzgrafenweiler Orthofotos UTM32N/34625377.tif'
+    fileName = '/home/michi/Dokumente/IT/Kontakte/SmartGeomatics/Projekte/Datenlieferungen/2011-11-30 Pfalzgrafenweiler Orthofoto UTM32N/34705383/34705383.tif'
 
     
     
@@ -249,7 +254,7 @@ if __name__ == '__main__':
     print("GeoSize: {0}".format(sourceImage.geoSize()))
     #print(tileBounds)
     
-    targetImage = GeoReferencedImage(tileBounds, QSize(500, 500))
+    targetImage = GeoReferencedImage(geoBoundingBox=tileBounds, imageSize=QSize(500, 500))
     print("----------TargetImage-------------")
     print("GeoBoundingBox: {0}".format(targetImage.geoBoundingBox()))
 #    print("SourceSize: {0}".format(targetImage.size()))
