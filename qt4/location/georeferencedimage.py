@@ -25,9 +25,11 @@ class GeoReferencedImage(QImage):
     def __init__(self, fileName=None, geoBoundingBox=None, imageSize=None,
                  projection='utm'):
         
-        self._onePixelSize = QSizeF()
+        self._onePixelSize = QSizeF(0.0, 0.0)
         self._geoBoundingBox = GeoBoundingBoxUtm()
         self._sourceSize = QSize()
+        self.painter = None
+        
         
         if (fileName) and (geoBoundingBox is None):
             
@@ -82,6 +84,7 @@ class GeoReferencedImage(QImage):
             target = None
             
             QImage.__init__(self, dstFileName)
+            
             os.remove(dstFileName)
             if os.path.exists(dstFileName + '.aux.xml'):
                 os.remove(dstFileName + '.aux.xml')
@@ -97,9 +100,11 @@ class GeoReferencedImage(QImage):
                                     "give a imageSize")
                 
                 self._sourceSize = imageSize
+                
                 QImage.__init__(self, imageSize, QImage.Format_RGB32)
             else:
                 QImage.__init__(self, fileName)
+                
         
         
         
@@ -107,7 +112,7 @@ class GeoReferencedImage(QImage):
         return self._topLeftCoordinate
     
     def onePixelSize(self):
-        if not self._onePixelSize.isValid():
+        if self._onePixelSize.isNull():
             geoSize = self.geoSize()
             x = geoSize.width() / self.size().width()
             y = geoSize.height() / self.size().height()
@@ -141,12 +146,6 @@ class GeoReferencedImage(QImage):
         y = (coordinate.longitude() - bottomRightLon) / self.onePixelSize().height()
         #print(x,y)
         result = QPointF(x, float(self.size().height()) + y)
-        
-        #Return 499,499 on highest val because there is no 500,500
-#        if result.x() == self.size().width():
-#            result.setX(self.size().width()-1.0)
-#        if result.y() == self.size().height():
-#            result.setY(self.size().height()-1.0)
         
         return result
     
@@ -192,32 +191,58 @@ class GeoReferencedImage(QImage):
             return QRectF(QImage.rect(self))
         
         intersected = self._geoBoundingBox.intersected(geoBoundingBox)
-        print("rectF()-intersected: {0}".format(intersected))
+        #intersected = geoBoundingBox.intersected(self._geoBoundingBox)
+#        print("source: {0}".format(geoBoundingBox))
+#        print("target: {0}".format(self._geoBoundingBox))
+#        print("intersected: {0}".format(intersected))
         if intersected.isValid():
             return QRectF(self.coordinate2PixelPosition(intersected.topLeft()),
                          self.coordinate2PixelPosition(intersected.bottomRight()))
         
         return QRectF()
     
-    def paste(self, otherImage, geoBoundingBox=None):
+    def fillImage(self, color=None):
+        if color is None:
+            color = Qt.black
+        painter = QPainter(self)
+        painter.fillRect(self.rect(), color)
+        painter.end()
+    
+    def paste(self, otherImage):
         sourceRect = otherImage.rectF(self._geoBoundingBox)
-        intersectedImage = otherImage.copy(QRect(int(round(sourceRect.x())),
-                                                 int(round(sourceRect.y())),
-                                                 int(round(sourceRect.width())),
-                                                 int(round(sourceRect.height())))
-                                           )
+#        intersectedImage = otherImage.copy(QRect(int(round(sourceRect.x())),
+#                                                 int(round(sourceRect.y())),
+#                                                 int(round(sourceRect.width())),
+#                                                 int(round(sourceRect.height())))
+#                                           )
         sourceBoundingBox = otherImage.geoBoundingBox(sourceRect)
-        print("sourceRect: {0}".format(sourceRect))
-        print("sourceBoundingBox: {0}".format(sourceBoundingBox))
+#        print("sourceRect: {0}".format(sourceRect))
+#        print("sourceBoundingBox: {0}".format(sourceBoundingBox))
         targetRect = self.rectF(sourceBoundingBox)
-        print("targetRect: {0}".format(targetRect))
+#        print("targetRect: {0}".format(targetRect))
+        #if self.painter is None:
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing, True)
+        painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
+        
+        
         #painter.setPen(Qt.lightGray)
-        painter.fillRect(self.rect(), Qt.lightGray)
-        painter.drawImage(targetRect, intersectedImage,
-                          QRectF(intersectedImage.rect()),
-                          Qt.AutoColor)
+        
+#        if not self.imageLoaded:
+#        if prefill is not None:
+#            painter.fillRect(self.rect(), prefill)
+#        painter.drawImage(targetRect, intersectedImage,
+#                          QRectF(intersectedImage.rect()),
+#                          Qt.AutoColor)
+        painter.drawImage(targetRect, otherImage, sourceRect)
+        #painter = None
+#        dstFileName = os.path.join(tempfile.gettempdir(), tempfile.mktemp('.BMP',
+#                                                                              'testimage-'))
+#        testImage = self.copy(targetRect.toRect())
+#        
+#        testImage.save(dstFileName)
+        
+        #painter.end()
         
                 
         
@@ -231,6 +256,7 @@ if __name__ == '__main__':
     
     
     app = QApplication([])
+    
     
     
 #    tileLeftTop = GeoCoordinate(470007.8125, 5382398.4375, projection="utm")

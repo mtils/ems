@@ -61,7 +61,7 @@ class GeoTileIterator(object):
             self._mapType = mapType
             self._connectivityMode = mapDataOrConMode
             self._zoomLevel = zoomLevel
-            
+        
         self._tileRect = QRect(QPoint(0,0), self._tileSize)
             
         x = (self._screenRect.topLeft().x() / self._tileSize.width())
@@ -406,7 +406,7 @@ class GeoTiledMapData(GeoMapData):
 #                continue
             if self._requestsByCacheId.has_key(cacheId):
                 continue
-            
+#            
             if not self.intersectsScreen(tileRect):
                 continue
             
@@ -966,8 +966,8 @@ class GeoTiledMapData(GeoMapData):
                                 int(t.width()) / self._zoomFactor,
                                 int(t.height()) / self._zoomFactor)
                 
-                cacheKeys = self.cache.keys()
-                zoomKeys = self.zoomCache.keys()
+                #cacheKeys = self.cache.keys()
+                #zoomKeys = self.zoomCache.keys()
                 cacheId = req.cacheId()
                 
                 if self._requestsByCacheId.has_key(cacheId):
@@ -1090,6 +1090,7 @@ class GeoTiledMapData(GeoMapData):
                         pass
     
     def _screenRectForZoomFactor(self, factor):
+        
         viewportWidth = self._windowSize.width()
         viewportHeight = self._windowSize.height()
         
@@ -1118,7 +1119,7 @@ class GeoTiledMapData(GeoMapData):
     
     def _updateScreenRect(self):
         self._worldReferenceViewportRect = self._screenRectForZoomFactor(self._zoomFactor)
-        
+#        print self._worldReferenceViewportRect
         x = self._worldReferenceViewportRect.x()
         y = self._worldReferenceViewportRect.y()
         width = self._worldReferenceViewportRect.width()
