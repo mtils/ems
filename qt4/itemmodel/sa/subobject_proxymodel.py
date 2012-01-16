@@ -81,6 +81,9 @@ class SubObjectProxyModel(EditableProxyModel):
         
     
     def mapToSource(self, proxyIndex):
+        if not proxyIndex.isValid():
+            return QModelIndex()
+        
         if not len(self._proxy2SourceColumnMap):
             self._fillPropertyMaps()
         try:
