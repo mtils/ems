@@ -19,6 +19,7 @@ from ems.converter.tags.modifier import Modifier
 from ems.converter.tags.variable import Variable
 from ems.converter.modifiers.replace import Replace
 from ems.converter.modifiers.concat import Concat
+from ems.converter.modifiers.join import Join #@UnresolvedImport
 from ems.converter.modifiers.generatecacheid import GenerateCacheId
 from ems.converter.modifiers.substring import Substring
 from ems.registry import Registry
@@ -42,6 +43,7 @@ def getPreConfigured(plugins=()):
     converter.addPlugin(Converter.tag,Variable())
     converter.addPlugin(Converter.modifier,Replace())
     converter.addPlugin(Converter.modifier,Concat())
+    converter.addPlugin(Converter.modifier,Join())
     converter.addPlugin(Converter.modifier,GenerateCacheId())
     converter.addPlugin(Converter.modifier,Substring())
     

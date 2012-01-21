@@ -21,4 +21,5 @@ class Concat(Modifier):
         '''
         Returns a string reprasentation
         '''
+        
         return "concat"
