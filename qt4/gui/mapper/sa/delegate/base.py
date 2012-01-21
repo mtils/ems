@@ -46,6 +46,6 @@ class MapperDelegate(QStyledItemDelegate):
         style = QApplication.style() if options.widget is None \
             else options.widget.style()
             
-        options.text = QString.fromUtf8(string)
+        options.text = QString.fromUtf8(unicode(string))
         style.drawControl(QStyle.CE_ItemViewItem, options, painter)
         

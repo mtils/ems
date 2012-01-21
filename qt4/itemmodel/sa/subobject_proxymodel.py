@@ -77,7 +77,9 @@ class SubObjectProxyModel(EditableProxyModel):
             #raise KeyError("Could not map column {0}".format(sourceIndex.column()))
             pass
             return QModelIndex()
-        
+    
+    def getObject(self, row):
+        return self.sourceModel().getObject(row)
         
     
     def mapToSource(self, proxyIndex):

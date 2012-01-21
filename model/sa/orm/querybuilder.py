@@ -215,7 +215,7 @@ class SAQueryBuilder(object):
             propertySelection = self.propertyNamesDecorated
         
         uniqueJoinNames = self._calculateJoinNames(propertySelection, filter)
-#        print uniqueJoinNames
+        
         aliases = self._buildJoinAliases(uniqueJoinNames)
         joinNames = aliases.keys()
         joinNames.sort()
@@ -416,6 +416,13 @@ class SAQueryBuilder(object):
 #                print "%s is Col" % propertyName
         return multipleRowProperties
     
+    def _hasJoins(self, obj):
+        mapper = object_mapper(obj)
+        for prop in mapper.iterate_properties:
+            if isinstance(prop, RelationshipProperty):
+                return True
+        return False
+    
     def _extractPropertiesAndJoins(self, obj, pathStack=[],
                                         alreadyAddedClasses=[],
                                         recursionCounter = -1):
@@ -446,7 +453,7 @@ class SAQueryBuilder(object):
                     joinName = "%s.%s" % (".".join(pathStack), prop.key)
                 else:
                     joinName = prop.key
-                #print joinName
+                print joinName
                 
                 if not prop.uselist or (joinName in self._forceJoins):
                     
@@ -466,9 +473,19 @@ class SAQueryBuilder(object):
                         
                         pathStack.append(prop.key)
                         self._joinNameClasses[joinName] = classType
-                        if classType not in alreadyAddedClasses:
+                        sample = classType()
+                        
+                        #If the object has no recursive props
+                        if not self._hasJoins(sample):
                             self._extractPropertiesAndJoins(classType(), pathStack,
                                                            alreadyAddedClasses,
                                                            recursionCounter)
+                        #Else check if the class was already added
+                        else:
+                            if classType not in alreadyAddedClasses:
+                                self._extractPropertiesAndJoins(classType(), pathStack,
+                                                               alreadyAddedClasses,
+                                                               recursionCounter)
                         
                         pathStack.pop()
+                
