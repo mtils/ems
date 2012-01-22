@@ -453,7 +453,7 @@ class SAQueryBuilder(object):
                     joinName = "%s.%s" % (".".join(pathStack), prop.key)
                 else:
                     joinName = prop.key
-                print joinName
+                #print joinName
                 
                 if not prop.uselist or (joinName in self._forceJoins):
                     
