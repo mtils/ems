@@ -14,6 +14,8 @@ from ems.thirdparty.odict import OrderedDict
 from sqlalchemy.util import symbol
 from sqlalchemy.sql.expression import and_, or_
 from lib.ems.model.sa.orm.base_object import OrmBaseObject
+from sqlalchemy.orm.descriptor_props import SynonymProperty
+from sqlalchemy.ext.hybrid import hybrid_property
 
 class PathClauseList(object):
     def __init__(self, conjunction, initialClauses=[]):
@@ -146,6 +148,7 @@ class SAQueryBuilder(object):
         if isinstance(filter, PathClauseList):
             #raise NotImplementedError("Or und And kommt noch")
             filterPropertyNames = self._extractPropertyNamesFromClauseList(filter, [])
+        
         if isinstance(filter, PathClause):
             filterPropertyNames = [filter.left]
         
@@ -437,8 +440,19 @@ class SAQueryBuilder(object):
         mapper = object_mapper(obj)
         alreadyAddedClasses.append(obj.__class__)
         
+        
         for prop in mapper.iterate_properties:
             if isinstance(prop, ColumnProperty):
+                if len(pathStack):
+                    propertyName = "%s.%s" % (".".join(pathStack), prop.key) 
+                else:
+                    propertyName = prop.key
+                self._propertyNames.append(propertyName)
+                self._properties[propertyName] = prop
+                self._propertyNameClasses[propertyName] = obj.__class__
+            
+            elif isinstance(prop, SynonymProperty):
+                print "SynonymProperty: {0}".format(prop)
                 if len(pathStack):
                     propertyName = "%s.%s" % (".".join(pathStack), prop.key) 
                 else:
@@ -488,4 +502,23 @@ class SAQueryBuilder(object):
                                                                recursionCounter)
                         
                         pathStack.pop()
-                
+#            else:
+#                print prop, type(prop)
+        
+        for dictKey in obj.__class__.__dict__:
+            try:
+                clsProp = obj.__class__.__getattribute__(obj.__class__, dictKey)
+                if isinstance(clsProp, hybrid_property):
+                    functionName = clsProp.fget.__name__
+                    if len(pathStack):
+                        propertyName = "%s.%s" % (".".join(pathStack), functionName) 
+                    else:
+                        propertyName = functionName
+                    self._propertyNames.append(propertyName)
+                    self._properties[propertyName] = clsProp
+                    self._propertyNameClasses[propertyName] = obj.__class__
+                    
+            except AttributeError:
+                #print type(e),e
+                pass
+        

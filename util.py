@@ -113,3 +113,24 @@ if __name__ == '__main__':
 #        print "%s %s%%" % (stringSimilarity(*test), stringSimilarity(*test, returnPercent=True))
     clause = GenClause('oma.name').like == 'Pups'
     print clause
+
+def splitIntAlpha(intString):
+    integer = []
+    string = []
+
+    firstNonDigitFound = False
+  
+    for char in intString:
+        if firstNonDigitFound:
+            string.append(unicode(char))
+            continue
+        if char.isdigit():
+            integer.append(char)
+            continue
+        if not char.isalpha():
+            firstNonDigitFound = True
+            continue
+        string.append(unicode(char))
+        firstNonDigitFound = True
+  
+    return (int("".join(integer)), "".join(string).strip())
