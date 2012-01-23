@@ -197,6 +197,9 @@ class Converter(object):
                 for tag in self.plugins[self.tag]:
                     self.plugins[self.tag][tag].notify(Plugin.startProcess)
                     
+                for modifierName in self.plugins[self.modifier]:
+                    self.plugins[self.modifier][modifierName].notify(Plugin.startProcess)
+                    
                 self._applyPreProcessors(xmlDict)
                 reader.notify(Plugin.startProcess)
                 writer.notify(Plugin.startProcess)
@@ -205,6 +208,7 @@ class Converter(object):
                             writer, 
                             xmlDict
                             )
+                
                 reader.notify(Plugin.endProcess)
                 writer.notify(Plugin.endProcess)
                 
