@@ -655,8 +655,10 @@ class GeoTiledMapData(GeoMapData):
             if len(self._requests) > 0:
                 QTimer.singleShot(0, self, SLOT('_processRequests()'))
                 return
+            
         else:
             self._replyFinished(reply)
+        
     
     @pyqtSlot(GeoTiledMapReply)
     def _replyFinished(self, reply):
@@ -905,7 +907,7 @@ class GeoTiledMapData(GeoMapData):
         return QPointF(offsetX, offsetY)
     
     def _updateMapImage(self):
-        #print "_updateMapImage"
+        
         if self._zoomLevel == -1.0 or not self._windowSize.isValid():
             return
         wasEmpty = (len(self._requests) == 0)
@@ -929,6 +931,7 @@ class GeoTiledMapData(GeoMapData):
         
         if wasEmpty and len(self._requests) > 0:
             QTimer.singleShot(0, self, SLOT("_processRequests()"))
+        
     
     def _clearRequests(self):
         self._requests = []
@@ -1119,7 +1122,7 @@ class GeoTiledMapData(GeoMapData):
     
     def _updateScreenRect(self):
         self._worldReferenceViewportRect = self._screenRectForZoomFactor(self._zoomFactor)
-#        print self._worldReferenceViewportRect
+        
         x = self._worldReferenceViewportRect.x()
         y = self._worldReferenceViewportRect.y()
         width = self._worldReferenceViewportRect.width()

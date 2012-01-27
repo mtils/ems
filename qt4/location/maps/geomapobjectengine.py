@@ -130,12 +130,14 @@ class GeoMapObjectEngine(QObject):
                 del self.pixelTrans[obj]
             except KeyError:
                 pass
-            
-            for item in self.pixelItemsRev[obj]:
-                del self.pixelItems[item]
-                self.pixelScene.removeItem(item)
-                del item
-            del self.pixelItemsRev[obj]
+            try:
+                for item in self.pixelItemsRev[obj]:
+                    del self.pixelItems[item]
+                    self.pixelScene.removeItem(item)
+                    del item
+                del self.pixelItemsRev[obj]
+            except KeyError:
+                pass
             
             for rect in rectsToUpdate:
                 self.mdp.triggerUpdateMapDisplay(rect)

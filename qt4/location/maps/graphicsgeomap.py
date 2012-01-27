@@ -154,7 +154,7 @@ class GraphicsGeoMap(QGraphicsWidget):
         @param target: The target rect
         @type target: QRectF
         '''
-#        print "GraphicsGeoMap.updateMapDisplay({0})".format(target)
+        #print "GraphicsGeoMap.updateMapDisplay({0})".format(target)
         #self.update()
         
         if isinstance(target, QRectF) and target.isValid():
@@ -587,7 +587,7 @@ class GraphicsGeoMap(QGraphicsWidget):
             return GeoBoundingBox()
         return self.mapData.viewport()
     
-    def fitInViewPort(self, bounds, preserveViewportCenter):
+    def fitInViewport(self, bounds, preserveViewportCenter):
         '''
         Attempts to fit the bounding box bounds into the viewport of the map.
 
@@ -607,7 +607,7 @@ class GraphicsGeoMap(QGraphicsWidget):
         if not self.mapData:
             return
         
-        self.mapData.fitInViewPort(bounds, preserveViewportCenter)
+        self.mapData.fitInViewport(bounds, preserveViewportCenter)
     
     def mapObjectsAtScreenPosition(self, screenPosition):
         '''
