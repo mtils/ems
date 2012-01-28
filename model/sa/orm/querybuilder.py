@@ -6,9 +6,11 @@ Created on 26.06.2011
 
 from sqlalchemy.orm import joinedload, joinedload_all, object_mapper, \
     RelationshipProperty, ColumnProperty, aliased, contains_eager
+from sqlalchemy import desc
+from sqlalchemy.ext.hybrid import hybrid_property #@UnresolvedImport
 
 
-from ems.util import GenClause   #@UnresolvedImport
+from ems.util import GenClause,isiterable   #@UnresolvedImport
 from ems.thirdparty.odict import OrderedDict
 
 from sqlalchemy.util import symbol
@@ -61,7 +63,13 @@ class PathClause(GenClause):
         self.right = other
         return self
         
-    
+class OrderByClause(object):
+    ASC = 1
+    DESC = 2
+    def __init__(self, propertyName, direction=1):
+        self.property = propertyName
+        self.direction=direction
+        
 
 class SAQueryBuilder(object):
     
@@ -125,8 +133,9 @@ class SAQueryBuilder(object):
                         self._loadPropertyNamesDecorated(joinClass, pathStack)
                         
                 if isinstance(self.properties[propertyPath],
-                              ColumnProperty):
+                              (ColumnProperty, hybrid_property)):
                     self._propertyNamesDecorated.append(propertyPath)
+                
             
             pathStack.pop()
         return self._propertyNamesDecorated
@@ -192,7 +201,7 @@ class SAQueryBuilder(object):
         return joins
     
     def _buildJoinAliases(self, joinNames):
-        sortedAliases = OrderedDict()
+        #sortedAliases = OrderedDict()
         aliases = {}
         for joinName in joinNames:
             #print self.joinNameClasses[joinName]
@@ -210,7 +219,8 @@ class SAQueryBuilder(object):
             
         return propertyNames
     
-    def getQuery(self, session, propertySelection=[], appendOptions=None, filter=None):
+    def getQuery(self, session, propertySelection=[], appendOptions=None,
+                 filter=None, orderBy=None):
         
 #        self._multipleRowsProperties = []
         
@@ -240,6 +250,10 @@ class SAQueryBuilder(object):
                 query = query.outerjoin((aliases[joinName],parentClass.__dict__[propertyName]))
         
         query = self._addFilter(query, filter, aliases)
+        
+        if orderBy is not None:
+            query = self._addOrderBy(query, orderBy, aliases)
+            
         containsEagers = self._getContainsEagers(propertySelection, aliases,
                                                 joinNames)            
         
@@ -302,13 +316,105 @@ class SAQueryBuilder(object):
             query = query.filter(saClauseList)
             
         if isinstance(filter, PathClause):
+            clause = None
             try:
                 clause = self._convertPathClause(filter, aliases)
                 query = query.filter(clause)
-            except:
+            except Exception, e:
                 print "Cannot convert PathClause %s" % clause
+                raise e
         
         return query
+    
+    def _addOrderBy(self, query, orderBy, aliases):
+        
+        #TODO: Das Durcheinander hier muss man mal refactorn
+        if isinstance(orderBy, basestring):
+            converted = self._convertOrderByClause(orderBy, aliases)
+            print converted
+            query = query.order_by(converted)
+            
+        elif isiterable(orderBy) and not isinstance(orderBy, OrderByClause):
+            try:
+                clauses = []
+                for clause in orderBy:
+                    if isinstance(clause, OrderByClause):
+                        c = self._convertOrderByClause(clause.property, aliases)
+                        print c
+                        if clause.direction == OrderByClause.DESC:
+                            query = query.order_by(desc(c))
+                        else:
+                            query = query.order_by(c)
+                    else:
+                        c = self._convertOrderByClause(clause, aliases)
+                        print c
+                        if isinstance(c, tuple):
+                            for i in c:
+                                clauses.append(i)
+                        else:
+                            clauses.append(c)
+                query = query.order_by(*clauses)
+            except Exception, e:
+                print "Cannot convert PathClause %s %s" % (clause, e)
+                
+        elif isinstance(orderBy, OrderByClause):
+            clause = self._convertOrderByClause(orderBy.property, aliases)
+            print clause
+            if orderBy.direction == OrderByClause.DESC:
+                query = query.order_by(desc(clause))
+            else:
+                query = query.order_by(clause)
+        
+        return query
+    
+    def _convertOrderByClause(self, clause, aliases):
+        
+        property = self.properties[clause]
+        if isinstance(property, ColumnProperty):
+
+            split = clause.split('.')
+            if len(split) < 2:
+                return self._ormObj.__class__.__dict__[clause]
+            else:
+                parentName = ".".join(split[:-1])
+                propName = split[-1:][0]
+                return aliases[parentName].__getattr__(propName)
+            
+        if isinstance(property, RelationshipProperty):
+            if aliases.has_key(clause):
+                foreignClass = aliases[clause]
+            else:
+                foreignClass = self._joinNameClasses[clause]
+                
+            if hasattr(foreignClass, '__reprasentive_column__'):
+                col = foreignClass.__reprasentive_column__
+                prop = foreignClass.__getattr__(col)
+                return prop
+            split = clause.split('.')
+            
+            self._joinNameClasses
+            if len(split) < 2:
+                return self._ormObj.__class__.__dict__[clause]
+            else:
+                parentName = ".".join(split[:-1])
+                propName = split[-1:][0]
+                
+                return aliases[parentName].__getattr__(propName)
+            
+        elif isinstance(property, hybrid_property):
+            split = clause.split('.')
+            #TODO: Bei Relationen sollte das auch funktionieren
+            if len(split) < 2:
+                hybridProp = getattr(self._ormObj.__class__, clause)
+                method = 'orderBy'
+                if hasattr(hybridProp, method):
+                    print "Hat die Methode {0}".format(hybridProp.__getattr__(method)(clause))
+                    return hybridProp.__getattr__(method)(clause)
+                else:
+                    raise NotImplementedError("Please implement orderBy")
+                
+            
+        
     
     def _convertPathClauseList(self, clauseList, aliases, parentClause=None):
         if isinstance(clauseList, PathClauseList):
@@ -353,6 +459,20 @@ class SAQueryBuilder(object):
                 propName = split[-1:][0]
                 
                 return aliases[parentName].__getattr__(propName).__eq__(clause.right)
+        elif isinstance(property, hybrid_property):
+            split = clause.left.split('.')
+            #TODO: Bei Relationen sollte das auch funktionieren
+            if len(split) < 2:
+                hybridProp = getattr(self._ormObj.__class__, clause.left)
+                method = self._translateOperator(clause.operator)
+                return hybridProp.__getattr__(method)(clause.right)
+            else:
+                parentName = ".".join(split[:-1])
+                propName = split[-1:][0]
+                method = self._translateOperator(clause.operator)
+                return aliases[parentName].__getattr__(propName).__getattr__(method)(clause.right)
+        else:
+            print "PathClause contained unknown clause {0}".format(property)
     
     def _translateOperator(self, operator):
         table = {'==':'__eq__',
@@ -452,7 +572,7 @@ class SAQueryBuilder(object):
                 self._propertyNameClasses[propertyName] = obj.__class__
             
             elif isinstance(prop, SynonymProperty):
-                print "SynonymProperty: {0}".format(prop)
+#                print "SynonymProperty: {0}".format(prop)
                 if len(pathStack):
                     propertyName = "%s.%s" % (".".join(pathStack), prop.key) 
                 else:
@@ -502,6 +622,8 @@ class SAQueryBuilder(object):
                                                                recursionCounter)
                         
                         pathStack.pop()
+            else:
+                print "Property Type {0} is unknown".format(prop)
 #            else:
 #                print prop, type(prop)
         

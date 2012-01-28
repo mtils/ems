@@ -167,3 +167,10 @@ def splitIntAlpha(intString):
         return (int("".join(integer)), "".join(string).strip())
     except ValueError:
         return (0,'')
+
+def isiterable(obj):
+    try:
+        it = iter(obj)
+        return True
+    except TypeError:
+        return False

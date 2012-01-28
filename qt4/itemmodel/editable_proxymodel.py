@@ -10,7 +10,9 @@ from PyQt4.QtGui import QAbstractProxyModel
 
 class EditableProxyModel(QAbstractProxyModel):
     
-    modelReset = pyqtSignal()
+    #modelReset = pyqtSignal()
+    #layoutChanged = pyqtSignal()
+    #headerDataChanged = pyqtSignal(Qt.Orientation, int, int)
     
     def __init__(self, parent):
         super(EditableProxyModel, self).__init__(parent)
@@ -24,6 +26,8 @@ class EditableProxyModel(QAbstractProxyModel):
         sourceModel.rowsAboutToBeRemoved.connect(self.onSourceModelRowsDeleted)
         sourceModel.dataChanged.connect(self.onDataChanged)
         sourceModel.modelReset.connect(self.modelReset)
+        sourceModel.layoutChanged.connect(self.layoutChanged)
+        sourceModel.headerDataChanged.connect(self.headerDataChanged)
         return QAbstractProxyModel.setSourceModel(self, sourceModel)
     
     def onSourceModelRowsInserted(self, parentIndex, start, end):

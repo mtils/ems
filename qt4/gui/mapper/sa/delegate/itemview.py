@@ -31,7 +31,7 @@ class MapperItemViewDelegate(GenericDelegate):
         return self._columnDelegates[col]
     
     def resetDelegates(self):
-        print "Resetting delegates..."
+        #print "Resetting delegates..."
         self._columnDelegates.clear()
     
     '''These two methods have no use inside this functionality until yet '''

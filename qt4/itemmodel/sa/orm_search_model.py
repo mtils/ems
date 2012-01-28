@@ -12,7 +12,7 @@ from sqlalchemy.orm import object_mapper
 from sqlalchemy.orm.collections import InstrumentedList
 from ems import qt4
 from ems.thirdparty.odict import OrderedDict
-from ems.model.sa.orm.querybuilder import SAQueryBuilder
+from ems.model.sa.orm.querybuilder import SAQueryBuilder, OrderByClause
 from ems.qt4.util import variant_to_pyobject
 from sqlalchemy.exc import SQLAlchemyError, InvalidRequestError
 
@@ -20,7 +20,8 @@ class SAOrmSearchModel(QAbstractTableModel):
     def __init__(self,session, queriedObject, querybuilder=None, filter=None,
                  columns = [],
                  appendOptions = None,
-                 editable = False):
+                 editable = False,
+                 orderBy=None):
         super(SAOrmSearchModel, self).__init__()
         self._session = session
         
@@ -48,6 +49,7 @@ class SAOrmSearchModel(QAbstractTableModel):
         
         self._flagsCache = {}
         self._filter = filter
+        self._orderBy = orderBy
         
         try:
             self._queryBuilder.propertyNames
@@ -91,6 +93,26 @@ class SAOrmSearchModel(QAbstractTableModel):
         self.perform()
     
     filter = property(getFilter, setFilter)
+    
+    def getOrderBy(self):
+        return self._orderBy
+    
+    def setOrderBy(self, *args):
+        if len(args) < 1:
+            raise TypeError("setOrderBy needs 1 parameter as minimum")
+        self._orderBy = args
+        self._dirty = True
+        self.perform()
+    
+    orderBy = property(getOrderBy, setOrderBy)
+            
+    
+    def sort(self, column, sortOrder=Qt.AscendingOrder):
+        col = self.getPropertyNameByIndex(column)
+        if sortOrder == Qt.AscendingOrder:
+            self.orderBy = col
+        else:
+            self.orderBy = OrderByClause(col, OrderByClause.DESC)
     
     @property
     def mapper(self):
@@ -490,7 +512,6 @@ class SAOrmSearchModel(QAbstractTableModel):
             return self._objectCache[row]
     
     def headerData(self, section, orientation, role=Qt.DisplayRole):
-        #print "headerData"
         if role == Qt.TextAlignmentRole:
             if orientation == Qt.Horizontal:
                 return QVariant(int(Qt.AlignLeft|Qt.AlignVCenter))
@@ -504,6 +525,8 @@ class SAOrmSearchModel(QAbstractTableModel):
             name = self.getPropertyFriendlyName(columnName)
 
             return QVariant(name)
+#        else:
+#            print "headerData: {0}".format(variant_to_pyobject(QVariant(int(section + 1))))
         return QVariant(int(section + 1))
     
     def getPropertyFriendlyName(self, propertyPath):
@@ -523,7 +546,8 @@ class SAOrmSearchModel(QAbstractTableModel):
     def isPrimaryKey(self, index):
         self._flagsCache
         
-        print 
+        print
+    
     
     def flags(self, index):
         if not self.editable:
@@ -568,8 +592,9 @@ class SAOrmSearchModel(QAbstractTableModel):
         query = self._queryBuilder.getQuery(self._session,
                                             propertySelection=self._columns,
                                             filter=self._filter,
-                                            appendOptions=self._appendOptions)
-        
+                                            appendOptions=self._appendOptions,
+                                            orderBy=self._orderBy)
+#        print query
         multipleRowsPerObject = self._queryBuilder.hasMultipleRowProperties(self._columns)
         #Check if multiple Objects per row are requested (1:n,m:n,...)
         if multipleRowsPerObject:
@@ -585,3 +610,7 @@ class SAOrmSearchModel(QAbstractTableModel):
                 i += 1
         self._dirty = False
         self.endResetModel()
+        self.layoutChanged.emit()
+        self.headerDataChanged.emit(Qt.Vertical, 0, self.rowCount(QModelIndex()))
+        
+    
