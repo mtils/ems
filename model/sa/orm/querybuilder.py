@@ -331,7 +331,7 @@ class SAQueryBuilder(object):
         #TODO: Das Durcheinander hier muss man mal refactorn
         if isinstance(orderBy, basestring):
             converted = self._convertOrderByClause(orderBy, aliases)
-            print converted
+#            print converted
             query = query.order_by(converted)
             
         elif isiterable(orderBy) and not isinstance(orderBy, OrderByClause):
@@ -340,14 +340,14 @@ class SAQueryBuilder(object):
                 for clause in orderBy:
                     if isinstance(clause, OrderByClause):
                         c = self._convertOrderByClause(clause.property, aliases)
-                        print c
+                        #print c
                         if clause.direction == OrderByClause.DESC:
                             query = query.order_by(desc(c))
                         else:
                             query = query.order_by(c)
                     else:
                         c = self._convertOrderByClause(clause, aliases)
-                        print c
+                        #print c
                         if isinstance(c, tuple):
                             for i in c:
                                 clauses.append(i)
@@ -359,7 +359,7 @@ class SAQueryBuilder(object):
                 
         elif isinstance(orderBy, OrderByClause):
             clause = self._convertOrderByClause(orderBy.property, aliases)
-            print clause
+            #print clause
             if orderBy.direction == OrderByClause.DESC:
                 query = query.order_by(desc(clause))
             else:
@@ -408,7 +408,6 @@ class SAQueryBuilder(object):
                 hybridProp = getattr(self._ormObj.__class__, clause)
                 method = 'orderBy'
                 if hasattr(hybridProp, method):
-                    print "Hat die Methode {0}".format(hybridProp.__getattr__(method)(clause))
                     return hybridProp.__getattr__(method)(clause)
                 else:
                     raise NotImplementedError("Please implement orderBy")
