@@ -4,20 +4,20 @@ Created on 26.06.2011
 @author: michi
 '''
 
+from sqlalchemy import desc
 from sqlalchemy.orm import joinedload, joinedload_all, object_mapper, \
     RelationshipProperty, ColumnProperty, aliased, contains_eager
-from sqlalchemy import desc
+from sqlalchemy.orm.descriptor_props import SynonymProperty #@UnresolvedImport
 from sqlalchemy.ext.hybrid import hybrid_property #@UnresolvedImport
-
-
-from ems.util import GenClause,isiterable   #@UnresolvedImport
-from ems.thirdparty.odict import OrderedDict
-
 from sqlalchemy.util import symbol
 from sqlalchemy.sql.expression import and_, or_
-from lib.ems.model.sa.orm.base_object import OrmBaseObject
-from sqlalchemy.orm.descriptor_props import SynonymProperty
-from sqlalchemy.ext.hybrid import hybrid_property
+
+from ems.util import GenClause,isiterable   #@UnresolvedImport
+
+
+
+
+
 
 class PathClauseList(object):
     def __init__(self, conjunction, initialClauses=[]):
@@ -201,10 +201,8 @@ class SAQueryBuilder(object):
         return joins
     
     def _buildJoinAliases(self, joinNames):
-        #sortedAliases = OrderedDict()
         aliases = {}
         for joinName in joinNames:
-            #print self.joinNameClasses[joinName]
             aliases[joinName] = aliased(self.joinNameClasses[joinName])
         return aliases
     
@@ -328,89 +326,82 @@ class SAQueryBuilder(object):
     
     def _addOrderBy(self, query, orderBy, aliases):
         
-        #TODO: Das Durcheinander hier muss man mal refactorn
-        if isinstance(orderBy, basestring):
-            converted = self._convertOrderByClause(orderBy, aliases)
-#            print converted
-            query = query.order_by(converted)
-            
-        elif isiterable(orderBy) and not isinstance(orderBy, OrderByClause):
-            try:
-                clauses = []
-                for clause in orderBy:
-                    if isinstance(clause, OrderByClause):
-                        c = self._convertOrderByClause(clause.property, aliases)
-                        #print c
-                        if clause.direction == OrderByClause.DESC:
-                            query = query.order_by(desc(c))
-                        else:
-                            query = query.order_by(c)
-                    else:
-                        c = self._convertOrderByClause(clause, aliases)
-                        #print c
-                        if isinstance(c, tuple):
-                            for i in c:
-                                clauses.append(i)
-                        else:
-                            clauses.append(c)
-                query = query.order_by(*clauses)
-            except Exception, e:
-                print "Cannot convert PathClause %s %s" % (clause, e)
-                
-        elif isinstance(orderBy, OrderByClause):
-            clause = self._convertOrderByClause(orderBy.property, aliases)
-            #print clause
-            if orderBy.direction == OrderByClause.DESC:
-                query = query.order_by(desc(clause))
-            else:
-                query = query.order_by(clause)
+        if not isinstance(orderBy, (list, tuple)):
+            orderBy = (orderBy,)
+        try:
+            clauses = []
+            for clause in orderBy:
+                for c in self._convertOrderByPropertyPath(clause, aliases):
+                    clauses.append(c)
+            query = query.order_by(*clauses)
+        except Exception, e:
+            print "Cannot convert PathClause %s %s" % (clause, e)
         
         return query
     
-    def _convertOrderByClause(self, clause, aliases):
+    def _descIfTrue(self, ormProperty, isDesc):
+        if not isDesc:
+            return ormProperty
+        else:
+            return desc(ormProperty)
+    
+    def _convertOrderByPropertyPath(self, clause, aliases):
         
-        property = self.properties[clause]
+        isDesc = False
+        
+        if isinstance(clause, OrderByClause):
+            propertyName = clause.property
+            #print clause
+            if clause.direction == OrderByClause.DESC:
+                isDesc = True
+            
+        else:
+            propertyName = clause
+        
+        
+        property = self.properties[propertyName]
+        
         if isinstance(property, ColumnProperty):
 
-            split = clause.split('.')
+            split = propertyName.split('.')
             if len(split) < 2:
-                return self._ormObj.__class__.__dict__[clause]
+                return (self._descIfTrue(self._ormObj.__class__.__dict__[propertyName],isDesc),)
             else:
                 parentName = ".".join(split[:-1])
                 propName = split[-1:][0]
-                return aliases[parentName].__getattr__(propName)
+                return (self._descIfTrue(aliases[parentName].__getattr__(propName), isDesc),)
             
         if isinstance(property, RelationshipProperty):
-            if aliases.has_key(clause):
-                foreignClass = aliases[clause]
+            if aliases.has_key(propertyName):
+                foreignClass = aliases[propertyName]
             else:
-                foreignClass = self._joinNameClasses[clause]
+                foreignClass = self._joinNameClasses[propertyName]
                 
             if hasattr(foreignClass, '__reprasentive_column__'):
                 col = foreignClass.__reprasentive_column__
                 prop = foreignClass.__getattr__(col)
-                return prop
-            split = clause.split('.')
+                return (self._descIfTrue(prop, isDesc),)
+            split = propertyName.split('.')
             
             self._joinNameClasses
             if len(split) < 2:
-                return self._ormObj.__class__.__dict__[clause]
+                return (self._descIfTrue(self._ormObj.__class__.__dict__[propertyName], isDesc),)
             else:
                 parentName = ".".join(split[:-1])
                 propName = split[-1:][0]
                 
-                return aliases[parentName].__getattr__(propName)
+                return (self._descIfTrue(aliases[parentName].__getattr__(propName), isDesc),)
             
         elif isinstance(property, hybrid_property):
-            split = clause.split('.')
+            split = propertyName.split('.')
             #TODO: Bei Relationen sollte das auch funktionieren
             if len(split) < 2:
-                hybridProp = getattr(self._ormObj.__class__, clause)
+                hybridProp = getattr(self._ormObj.__class__, propertyName)
                 method = 'orderBy'
                 if hasattr(hybridProp, method):
-                    return hybridProp.__getattr__(method)(clause)
+                    return hybridProp.__getattr__(method)(clause, isDesc)
                 else:
-                    raise NotImplementedError("Please implement orderBy")
+                    raise NotImplementedError("Please implement orderBy in your hybrid property")
                 
             
         
@@ -447,10 +438,6 @@ class SAQueryBuilder(object):
             
         if isinstance(property, RelationshipProperty):
             split = clause.left.split('.')
-#            print clause
-#            if not isinstance(clause.right, OrmBaseObject):
-#                return
-#            print type(clause.right)
             if len(split) < 2:
                 return self._ormObj.__class__.__dict__[clause.left].__eq__(clause.right)
             else:
