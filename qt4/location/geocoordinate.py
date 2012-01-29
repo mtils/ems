@@ -261,6 +261,14 @@ class GeoCoordinate(object):
             (other.type_() == self.InvalidCoordinate):
             return 0
         
+        if self.projection == "utm":
+            xMeters = abs(other.lat - self.lat)
+            yMeters = abs(other.lng - self.lng)
+            try:
+                return math.sqrt((xMeters ** 2) + (yMeters ** 2))
+            except ZeroDivisionError:
+                return 0.0
+            
         #Haversine Formula
         dlat = self.degToRad(other.lat - self.lat)
         dlon = self.degToRad(other.lng - self.lng)

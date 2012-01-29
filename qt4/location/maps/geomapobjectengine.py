@@ -123,8 +123,10 @@ class GeoMapObjectEngine(QObject):
                     del item
             except KeyError:
                 pass
-            
-            del self.latLonItemsRev[obj]
+            try:
+                del self.latLonItemsRev[obj]
+            except KeyError:
+                pass 
             
             try:
                 del self.pixelTrans[obj]
@@ -906,10 +908,13 @@ class GeoMapObjectEngine(QObject):
         
         
         needsPixelUpdate = False
+        #try:
         for item in self.latLonItemsRev[obj]:
             if item.boundingRect().intersects(view):
                 needsPixelUpdate = True
-                break;
+                break
+#        except KeyError:
+#            pass
         
         if needsPixelUpdate:
             self.objectsForPixelUpdate.append(obj)

@@ -118,7 +118,7 @@ class GeoSearchReply(QObject):
         elif isinstance(errorOrParent, int):
             self._error = errorOrParent
             self._errorString = errorString
-        
+        self._places = []
         QObject.__init__(self, parent)
         
     def _setFinished(self, finished):
@@ -217,7 +217,7 @@ class GeoSearchReply(QObject):
         '''
         return self._places
     
-    def _addPlace(self, place):
+    def addPlace(self, place):
         '''
         Adds \a place to the list of places in this reply.
         
