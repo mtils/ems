@@ -11,6 +11,7 @@ from ems.converter.inputreader import InputReader,DataCorruptException,\
     DataNotFoundException, XPathNotImplementedError
 from ems.core.mimetype import MimeType
 from dbfpy.dbf import *
+from ems.qt4.util import variant_to_pyobject
 
 class QItemModel(InputReader):
     '''
@@ -64,15 +65,7 @@ class QItemModel(InputReader):
             for col in self.getFieldNames():
                 index = self.source.index(self.currentIndex, i)
                 val = self.source.data(index,Qt.DisplayRole)
-                typeName = val.typeName()
-                if typeName == 'int':
-                    row[col] = val.toInt()[0]
-                elif typeName == 'double':
-                    row[col] = val.toDouble()[0]
-                elif typeName == 'bool':
-                    row[col] = val.toBool()[0]
-                else:
-                    row[col] =unicode(val.toString())
+                row[col] = variant_to_pyobject(val)
                 i += 1
             self.currentRow = row
             if self.currentRow:
