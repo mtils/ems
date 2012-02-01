@@ -112,15 +112,16 @@ class SAQueryBuilder(object):
     
     propertyNamesDecorated = property(getPropertyNamesDecorated)
     
-    def _loadPropertyNamesDecorated(self, ormClass=None, pathStack=[]):
+    def _loadPropertyNamesDecorated(self, ormClass=None, pathStack=None):
         
         if ormClass is None:
             ormClass = self._ormObj.__class__
+        if pathStack is None:
+            pathStack = []
         
         dec = ormClass.__ormDecorator__()
         
         for propertyName in dec.getShownProperties():
-            
             pathStack.append(propertyName)
             propertyPath = ".".join(pathStack)
             
@@ -260,7 +261,7 @@ class SAQueryBuilder(object):
                 for option in appendOptions:
                     containsEagers.append(option)
             query = query.options(*containsEagers)
-        #print str(query).replace('LEFT OUTER JOIN', '\nLEFT OUTER JOIN')
+        
         return query
     
     
@@ -558,7 +559,6 @@ class SAQueryBuilder(object):
                 self._propertyNameClasses[propertyName] = obj.__class__
             
             elif isinstance(prop, SynonymProperty):
-#                print "SynonymProperty: {0}".format(prop)
                 if len(pathStack):
                     propertyName = "%s.%s" % (".".join(pathStack), prop.key) 
                 else:
@@ -568,12 +568,10 @@ class SAQueryBuilder(object):
                 self._propertyNameClasses[propertyName] = obj.__class__
                 
             elif isinstance(prop, RelationshipProperty):
-#                print prop
                 if len(pathStack):
                     joinName = "%s.%s" % (".".join(pathStack), prop.key)
                 else:
                     joinName = prop.key
-                #print joinName
                 
                 if not prop.uselist or (joinName in self._forceJoins):
                     
@@ -606,8 +604,9 @@ class SAQueryBuilder(object):
                                 self._extractPropertiesAndJoins(classType(), pathStack,
                                                                alreadyAddedClasses,
                                                                recursionCounter)
-                        
+
                         pathStack.pop()
+ 
             else:
                 print "Property Type {0} is unknown".format(prop)
 #            else:
