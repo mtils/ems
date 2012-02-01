@@ -134,6 +134,17 @@ class GeoMapObject(QObject):
         '''
         QObject.__init__(self, None)
         
+        self._zValue = 0
+        self._visible = True
+        self._selected = False
+        self._mapData = None
+        self._info = None
+        self._transformType = 1
+        self._origin = None
+        self._units = 0
+        
+        serial = 0
+        
         if mapData is not None:
             self.setMapData(mapData)
         
@@ -181,6 +192,7 @@ class GeoMapObject(QObject):
         '''
         if self._visible != visible:
             self._visible = visible
+            
             self.visibleChanged.emit(self._visible)
     
     def isVisible(self):

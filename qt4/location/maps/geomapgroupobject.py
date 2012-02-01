@@ -44,7 +44,8 @@ class GeoMapGroupObject(GeoMapObject):
         '''
         Constructs a new group object.
         '''
-        QObject.__init__(self, None)
+        #QObject.__init__(self, None)
+        GeoMapObject.__init__(self, None)
         self._children = []
     
     def type_(self):
@@ -71,6 +72,7 @@ class GeoMapGroupObject(GeoMapObject):
         for i in range(len(self._children)):
             bounds <<= bounds.united(self._children[i].boundingBox())
         
+        
         return bounds
     
     def contains(self, coordinate):
@@ -89,7 +91,6 @@ class GeoMapGroupObject(GeoMapObject):
         for child in self._children:
             if child.contains(coordinate):
                 return True
-            
         return False
     
     def mapObjectLessThan(self, op1, op2):
@@ -174,7 +175,7 @@ class GeoMapGroupObject(GeoMapObject):
         @type visible: bool
         '''
         for child in self._children:
-            child.setVisible()
+            child.setVisible(visible)
         
         super(GeoMapGroupObject, self).setVisible(visible)
     

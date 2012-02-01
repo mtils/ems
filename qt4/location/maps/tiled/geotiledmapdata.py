@@ -763,6 +763,7 @@ class GeoTiledMapData(GeoMapData):
                                                Qt.IntersectsItemShape,
                                                Qt.AscendingOrder)
         
+        contains = False
         for item in pixelItems:
             obj = self._oe.pixelItems[item]
             
