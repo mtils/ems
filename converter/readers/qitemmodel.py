@@ -12,6 +12,7 @@ from ems.converter.inputreader import InputReader,DataCorruptException,\
 from ems.core.mimetype import MimeType
 from dbfpy.dbf import *
 from ems.qt4.util import variant_to_pyobject
+from ems.model.sa.orm.base_object import OrmBaseObject
 
 class QItemModel(InputReader):
     '''
@@ -64,8 +65,16 @@ class QItemModel(InputReader):
             
             for col in self.getFieldNames():
                 index = self.source.index(self.currentIndex, i)
-                val = self.source.data(index,Qt.DisplayRole)
-                row[col] = variant_to_pyobject(val)
+                val = variant_to_pyobject(self.source.data(index,Qt.DisplayRole))
+                if isinstance(val, OrmBaseObject):
+                    if hasattr(val.__class__, '__ormDecorator__'):
+                        row[col] = val.__class__.__ormDecorator__().\
+                            getReprasentiveString(val)
+                    else:
+                        row[col] = unicode(val)
+                else:
+                    row[col] = val
+                
                 i += 1
             self.currentRow = row
             if self.currentRow:
