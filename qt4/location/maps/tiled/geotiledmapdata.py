@@ -763,7 +763,7 @@ class GeoTiledMapData(GeoMapData):
                                                Qt.IntersectsItemShape,
                                                Qt.AscendingOrder)
         
-        contains = False
+        
         for item in pixelItems:
             obj = self._oe.pixelItems[item]
             
@@ -796,10 +796,11 @@ class GeoTiledMapData(GeoMapData):
                                 else:
                                     if item.shape().contains(testPt):
                                         contains = True
-            if contains:
-                results.append(obj)
+                                        break
+                if contains:
+                    results.append(obj)
             
-            considered.append(obj)
+                considered.append(obj)
         return results
     
     def mapObjectsInScreenRect(self, screenRect):

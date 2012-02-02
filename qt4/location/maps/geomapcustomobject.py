@@ -106,12 +106,13 @@ class GeoMapCustomObject(GeoMapObject):
         @param offset: The offset
         @type offset: QPoint
         '''
+        GeoMapObject.__init__(self)
         if coordinate is not None:
             self.setOrigin(coordinate)
             
-        self._graphicsItem = QGraphicsItem()
+        self._graphicsItem = None#QGraphicsItem()
         self._offset = offset
-        GeoMapObject.__init__(self)
+        
     
     def type_(self):
         return GeoMapObject.CustomType

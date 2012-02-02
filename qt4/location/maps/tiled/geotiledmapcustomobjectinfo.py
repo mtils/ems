@@ -20,6 +20,7 @@ class GeoTiledMapCustomObjectInfo(GeoTiledMapObjectInfo):
         @param mapObject: The mapObject
         @type mapObject: GeoMapObject
         '''
+        GeoTiledMapObjectInfo.__init__(self, mapData, mapObject)
         self.custom = mapObject
         
         self.custom.triggerUpdate.connect(self.updateTriggered)
