@@ -21,7 +21,10 @@ class SubObjectProxyModel(EditableProxyModel):
                 self.properties = ormPropertyNameOrProperties
             if isinstance(ormPropertyNameOrProperties, basestring):
                 self.ormPropertyName = ormPropertyNameOrProperties
-                          
+
+    @property
+    def session(self):
+        return self.sourceModel().session
     
     def setSourceModel(self, sourceModel):
         
