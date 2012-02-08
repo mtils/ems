@@ -27,5 +27,5 @@ if __name__ == '__main__':
     for i in range(1,19):
         test[float(i)] = (1304000 - 280000) / float((1 << i) * 500)
     print test
-    print nearest(0.19, test, True)
+    print nearest(0.2499985488745, test, True)
     
