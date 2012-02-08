@@ -13,12 +13,13 @@ synonyms_de_DE = {
                   u'ü':'ue',
                   u'ö':'oe',
                   u'Str.':'Strasse',
-                  u'str.':'strasse'
+                  u'str.':'strasse',
+                  #u'Straße':
                   } 
 class StringComparator(object):
     
     valForOnlyCaseDiff = 0.99
-    synonymDiffRange = (0.15,0.85)
+    synonymDiffRange = (0.15,0.90)
     synonymCorrection = 0.05
     
     def __init__(self, typicalSynonyms={}):
@@ -45,6 +46,7 @@ class StringComparator(object):
             matcher.set_seqs(translatedA, translatedB)
             
             ratio = matcher.ratio() - self.synonymCorrection
+
         return ratio
             
                 

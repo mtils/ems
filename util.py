@@ -151,7 +151,7 @@ def splitIntAlpha(intString):
 
     firstNonDigitFound = False
   
-    for char in intString:
+    for char in unicode(intString):
         if firstNonDigitFound:
             string.append(unicode(char))
             continue
