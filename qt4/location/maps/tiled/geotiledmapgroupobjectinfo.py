@@ -43,7 +43,10 @@ class GeoTiledMapGroupObjectInfo(GeoTiledMapObjectInfo):
         if info and info.graphicsItem:
             #the child's z value will get updated in QGeoTiledMapGroupObjectInfo::childUpdated
             #we do this in order to keep the same order of operations that we had previously
-            childObject.zValueChanged.disconnect(info.zValueChanged)
+            try:
+                childObject.zValueChanged.disconnect(info.zValueChanged)
+            except TypeError:
+                pass
             info.graphicsItem.setParentItem(self.graphicsItem)
             self._mapData.update(self.mapObject())
     
