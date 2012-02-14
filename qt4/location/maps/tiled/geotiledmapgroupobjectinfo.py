@@ -57,7 +57,7 @@ class GeoTiledMapGroupObjectInfo(GeoTiledMapObjectInfo):
         info = childObject.info()
         
         if info and info.graphicsItem:
-            self._mapData._update(self.mapObject())
+            self._mapData.update(self.mapObject())
             info.zValueChanged(childObject.zValue())
     
     @pyqtSlot(GeoMapObject)

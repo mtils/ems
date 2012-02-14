@@ -33,7 +33,7 @@ class GeoTiledMapObjectInfo(GeoMapObjectInfo):
     @pyqtSlot(int)
     def zValueChanged(self, zValue):
         if self.graphicsItem:
-            self.graphicsItem.setValue(zValue)
+            self.graphicsItem.setZValue(zValue)
             self.updateItem()
             if self.tiledMapData and self.tiledMapData._oe:
                 self.tiledMapData._oe.rebuildScenes()
