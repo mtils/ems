@@ -103,6 +103,13 @@ class CSV(OutputWriter):
     
     def setElementValue(self,value):
         if self.currentDepth == 2:
+            if value is None:
+                value = ""
+            if isinstance(value, (tuple, list)):
+                if len(value):
+                    value = u",".join(value)
+                else:
+                    value = ''
             self.__currentRow.append(unicode(value))
     
     def endElement(self):
