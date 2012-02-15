@@ -11,6 +11,7 @@ from ems.converter.readers.csv import CSVReader #@UnresolvedImport
 from ems.converter.writers.alchemycore import AlchemyCore
 from ems.converter.writers.csv import CSV
 from ems.converter.writers.dummy import Dummy
+from ems.converter.writers.excel import Excel as ExcelWriter #@UnresolvedImport
 from ems.converter.preprocessors.attributeset import AttributeSet 
 from ems.converter.tags.foreach import ForEach
 from ems.converter.tags.valueof import ValueOf
@@ -36,6 +37,7 @@ def getPreConfigured(plugins=()):
     converter.addPlugin(Converter.writer,AlchemyCore())
     converter.addPlugin(Converter.writer,CSV())
     converter.addPlugin(Converter.writer,Dummy())
+    converter.addPlugin(Converter.writer,ExcelWriter())
     converter.addPlugin(Converter.tag,ForEach())
     converter.addPlugin(Converter.tag,ValueOf())
     converter.addPlugin(Converter.tag,Element())

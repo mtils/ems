@@ -472,6 +472,7 @@ class SAQueryBuilder(object):
          'BEFORE':'<',
          'AFTER':'>'}
         return table[operator]
+    
     @property
     def propertyName2Class(self):
         return self._propertyNameClasses
