@@ -40,6 +40,9 @@ class PluginEmitter(object):
         self.__pluginRegistry = {}
         self.__pluginNamesOrdered = []
         self.__pluginsForEventName = {}
+        self.__callable2PluginName = {}
+        self.__disabledPluginNames = set()
+    
     
     def registerPlugin(self,name,plugin):
         if not isinstance(plugin, BasePlugin):
@@ -50,12 +53,28 @@ class PluginEmitter(object):
         self.__pluginRegistry[name] = plugin
         self.__pluginNamesOrdered.append(name)
     
-    def registerForEventName(self,eventName,method):
+    def enablePlugin(self, pluginName):
+        try:
+            self.__disabledPluginNames.remove(pluginName)
+            return True
+        except KeyError:
+            return False
+    
+    def disablePlugin(self, pluginName):
+        self.__disabledPluginNames.add(pluginName)
+        return True
+    
+    def registerForEventName(self,eventName,method, pluginName=None):
         if not callable(method):
             raise TypeError("The method is not callable")
+        
         if not self.__pluginsForEventName.has_key(eventName):
             self.__pluginsForEventName[eventName] = []
         self.__pluginsForEventName[eventName].append(method)
+        
+        if pluginName is not None:
+            if not self.__callable2PluginName.has_key(method):
+                self.__callable2PluginName[method] = pluginName
     
     def getPlugin(self,name):
         if self.__pluginRegistry.has_key(name):
@@ -64,7 +83,12 @@ class PluginEmitter(object):
     
     def notify(self,caller,eventName,params):
         for name in self.__pluginNamesOrdered:
-            self.__pluginRegistry[name].notify(caller,eventName,params)
+            if name not in self.__disabledPluginNames:
+                self.__pluginRegistry[name].notify(caller,eventName,params)
         if self.__pluginsForEventName.has_key(eventName):
             for method in self.__pluginsForEventName[eventName]:
+                if self.__callable2PluginName.has_key(method):
+                    pluginName = self.__callable2PluginName[method]
+                    if pluginName in self.__disabledPluginNames:
+                        continue
                 method(caller,eventName,params)        
