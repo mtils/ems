@@ -91,4 +91,14 @@ class PluginEmitter(object):
                     pluginName = self.__callable2PluginName[method]
                     if pluginName in self.__disabledPluginNames:
                         continue
-                method(caller,eventName,params)        
+                method(caller,eventName,params)
+    
+    def eventNameHasSubscriber(self, eventName):
+        if self.__pluginsForEventName.has_key(eventName):
+            for method in self.__pluginsForEventName[eventName]:
+                if self.__callable2PluginName.has_key(method):
+                    pluginName = self.__callable2PluginName[method]
+                    if pluginName in self.__disabledPluginNames:
+                        continue
+                return True
+        return False
