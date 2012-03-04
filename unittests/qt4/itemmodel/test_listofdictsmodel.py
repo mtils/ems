@@ -12,16 +12,17 @@ from PyQt4.QtGui import QTableView, QApplication, QDialog, QVBoxLayout, QPushBut
 
 from ems.qt4.itemmodel.listofdictsmodel import ListOfDictsModel #@UnresolvedImport
 from ems.qt4.gui.widgets.itemview.itemview_editor import ItemViewEditor
-from ems.xtype.base import StringType, NumberType, UnitType #@UnresolvedImport
+from ems.xtype.base import StringType, NumberType, UnitType, BoolType #@UnresolvedImport
 from ems.qt4.gui.itemdelegate.xtypedelegate import XTypeDelegate #@UnresolvedImport
 from ems.qt4.gui.itemdelegate.xtypes.unittype import UnitTypeDelegate #@UnresolvedImport
 from ems.qt4.gui.itemdelegate.xtypemapdelegate import XTypeMapDelegate #@UnresolvedImport
 
-testData = [{'vorname':'Leo','nachname':'Tils','alter':1,'gewicht':8.9,'einkommen':850.0},
-            {'vorname':'Kristina','nachname':'Bentz','alter':31,'gewicht':68.9,'einkommen':1450.0},
-            {'vorname':'Fabian','nachname':'Tils','alter':29,'gewicht':72.9,'einkommen':2850.0},
-            {'vorname':'Sonja','nachname':'Bentz','alter':28,'gewicht':65.9,'einkommen':450.0},
-            {'vorname':'Patrick','nachname':'Arnold','alter':29,'gewicht':79.6,'einkommen':3850.0}]
+
+testData = [{'vorname':'Leo','nachname':'Tils','alter':1,'gewicht':8.9,'einkommen':850.0,'verheiratet':False},
+            {'vorname':'Kristina','nachname':'Bentz','alter':31,'gewicht':68.9,'einkommen':1450.0,'verheiratet':False},
+            {'vorname':'Fabian','nachname':'Tils','alter':29,'gewicht':72.9,'einkommen':2850.0,'verheiratet':False},
+            {'vorname':'Sonja','nachname':'Bentz','alter':28,'gewicht':65.9,'einkommen':450.0,'verheiratet':True},
+            {'vorname':'Patrick','nachname':'Arnold','alter':29,'gewicht':79.6,'einkommen':3850.0,'verheiratet':False}]
 
 
 class Importer(QObject):
@@ -31,6 +32,7 @@ class Importer(QObject):
     
     def importData(self):
         self.model.setModelData(copy.copy(testData))
+        self.model.setStandardRow(1)
         
 app = QApplication(sys.argv)
 
@@ -67,15 +69,18 @@ geldType.decimalsCount = 2
 geldType.thousandsSeparator = '.'
 geldType.decimalsSeparator = ','
 
+verheiratetType = BoolType()
+
 
 model.addKey('vorname', namenType, QString.fromUtf8('Name'))
 model.addKey('nachname', namenType, QString.fromUtf8('Familienname'))
 model.addKey('alter', alterType, QString.fromUtf8('Alter'))
 model.addKey('gewicht', gewichtType, QString.fromUtf8('Gewicht'))
 model.addKey('einkommen', geldType, QString.fromUtf8('Einkommen'))
+model.addKey('verheiratet', verheiratetType, label=QString.fromUtf8('Verheiratet'))
 
-model.addRow({'vorname':'Leo','nachname':'Tils','alter':1,'gewicht':8.9,'einkommen':850.0})
-model.addRow(vorname='Fabian',nachname='Tils',alter=29,gewicht=67.2,einkommen=2600.0)
+model.addRow({'vorname':'Leo','nachname':'Tils','alter':1,'gewicht':8.9,'einkommen':850.0,'verheiratet':True})
+model.addRow(vorname='Fabian',nachname='Tils',alter=29,gewicht=67.2,einkommen=2600.0,verheiratet=False)
 #model.addRow
 
 dlg.editor = ItemViewEditor(dlg.view, parent=dlg)

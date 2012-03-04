@@ -5,6 +5,7 @@ Created on 04.03.2012
 '''
 from PyQt4.QtCore import QAbstractTableModel, QModelIndex, Qt, QVariant, \
     pyqtSignal, pyqtSlot
+from PyQt4.QtGui import QColor
 
 from ems import qt4
 from ems.qt4.util import variant_to_pyobject
@@ -20,6 +21,8 @@ class ListOfDictsModel(QAbstractTableModel):
         self.__keyLabels = {}
         self.__xTypes = {}
         self.isEditable = True
+        self._standardRow = None
+        self.standardRowBackground = '#00E3F3'
     
     def xTypeMap(self):
         return self.__xTypes
@@ -91,6 +94,11 @@ class ListOfDictsModel(QAbstractTableModel):
                 return QVariant()
             except AttributeError:
                 return QVariant()
+        
+        if role == Qt.BackgroundColorRole:
+            if self._standardRow is not None:
+                if index.row() == self._standardRow:
+                    return QVariant(QColor(self.standardRowBackground))
 
         
         if role == qt4.ColumnNameRole:
@@ -99,6 +107,12 @@ class ListOfDictsModel(QAbstractTableModel):
             return QVariant(self.__modelData[index.row()])
         
         return QVariant()
+    
+    def setStandardRow(self, row):
+        self._standardRow = row
+    
+    def standardRow(self):
+        return self._standardRow 
     
     def setData(self, index, value, role=Qt.EditRole):
         keyName = self.__keys[index.column()]
@@ -167,7 +181,4 @@ class ListOfDictsModel(QAbstractTableModel):
     
     @pyqtSlot()
     def exportModelData(self):
-        import pprint
-        pprint.pprint(self.__modelData)
         return self.__modelData
-             

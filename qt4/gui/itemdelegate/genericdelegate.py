@@ -47,7 +47,6 @@ class GenericDelegate(QStyledItemDelegate):
         if delegate is not None:
             return delegate.createEditor(parent, option, index)
         else:
-            print "gDelegate.createEditor %s" % parent
             return QStyledItemDelegate.createEditor(self, parent, option,
                                               index)
 
@@ -57,7 +56,6 @@ class GenericDelegate(QStyledItemDelegate):
         if delegate is not None:
             return delegate.setEditorData(editor, index)
         else:
-            print "gDelegate.setEditorData %s" % editor
             return QStyledItemDelegate.setEditorData(self, editor, index)
 
 
@@ -66,5 +64,4 @@ class GenericDelegate(QStyledItemDelegate):
         if delegate is not None:
             return delegate.setModelData(editor, model, index)
         else:
-            print "gDelegate.setModelData %s" % editor
             return QStyledItemDelegate.setModelData(self, editor, model, index)

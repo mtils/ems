@@ -8,7 +8,7 @@ from PyQt4.QtCore import Qt, pyqtSlot
 
 from ems import qt4
 
-from ems.xtype.base import StringType, NumberType, UnitType #@UnresolvedImport
+from ems.xtype.base import StringType, NumberType, UnitType, BoolType #@UnresolvedImport
 from ems.qt4.gui.itemdelegate.xtypedelegate import XTypeDelegate #@UnresolvedImport
 from ems.qt4.gui.itemdelegate.xtypes.unittype import UnitTypeDelegate #@UnresolvedImport
 from ems.qt4.gui.itemdelegate.xtypes.stringtype import StringTypeDelegate #@UnresolvedImport
@@ -38,6 +38,8 @@ class XTypeMapDelegate(GenericDelegate):
             elif isinstance(self.__xTypeMap[col], StringType):
                 self.delegates[col] = StringTypeDelegate(self.__xTypeMap[col],
                                                          self)
+            elif isinstance(self.__xTypeMap[col], BoolType):
+                pass
             else:
                 self.delegates[col] = XTypeDelegate(self.__xTypeMap[col],
                                                        self)

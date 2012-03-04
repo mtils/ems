@@ -95,6 +95,12 @@ class ItemViewEditor(QWidget):
         self.isRowSelectedStateChanged.connect(self.deleteButton.setEnabled)
         self.buttonContainer.layout().addWidget(self.deleteButton)
         
+        self.standardButton = QPushButton(self.trUtf8(u"Als Standard setzen"), self)
+        self.standardButton.clicked.connect(self.onStandardButtonClicked)
+        self.isRowSelectedStateChanged.connect(self.standardButton.setEnabled)
+        self.buttonContainer.layout().addWidget(self.standardButton)
+        self.standardButton.hide()
+        
         self.buttonContainer.layout().addStretch()
 
     @property
@@ -104,6 +110,10 @@ class ItemViewEditor(QWidget):
             if idx.row() not in rowList:
                 rowList.append(idx.row())
         return rowList
+    
+    def onStandardButtonClicked(self):
+        if hasattr(self.itemView.model(),'setStandardRow'):
+            self.itemView.model().setStandardRow(self.selectedRows[0])
     
     def onAddButtonClicked(self):
         if self.insertMode in (self.INSERT_PRIOR_CURRENT,

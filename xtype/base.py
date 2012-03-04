@@ -13,6 +13,7 @@ class XType:
     CUSTOM = 1
     NUMBER = 2
     STRING = 3
+    BOOL = 4
     
     
     def __init__(self, canBeNone=None):
@@ -23,6 +24,19 @@ class XType:
     @abstractproperty
     def group(self):
         pass
+    
+    def value2String(self, value):
+        return unicode(value)
+
+class BoolType(XType):
+    
+    def __init__(self, boolNames=None):
+        XType.__init__(self)
+        
+    
+    @property
+    def group(self):
+        return XType.BOOL
     
 class NumberType(XType):
     
@@ -127,7 +141,9 @@ class UnitType(NumberType):
     APPEND = 2
     VALUE_2_UNIT_SPACE = ' '
     
-    def __init__(self, unit=None, pyTypeOfNumber=float):
+    def __init__(self, unit=None, pyTypeOfNumber=None):
+        if pyTypeOfNumber is None:
+            pyTypeOfNumber = float
         super(UnitType, self).__init__(pyTypeOfNumber)
         self._unit = unit
         self._unitStrPosition = UnitType.APPEND
