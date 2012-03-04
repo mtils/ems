@@ -4,7 +4,7 @@ Created on 15.09.2011
 
 @author: michi
 '''
-from PyQt4.QtCore import pyqtSignal, pyqtSlot
+from PyQt4.QtCore import pyqtSignal, pyqtSlot, QTimer, SLOT
 from PyQt4.QtGui import QWidget, QPushButton, QHBoxLayout, QVBoxLayout,\
     QAbstractItemView
 
@@ -24,11 +24,12 @@ class ItemViewEditor(QWidget):
     
     def __init__(self, itemView, connectOwnMethods=True, parent=None):
         QWidget.__init__(self, parent)
+        
         if not isinstance(itemView, QAbstractItemView):
             raise TypeError("itemView has to be instanceof QAbstractItemView")
         self.itemView = itemView
-        self.itemView.selectionModel().\
-            selectionChanged.connect(self._checkSelection)
+        self._tryToConnectToSelectionModel()
+                
         self.insertMode = self.INSERT_END
         self.lastSelectedRow = None
         self._isRowSelected = None 
@@ -43,12 +44,25 @@ class ItemViewEditor(QWidget):
             self._isRowSelected = isSelected
             self.isRowSelectedStateChanged.emit(self._isRowSelected)
     
+    @pyqtSlot()
+    def _tryToConnectToSelectionModel(self):
+        if self.itemView.selectionModel() is not None:
+            self.itemView.selectionModel().\
+                selectionChanged.connect(self._checkSelection)
+        else:
+            QTimer.singleShot(200, self,
+                              SLOT('_tryToConnectToSelectionModel()'))
+    
     @property
     def isRowSelected(self):
         return self._isRowSelected
     
     def _checkSelection(self, itemSelection=None, itemDeselection=None):
         hasSelection = False
+        
+        if self.itemView.selectionModel() is None:
+            return
+        
         for idx in self.itemView.selectionModel().selection().indexes():
             hasSelection = True
             lastSelectedRow = idx.row()
