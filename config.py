@@ -100,6 +100,9 @@ class Config(object):
         if not self._loadInProgress:
             self.notifyPlugins('profileNameChanged', (profileId,name))
     
+    def __iter__(self):
+        return self.__profiles[self.defaultProfile].__iter__()
+    
     def getProfileName(self,profileId):
         if not len(profileId):
             profileId = self.getDefaultProfile()
