@@ -28,5 +28,12 @@ class MainApplication(QApplication):
         rPath = path.replace(self.appPath, "")
         if rPath.startswith(os.path.sep):
             return rPath[1:]
-        return rPath 
+        return rPath
+    
+    def getAbsolutePath(self, path):
+        if os.path.isabs(path):
+            return path
+        if not path.startswith(os.path.sep):
+            return os.path.join(self.appPath, path)
+        return path
         
