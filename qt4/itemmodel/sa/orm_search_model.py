@@ -6,7 +6,9 @@ Created on 14.06.2011
 import datetime
 
 from PyQt4.QtCore import QAbstractTableModel, QModelIndex, Qt, QVariant,\
-     QString, QDateTime, pyqtSlot
+     QString, QDateTime, pyqtSlot, pyqtSignal
+
+from PyQt4.QtGui import QColor
 
 from sqlalchemy.orm import object_mapper
 from sqlalchemy.orm.collections import InstrumentedList
@@ -17,6 +19,9 @@ from ems.qt4.util import variant_to_pyobject
 from sqlalchemy.exc import SQLAlchemyError, InvalidRequestError
 
 class SAOrmSearchModel(QAbstractTableModel):
+    
+    error = pyqtSignal(SQLAlchemyError)
+    
     def __init__(self,session, queriedObject, querybuilder=None, filter=None,
                  columns = [],
                  appendOptions = None,
@@ -64,6 +69,7 @@ class SAOrmSearchModel(QAbstractTableModel):
         
         self._columnName2Index = self._buildReversedColumnLookup(columns)
         self._dirty = True
+        self.unsubmittetColor = QColor('#ffff00')
     
     def index(self, row, column, parent=QModelIndex()):
         return self.createIndex(row, column, object=0)
@@ -445,12 +451,16 @@ class SAOrmSearchModel(QAbstractTableModel):
     
     @pyqtSlot()
     def submit(self):
-        #print "submit called"
         try:
             self._session.commit()
             self._unsubmittedRows = []
             return True
-        except SQLAlchemyError:
+        except SQLAlchemyError as e:
+            self._session.rollback()
+            for row in self._unsubmittedRows:
+                self._session.add(self._objectCache[row])
+            
+            self.error.emit(e)
             return False
     
     @pyqtSlot()
