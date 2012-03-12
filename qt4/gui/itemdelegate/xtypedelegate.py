@@ -14,6 +14,7 @@ class XTypeDelegate(QStyledItemDelegate):
         QStyledItemDelegate.__init__(self, parent)
         self.xType = xType
         self._lastValue = ''
+        self.textAlignment = Qt.AlignRight | Qt.AlignVCenter
         
     def getString(self, value):
         return self.xType.value2String(value)
@@ -24,7 +25,7 @@ class XTypeDelegate(QStyledItemDelegate):
         if isinstance(value,(int,float)):
             options = QStyleOptionViewItemV4(option)
             self.initStyleOption(options, index)
-            options.displayAlignment = Qt.AlignRight | Qt.AlignVCenter
+            options.displayAlignment = self.textAlignment
             
             style = QApplication.style() if options.widget is None \
                 else options.widget.style()
