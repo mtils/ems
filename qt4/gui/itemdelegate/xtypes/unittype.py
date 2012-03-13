@@ -20,6 +20,7 @@ class UnitTypeDelegate(XTypeDelegate):
         else:
             XTypeDelegate.createEditor(self, parent, option, index)
         
+        widget.setAlignment(self.textAlignment)
         widget.setSuffix(QString.fromUtf8(self.xType.strSuffix))
         widget.setPrefix(QString.fromUtf8(self.xType.strPrefix))
         

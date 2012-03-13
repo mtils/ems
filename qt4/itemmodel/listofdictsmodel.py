@@ -23,6 +23,8 @@ class ListOfDictsModel(QAbstractTableModel):
         self.isEditable = True
         self._standardRow = None
         self.standardRowBackground = '#00E3F3'
+        self.hHeaderAlignment = Qt.AlignLeft|Qt.AlignVCenter
+        self.vHeaderAlignment = Qt.AlignRight|Qt.AlignVCenter
     
     def xTypeMap(self):
         return self.__xTypes
@@ -67,8 +69,8 @@ class ListOfDictsModel(QAbstractTableModel):
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if role == Qt.TextAlignmentRole:
             if orientation == Qt.Horizontal:
-                return QVariant(int(Qt.AlignLeft|Qt.AlignVCenter))
-            return QVariant(int(Qt.AlignRight|Qt.AlignVCenter))
+                return QVariant(int(self.hHeaderAlignment))
+            return QVariant(int(self.vHeaderAlignment))
         if role != Qt.DisplayRole:
             return QVariant()
         if orientation == Qt.Horizontal:
@@ -150,6 +152,7 @@ class ListOfDictsModel(QAbstractTableModel):
         return True
     
     def addRow(self, *args, **kwargs):
+        data = {}
         if kwargs:
             data = kwargs
         if args:
