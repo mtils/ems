@@ -3,7 +3,7 @@ Created on 04.03.2012
 
 @author: michi
 '''
-
+from datetime import date
 from abc import ABCMeta, abstractmethod, abstractproperty
 
 class XType:
@@ -14,12 +14,15 @@ class XType:
     NUMBER = 2
     STRING = 3
     BOOL = 4
+    NON_SCALAR = 5
+    TEMPORAL = 6
     
     
-    def __init__(self, canBeNone=None):
+    def __init__(self, canBeNone=None, defaultValue=None):
         if canBeNone is None:
             canBeNone = True
         self.canBeNone = True
+        self.defaultValue = defaultValue
     
     @abstractproperty
     def group(self):
@@ -27,16 +30,19 @@ class XType:
     
     def value2String(self, value):
         return unicode(value)
+    
 
 class BoolType(XType):
     
     def __init__(self, boolNames=None):
         XType.__init__(self)
+        self.defaultValue = False
         
     
     @property
     def group(self):
         return XType.BOOL
+    
     
 class NumberType(XType):
     
@@ -51,6 +57,10 @@ class NumberType(XType):
         self.decimalsSeparator = '.'
         self.thousandsSeparator = None
         self.decimalsCount = None
+        if self.pyType is float:
+            self.defaultValue = 0.0
+        if self.pyType is int:
+            self.defaultValue = 0
         
     
     def value2String(self, value):
@@ -127,6 +137,7 @@ class StringType(XType):
         XType.__init__(self)
         self.minLength = 0
         self.maxLength = 10000000
+        self.defaultValue = unicode()
     
     @property
     def group(self):
@@ -203,4 +214,54 @@ class UnitType(NumberType):
     def value2UnitSpace(self, space):
         self._value2UnitSpace = space
         self.unit = self.unit
+
+class ListOfDictsType(XType):
+    
+    def __init__(self):
+        XType.__init__(self)
+        self.defaultValue = []
+        self.__xTypeMap = {}
+        self.__keys = []
+        self.maxLength = None
+        self.minLength = None
+    
+    def addKey(self, name, xType):
+        self.__keys.append(name)
+        self.__xTypeMap[self.__keys.index(name)] = xType
+    
+    def keyType(self, key):
+        if isinstance(key, basestring):
+            return self.__xTypeMap[self.__keys.index(key)]
+        elif isinstance(key, int):
+            return self.__xTypeMap[key]
+    
+    def keys(self):
+        return self.__keys
+    
+    def keyName(self, index):
+        return self.__keys[index]
+    
+    @property
+    def xTypeMap(self):
+        return self.__xTypeMap
         
+    @property
+    def group(self):
+        return XType.NON_SCALAR
+    
+    def __len__(self):
+        return len(self.__keys)
+        
+class DateType(XType):
+    def __init__(self):
+        XType.__init__(self)
+        self.minDate = None
+        self.maxDate = None
+        self.defaultValue = date.today()
+    
+    @property
+    def group(self):
+        return XType.TEMPORAL
+    
+    def value2String(self, value):
+        return unicode(value)

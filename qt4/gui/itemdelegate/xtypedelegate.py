@@ -3,6 +3,7 @@ Created on 04.03.2012
 
 @author: michi
 '''
+#from datetime import 
 from PyQt4.QtCore import Qt, QString, QSize
 from PyQt4.QtGui import QStyledItemDelegate, QStyleOptionViewItemV4,\
     QApplication, QStyle
@@ -17,23 +18,25 @@ class XTypeDelegate(QStyledItemDelegate):
         self.textAlignment = Qt.AlignRight | Qt.AlignVCenter
         
     def getString(self, value):
+        if value is None:
+            return ""
         return self.xType.value2String(value)
     
     def paint(self, painter, option, index):
         value = variant_to_pyobject(index.data())
         self._lastValue = value
-        if isinstance(value,(int,float)):
-            options = QStyleOptionViewItemV4(option)
-            self.initStyleOption(options, index)
-            options.displayAlignment = self.textAlignment
-            
-            style = QApplication.style() if options.widget is None \
-                else options.widget.style()
-            
-            string = self.getString(value)
-            options.text = QString.fromUtf8(string)
-            style.drawControl(QStyle.CE_ItemViewItem, options, painter)
-            return None
+ #       if isinstance(value,(int,float)):
+        options = QStyleOptionViewItemV4(option)
+        self.initStyleOption(options, index)
+        options.displayAlignment = self.textAlignment
+        
+        style = QApplication.style() if options.widget is None \
+            else options.widget.style()
+        
+        string = self.getString(value)
+        options.text = QString.fromUtf8(string)
+        style.drawControl(QStyle.CE_ItemViewItem, options, painter)
+        return None
         
         
         return super(XTypeDelegate, self).paint(painter, option, index)

@@ -9,62 +9,45 @@ from PyQt4.QtGui import QColor
 
 from ems import qt4
 from ems.qt4.util import variant_to_pyobject
+from ems.xtype.base import XType #@UnresolvedImport
+#from pprint import pprint
 
 class ListOfDictsModel(QAbstractTableModel):
     
     xTypeMapChanged = pyqtSignal(dict)
     
-    def __init__(self, parent=None):
+    def __init__(self, xType, parent=None):
         QAbstractTableModel.__init__(self, parent)
         self.__modelData = []
-        self.__keys = []
+        self.__xType = xType
         self.__keyLabels = {}
-        self.__xTypes = {}
         self.isEditable = True
         self._standardRow = None
         self.standardRowBackground = '#00E3F3'
         self.hHeaderAlignment = Qt.AlignLeft|Qt.AlignVCenter
         self.vHeaderAlignment = Qt.AlignRight|Qt.AlignVCenter
     
-    def xTypeMap(self):
-        return self.__xTypes
-    
     def setKeyLabel(self, key, label):
         self.__keyLabels[key] = label
-        i = self.__keys.index(key)
-        self.headerDataChanged.emit(Qt.Horizontal, i, i)
+        try:
+            i = self.__xType.keys().index(key)
+            self.headerDataChanged.emit(Qt.Horizontal, i, i)
+        except ValueError:
+            pass
     
-    def setXType(self, col, xType):
-        if not self.__xTypes.has_key(col):
-            self.__xTypes[col] = xType
-            self.xTypeMapChanged.emit(self.__xTypes)
-        if self.__xTypes is not xType:
-            self.__xTypes[col] = xType
-            self.xTypeMapChanged.emit(self.__xTypes)
-    
-    def addKey(self, name, xType=None, label=None):
-        nextIndex = len(self.__keys)
-        if nextIndex < 0:
-            nextIndex = 0
-        self.beginInsertColumns(QModelIndex(), nextIndex, nextIndex+1)
-        self.__keys.append(name)
-        self.endInsertColumns()
-        if xType is not None:
-            self.setXType(nextIndex, xType)
-        if label is not None:
-            self.setKeyLabel(name, label)
+    def getKeyLabel(self, key):
+        if self.__keyLabels.has_key(key):
+            return self.__keyLabels[key]
+        return key
     
     def index(self, row, column, parent=QModelIndex()):
         return self.createIndex(row, column, object=0)
     
     def rowCount(self, index=QModelIndex()):
-        #self.perform()
-        #print "rowCount called %s" % len(self.__modelData)
         return len(self.__modelData)
     
     def columnCount(self, index=QModelIndex()):
-        #self.perform()
-        return len(self.__keys)
+        return len(self.__xType)
     
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if role == Qt.TextAlignmentRole:
@@ -74,7 +57,7 @@ class ListOfDictsModel(QAbstractTableModel):
         if role != Qt.DisplayRole:
             return QVariant()
         if orientation == Qt.Horizontal:
-            keyName = self.__keys[section]
+            keyName = self.__xType.keyName(section)
             if self.__keyLabels.has_key(keyName):
                 return QVariant(self.__keyLabels[keyName])
             return QVariant(keyName)
@@ -90,7 +73,7 @@ class ListOfDictsModel(QAbstractTableModel):
         
         if role in (Qt.DisplayRole, Qt.EditRole):
             try:
-                keyName = self.__keys[index.column()]
+                keyName = self.__xType.keyName(index.column())
                 return QVariant(self.__modelData[index.row()][keyName])
             except KeyError:
                 return QVariant()
@@ -104,7 +87,7 @@ class ListOfDictsModel(QAbstractTableModel):
 
         
         if role == qt4.ColumnNameRole:
-            return QVariant(unicode(self.__keys[index.column()]))
+            return QVariant(unicode(self.__xType.keyName(index.column())))
         if role == qt4.RowObjectRole:
             return QVariant(self.__modelData[index.row()])
         
@@ -117,9 +100,8 @@ class ListOfDictsModel(QAbstractTableModel):
         return self._standardRow 
     
     def setData(self, index, value, role=Qt.EditRole):
-        keyName = self.__keys[index.column()]
+        keyName = self.__xType.keyName(index.column())
         pyValue = variant_to_pyobject(value)
-
         self.__modelData[index.row()][keyName] = pyValue
         self.dataChanged.emit(index, index)
         return True
@@ -137,6 +119,10 @@ class ListOfDictsModel(QAbstractTableModel):
         if row != rowCount:
             raise NotImplementedError("Currently the row can be inserted at the end")
         
+        if self.__xType.maxLength is not None:
+            if rowCount >= self.__xType.maxLength:
+                return False
+            
         self.beginInsertRows(parent, row, row)
         self.__modelData.append(self.getRowTemplate())
         self.endInsertRows()
@@ -145,6 +131,11 @@ class ListOfDictsModel(QAbstractTableModel):
     def removeRows(self, row, count, parentIndex=QModelIndex()):
         if count > 1:
             raise NotImplementedError("Currently only one row can be removed")
+        
+        if self.__xType.minLength is not None:
+            if self.rowCount() <= self.__xType.minLength:
+                return False
+            
         self.beginRemoveRows(parentIndex, row, row)
         self.__modelData.pop(row)
         self.endRemoveRows()
@@ -152,6 +143,10 @@ class ListOfDictsModel(QAbstractTableModel):
         return True
     
     def addRow(self, *args, **kwargs):
+        if self.__xType.maxLength is not None:
+            if self.rowCount() >= self.__xType.maxLength:
+                return False
+        
         data = {}
         if kwargs:
             data = kwargs
@@ -173,15 +168,49 @@ class ListOfDictsModel(QAbstractTableModel):
     
     def getRowTemplate(self):
         template = {}
-        for key in self.__keys:
-            template[key] = None
+        for key in self.__xType.keys():
+            xType = self.__xType.keyType(key)
+            if isinstance(xType, XType):
+                template[key] = xType.defaultValue
+            else:
+                template[key] = None
         return template
     
     def setModelData(self, modelData):
         self.beginResetModel()
-        self.__modelData = modelData
+        
+        self.__modelData = []
+        
+        
+        i = 0    
+        for row in modelData:
+            rowTpl = self.getRowTemplate()
+            for key in row:
+                pyKey = unicode(key)
+                if rowTpl.has_key(pyKey):
+                    rowTpl[pyKey] = row[key]
+                
+            self.__modelData.append(rowTpl)
+            
+            i += 1
+            if self.__xType.maxLength is not None:
+                if i >= self.__xType.maxLength:
+                    break
+            
+        
         self.endResetModel()
     
     @pyqtSlot()
-    def exportModelData(self):
-        return self.__modelData
+    def exportModelData(self, omitEmptyRows=False):
+        if not omitEmptyRows:
+            return self.__modelData
+        else:
+            result = []
+            for row in self.__modelData:
+                rowIsEmpty = True
+                for key in self.__xType.keys():
+                    if row.has_key(key) and row[key]:
+                        rowIsEmpty = False
+                if not rowIsEmpty:
+                    result.append(row)
+            return result

@@ -10,7 +10,10 @@ from PyQt4.QtGui import QColor
 
 def variant_to_pyobject(qvariant=None): 
     """Try to convert a QVariant to a python object as good as possible""" 
-     
+    
+    if not isinstance(qvariant, QVariant):
+        return qvariant
+    
     if not qvariant: 
         return None 
     if qvariant.isNull(): 
