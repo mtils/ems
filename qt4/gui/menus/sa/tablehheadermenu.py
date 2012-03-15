@@ -36,7 +36,7 @@ class TableHHeaderContextMenu(QMenu):
         self.exec_(self.parent().mapToGlobal(point))
     
     def addColumnDisplayActions(self):
-        action = QAction(self.trUtf8("Spalten auswählen"), self)
+        action = QAction(self.trUtf8(u"Spalten auswählen"), self)
         self.connect(action, SIGNAL("triggered(bool)"),
                      self.displayColumnSelection)
         self.addAction(action)
@@ -45,8 +45,8 @@ class TableHHeaderContextMenu(QMenu):
         #print "Isch bin dran"
         self._columnSelectionWidget = DragDropLists.toDialog(srcWidgetMode=DragDropLists.Tree,
                                    srcWidgetIsReadOnly=True,
-                                   parent = self.parent())
-        self._columnSelectionWidget.setWindowTitle(self.trUtf8("Spalten auswählen"))
+                                   parent = self.parent().window())
+        self._columnSelectionWidget.setWindowTitle(self.trUtf8(u"Spalten auswählen"))
         depth = 0
         for col in self.model.possibleColumns:
             depth = len(col.split('.')) - 1
