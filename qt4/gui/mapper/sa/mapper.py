@@ -24,10 +24,18 @@ class SAInterfaceMixin(object):
     def _init(self):
         self._strategies = {}
     
-    def addStrategy(self, type_, strategy):
+    def getStrategy(self, type_):
+        dictKey = hash(type_)
+        if self._strategies.has_key(dictKey):
+            return self._strategies[dictKey]
+    
+    def setStrategy(self, type_, strategy):
         if not isinstance(strategy, BaseStrategy):
             raise TypeError("strategy has to be instance of BaseStrategy")
         self._strategies[hash(type_)] = strategy
+    
+    def hasStrategyForType(self, type_):
+        return self._strategies.has_key(hash(type_))
         
 
 class SAMapperDefaults(Singleton, SAInterfaceMixin):
@@ -146,14 +154,16 @@ class SAMapper(QObject, SAInterfaceMixin):
             realSymbol = self.getRealRelationSymbol(rProperty)
             mappingKey = realSymbol
             #mappingKey = rProperty.direction
-        #print "%s.%s mappingKey: %s" % (self._ormObj.__class__.__name__, property, mappingKey)
+        
         key = hash(mappingKey)
+        
         self._hashToType[key] = mappingKey
         
         if self._strategies.has_key(key):
             self._strategies[key].mapper = self
             return self._strategies[key]
-        
+        elif self._defaults.hasStrategyForType(mappingKey):
+            return self._defaults.getStrategy(mappingKey)
         else:
             return self._defaultStrategy
         
