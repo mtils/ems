@@ -22,10 +22,13 @@ class XTypeDelegate(QStyledItemDelegate):
             return ""
         return self.xType.value2String(value)
     
+    def configureEditor(self, widget, xType):
+        widget.setAlignment(self.textAlignment)
+    
     def paint(self, painter, option, index):
         value = variant_to_pyobject(index.data())
         self._lastValue = value
- #       if isinstance(value,(int,float)):
+ 
         options = QStyleOptionViewItemV4(option)
         self.initStyleOption(options, index)
         options.displayAlignment = self.textAlignment

@@ -10,6 +10,7 @@ from ems.xtype.base import UnitType #@UnresolvedImport
 from ems.qt4.gui.itemdelegate.xtypedelegate import XTypeDelegate #@UnresolvedImport
 
 class UnitTypeDelegate(XTypeDelegate):
+    
     def createEditor(self, parent, option, index):
         if self.xType.pyType == float:
             widget = QDoubleSpinBox(parent)
@@ -19,14 +20,16 @@ class UnitTypeDelegate(XTypeDelegate):
             widget = QSpinBox(parent)
         else:
             XTypeDelegate.createEditor(self, parent, option, index)
-        
-        widget.setAlignment(self.textAlignment)
+            
+        return widget
+    
+    def configureEditor(self, widget, xType):
+        XTypeDelegate.configureEditor(self, widget, xType)
         widget.setSuffix(QString.fromUtf8(self.xType.strSuffix))
         widget.setPrefix(QString.fromUtf8(self.xType.strPrefix))
-        
         widget.setMinimum(self.xType.minValue)
         widget.setMaximum(self.xType.maxValue)
-        
-        return widget
+        if self.xType.pyType == float and self.xType.decimalsCount is not None:
+            widget.setDecimals(self.xType.decimalsCount)
     
         

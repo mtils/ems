@@ -12,8 +12,11 @@ from ems.qt4.gui.itemdelegate.xtypedelegate import XTypeDelegate #@UnresolvedImp
 class StringTypeDelegate(XTypeDelegate):
     def createEditor(self, parent, option, index):
         widget = QLineEdit(parent)
-        widget.setMaxLength(self.xType.maxLength)
-        widget.setAlignment(self.textAlignment)
         return widget
     
+    def configureEditor(self, widget, xType):
+        XTypeDelegate.configureEditor(self, widget, xType)
+        widget.setMaxLength(self.xType.maxLength)
+        widget.setAlignment(self.textAlignment)
+        
         

@@ -23,6 +23,12 @@ class DateTypeDelegate(XTypeDelegate):
     def createEditor(self, parent, option, index):
         widget = QDateEdit(parent)
         
+        self.configureEditor(widget, self.xType)
+        return widget
+    
+    def configureEditor(self, widget, xType):
+        XTypeDelegate.configureEditor(self, widget, xType)
+        
         if isinstance(self.xType.minDate, date):
             widget.setMinimumDate(QDate(self.xType.minDate.year,
                                         self.xType.minDate.month,
@@ -32,18 +38,6 @@ class DateTypeDelegate(XTypeDelegate):
             widget.setMaximumDate(QDate(self.xType.maxDate.year,
                                         self.xType.maxDate.month,
                                         self.xType.maxDate.day))
-        
-        widget.setAlignment(self.textAlignment)
-        #widget.setDate()
-        
-        #widget.setAlignment(self.textAlignment)
-        #widget.setSuffix(QString.fromUtf8(self.xType.strSuffix))
-        #widget.setPrefix(QString.fromUtf8(self.xType.strPrefix))
-        
-        #widget.setMinimum(self.xType.minValue)
-        #widget.setMaximum(self.xType.maxValue)
-        
-        return widget
     
     def setEditorData(self, editor, index):
         pyDate = variant_to_pyobject(index.data())

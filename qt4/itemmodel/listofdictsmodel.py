@@ -35,7 +35,7 @@ class ListOfDictsModel(QAbstractTableModel, ReflectableMixin):
         return self.__xType.keyName(column)
     
     def columnOfName(self, name):
-        self.__xType.keys().index(name)
+        return self.__xType.keys().index(name)
     
     def setKeyLabel(self, key, label):
         self.__keyLabels[key] = label

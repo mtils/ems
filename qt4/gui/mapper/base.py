@@ -21,7 +21,7 @@ class BaseStrategy(QObject):
     def getDelegateForItem(self, mapper, type_, parent=None):
         raise NotImplementedError()
     
-    def map(self, mapper, widget, propertyName):
+    def addMapping(self, mapper, widget, propertyName, type_):
         raise NotImplementedError()
     
     def match(self, param):
@@ -74,10 +74,7 @@ class BaseMapper(QObject, MapperInterfaceMixin):
         if not isinstance(self._dataWidgetMapper, QDataWidgetMapper):
             self._dataWidgetMapper = QDataWidgetMapper(self)
             self._dataWidgetMapper.setModel(self.model)
-            itemDelegate = MapperItemViewDelegate(self._ormObj,
-                                                  self.model,
-                                                  self,
-                                                  self._dataWidgetMapper)
+            itemDelegate = MapperItemViewDelegate(self, self._dataWidgetMapper)
             self._dataWidgetMapper.setItemDelegate(itemDelegate)
         return self._dataWidgetMapper
     
@@ -106,11 +103,12 @@ class BaseMapper(QObject, MapperInterfaceMixin):
         return strategy.getEditor(self, type_, parent)
     
     def _getTypeOfPropertyName(self, propertyName):
-        return self._model.getTypeOfProperty(propertyName)
+        return self._model.columnType(propertyName)
         
     def addMapping(self, widget, propertyName):
         if not isinstance(self._model, QAbstractItemModel):
             raise TypeError("Assign a QAbstractItemModel prior to addMapping")
+        
         type_ = self._getTypeOfPropertyName(propertyName)
         strategy = self.getStrategy(type_)
-        return strategy.map(self, widget, type_)
+        return strategy.addMapping(self, widget, propertyName, type_)

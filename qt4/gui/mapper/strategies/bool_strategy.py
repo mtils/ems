@@ -18,3 +18,9 @@ class BoolStrategy(BaseStrategy):
     
     def getDelegateForItem(self, mapper, type_, parent=None):
         return QStyledItemDelegate(parent)
+    
+    def addMapping(self, mapper, widget, columnName, type_):
+        columnIndex = mapper.model.columnOfName(columnName)
+        delegate = self.getDelegateForItem(mapper, type_, None)
+        delegate.configureEditor(widget, type_)
+        mapper.dataWidgetMapper.addMapping(widget, columnIndex)
