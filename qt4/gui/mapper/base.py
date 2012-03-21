@@ -4,32 +4,24 @@ Created on 20.03.2012
 @author: michi
 '''
 
-from PyQt4.QtCore import QObject
+from PyQt4.QtCore import QObject, QAbstractItemModel
 from PyQt4.QtGui import QDataWidgetMapper
 
-from sqlalchemy.types import AbstractType, String, Integer, Float, Boolean
-from sqlalchemy.orm import object_mapper
-from sqlalchemy.orm.properties import ColumnProperty, RelationshipProperty
-from sqlalchemy.util import symbol
-
 from ems.thirdparty.singletonmixin import Singleton
-from ems.qt4.itemmodel.alchemyormmodel import AlchemyOrmModel
-from ems.model.sa.orm.querybuilder import SAQueryBuilder
-from sa.delegate.itemview import MapperItemViewDelegate 
+from ems.qt4.gui.itemdelegate.mapper import MapperItemViewDelegate #@UnresolvedImport
 
-from ems.qt4.itemmodel.sa.orm_search_model import SAOrmSearchModel
 
 class BaseStrategy(QObject):
     def __init__(self, parent=None):
         QObject.__init__(self, parent)
     
-    def getEditor(self, mapper, propertyName, rProperty, parent=None):
+    def getEditor(self, mapper, type_, parent=None):
         raise NotImplementedError()
         
-    def getDelegateForItem(self, mapper, propertyName, rProperty, parent=None):
+    def getDelegateForItem(self, mapper, type_, parent=None):
         raise NotImplementedError()
     
-    def map(self, mapper, widget, propertyName, rProperty):
+    def map(self, mapper, widget, propertyName):
         raise NotImplementedError()
     
     def match(self, param):
@@ -67,7 +59,7 @@ class MapperDefaults(Singleton, MapperInterfaceMixin):
         MapperInterfaceMixin._init(self)
 
 class BaseMapper(QObject, MapperInterfaceMixin):
-    def __init__(self, ormObjInstance, model=None, parent=None):
+    def __init__(self, model=None, parent=None):
         QObject.__init__(self, parent)
         MapperInterfaceMixin._init(self)
         self._defaults = MapperDefaults.getInstance()
@@ -89,47 +81,36 @@ class BaseMapper(QObject, MapperInterfaceMixin):
             self._dataWidgetMapper.setItemDelegate(itemDelegate)
         return self._dataWidgetMapper
     
-    
-    def getDelegateForItemView(self, propertyName=None, parent=None):
-        return MapperItemViewDelegate(self._ormObj, self.model, self, parent)
-    
-    def getDelegateForItem(self, propertyName, rProperty=None, parent=None):
-        if rProperty is None:
-            rProperty = self.queryBuilder.properties[propertyName]
-        strategy = self.getStrategyFor(propertyName, rProperty)
-        return strategy.getDelegateForItem(self, propertyName, rProperty,
-                                           parent)
-    
-    def widgetDelegate(self, ormObj, propertyName, model):
-        pass
-    
     def getModel(self):
         return self._model
     
     def setModel(self, model):
-        if not isinstance(model, (AlchemyOrmModel, SAOrmSearchModel)):
-            raise TypeError("Model has to be instanceof AlchemyOrmModel")
+        if not isinstance(model, QAbstractItemModel):
+            raise TypeError("Model has to be instanceof AbstractItemModel")
         self._model = model
         if isinstance(self._dataWidgetMapper,QDataWidgetMapper):
             self._dataWidgetMapper.setModel(model)
-        #self._dataWidgetMapper.setItemDelegate(self._delegate)
-    
-    
+        
     model = property(getModel, setModel)
     
-    @property
-    def mapper(self):
-        return self._mapper
+    def getDelegateForItemView(self, parent=None):
+        return MapperItemViewDelegate(self, parent)
+    
+    def getDelegateForItem(self, type_,  parent=None):
+        strategy = self.getStrategy(type_)
+        return strategy.getDelegateForItem(self, type_, parent)
     
     def getEditor(self, propertyName, parent=None):
-        rProperty = self.queryBuilder.properties[propertyName]
-        strategy = self.getStrategyFor(propertyName, rProperty)
-        return strategy.getWidget(self, propertyName, rProperty, parent)
-        
+        type_ = self._getTypeOfPropertyName(propertyName)
+        strategy = self.getStrategy(type_)
+        return strategy.getEditor(self, type_, parent)
     
+    def _getTypeOfPropertyName(self, propertyName):
+        return self._model.getTypeOfProperty(propertyName)
+        
     def addMapping(self, widget, propertyName):
-        if not isinstance(self._model, (AlchemyOrmModel, SAOrmSearchModel)):
-            raise TypeError("Assign a AlchemyOrmModel prior to addMapping")
-        rProperty = self.queryBuilder.properties[propertyName]
-        strategy = self.getStrategyFor(propertyName, rProperty)
-        return strategy.map(self, widget, propertyName, rProperty)
+        if not isinstance(self._model, QAbstractItemModel):
+            raise TypeError("Assign a QAbstractItemModel prior to addMapping")
+        type_ = self._getTypeOfPropertyName(propertyName)
+        strategy = self.getStrategy(type_)
+        return strategy.map(self, widget, type_)

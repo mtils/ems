@@ -32,6 +32,8 @@ class DateTypeDelegate(XTypeDelegate):
             widget.setMaximumDate(QDate(self.xType.maxDate.year,
                                         self.xType.maxDate.month,
                                         self.xType.maxDate.day))
+        
+        widget.setAlignment(self.textAlignment)
         #widget.setDate()
         
         #widget.setAlignment(self.textAlignment)

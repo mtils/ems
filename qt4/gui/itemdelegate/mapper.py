@@ -7,23 +7,28 @@ Created on 20.03.2012
 from ems import qt4
 from ems.qt4.util import variant_to_pyobject
 from ems.qt4.gui.itemdelegate.genericdelegate import GenericDelegate
+from ems.qt4.itemmodel.reflectable_mixin import ReflectableMixin #@UnresolvedImport
 
 
 class MapperItemViewDelegate(GenericDelegate):
-    def __init__(self, ormObj, model, mapper, parent=None):
+    def __init__(self, mapper, parent=None):
         super(MapperItemViewDelegate, self).__init__(parent)
-        self.ormObj = ormObj
-        self.model = model
-        self.mapper = mapper
+        self._mapper = mapper
         self._columnDelegates = {}
-        self.model.modelReset.connect(self.resetDelegates)
+        #self.model.modelReset.connect(self.resetDelegates)
     
+    def getMapper(self):
+        return self._mapper
+    
+    mapper = property(getMapper)
     
     def _getDelegate(self, index):
         col = index.column()
         if not self._columnDelegates.has_key(col):
-            columnName = variant_to_pyobject(index.data(qt4.ColumnNameRole))
-            self._columnDelegates[col] = self.mapper.getDelegateForItem(columnName)
+            model = index.model()
+            if isinstance(model, ReflectableMixin):
+                type_ = model.columnType(index.column())
+            self._columnDelegates[col] = self._mapper.getDelegateForItem(type_)
         return self._columnDelegates[col]
     
     def resetDelegates(self):

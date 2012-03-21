@@ -5,6 +5,7 @@ Created on 04.03.2012
 '''
 from datetime import date
 from abc import ABCMeta, abstractmethod, abstractproperty
+import datetime
 
 class XType:
     
@@ -163,8 +164,6 @@ class UnitType(NumberType):
         if unit is not None:
             self.unit = unit
         
-        
-    
     @property
     def unit(self):
         return self._unit
@@ -215,10 +214,20 @@ class UnitType(NumberType):
         self._value2UnitSpace = space
         self.unit = self.unit
 
-class ListOfDictsType(XType):
+class NonScalarType(XType):
+    def __init__(self, canBeNone=None, defaultValue=None):
+        XType.__init__(self, canBeNone=canBeNone, defaultValue=defaultValue)
     
-    def __init__(self):
-        XType.__init__(self)
+    @property
+    def group(self):
+        return XType.NON_SCALAR
+    
+
+class ListOfDictsType(NonScalarType):
+    
+    def __init__(self, canBeNone=None, defaultValue=None):
+        NonScalarType.__init__(self, canBeNone=canBeNone,
+                               defaultValue=defaultValue)
         self.defaultValue = []
         self.__xTypeMap = {}
         self.__keys = []
@@ -244,10 +253,6 @@ class ListOfDictsType(XType):
     @property
     def xTypeMap(self):
         return self.__xTypeMap
-        
-    @property
-    def group(self):
-        return XType.NON_SCALAR
     
     def __len__(self):
         return len(self.__keys)
@@ -265,3 +270,15 @@ class DateType(XType):
     
     def value2String(self, value):
         return unicode(value)
+
+def native2XType(type_):
+    if type_ in (int, float):
+        return NumberType(type_)
+    if type_ is bool:
+        return BoolType()
+    if type_ in (str, unicode):
+        return StringType()
+    if type_ in (dict, list, tuple, set):
+        return NonScalarType()
+    if type_ in (datetime.datetime, datetime.date):
+        return DateType()

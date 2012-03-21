@@ -10,9 +10,10 @@ from PyQt4.QtGui import QColor
 from ems import qt4
 from ems.qt4.util import variant_to_pyobject
 from ems.xtype.base import XType #@UnresolvedImport
+from ems.qt4.itemmodel.reflectable_mixin import ReflectableMixin #@UnresolvedImport
 #from pprint import pprint
 
-class ListOfDictsModel(QAbstractTableModel):
+class ListOfDictsModel(QAbstractTableModel, ReflectableMixin):
     
     xTypeMapChanged = pyqtSignal(dict)
     
@@ -26,6 +27,15 @@ class ListOfDictsModel(QAbstractTableModel):
         self.standardRowBackground = '#00E3F3'
         self.hHeaderAlignment = Qt.AlignLeft|Qt.AlignVCenter
         self.vHeaderAlignment = Qt.AlignRight|Qt.AlignVCenter
+    
+    def columnType(self, column):
+        return self.__xType.keyType(column)
+    
+    def nameOfColumn(self, column):
+        return self.__xType.keyName(column)
+    
+    def columnOfName(self, name):
+        self.__xType.keys().index(name)
     
     def setKeyLabel(self, key, label):
         self.__keyLabels[key] = label

@@ -13,6 +13,7 @@ class StringTypeDelegate(XTypeDelegate):
     def createEditor(self, parent, option, index):
         widget = QLineEdit(parent)
         widget.setMaxLength(self.xType.maxLength)
+        widget.setAlignment(self.textAlignment)
         return widget
     
         
