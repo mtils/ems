@@ -222,6 +222,14 @@ class NonScalarType(XType):
     def group(self):
         return XType.NON_SCALAR
     
+class EnumType(NonScalarType):
+    def __init__(self, canBeNone=None, defaultValue=None):
+        NonScalarType.__init__(self, canBeNone=canBeNone, defaultValue=defaultValue)
+        self.enum = ()
+    
+    def __len__(self):
+        return len(self.enum)
+    
 
 class ListOfDictsType(NonScalarType):
     
