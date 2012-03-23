@@ -39,5 +39,6 @@ class BoolStrategy(BaseStrategy):
     def boolToOneOfAList(self, xType):
         pseudoBoolType = OneOfAListType(xType.canBeNone, xType.defaultValue)
         pseudoBoolType.possibleValues = (True, False)
+        pseudoBoolType.xTypeOfItems = xType
         return pseudoBoolType
     
