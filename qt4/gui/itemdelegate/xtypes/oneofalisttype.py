@@ -19,11 +19,12 @@ class OneOfAListDelegate(XTypeDelegate):
         self._model = None
     
     def getString(self, value):
+        if self.valueNames.has_key(value):
+            return self.valueNames[value]
+        
         if value is None:
             return ""
         
-        if self.valueNames.has_key(value):
-            return self.valueNames[value]
         return unicode(value)
     
     def getModel(self):
@@ -45,7 +46,6 @@ class OneOfAListDelegate(XTypeDelegate):
     def configureEditor(self, editor, xType):
         if isinstance(editor, QComboBox):
             editor.setModel(self.model)
-            
         
     def setEditorData(self, editor, index):
         if isinstance(editor, QComboBox):

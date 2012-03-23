@@ -192,6 +192,7 @@ mapper.addMapping(form.alterInput, 'alter')
 mapper.addMapping(form.gewichtInput, 'gewicht')
 mapper.addMapping(form.einkommenInput, 'einkommen')
 mapper.addMapping(form.verheiratetInput, 'verheiratet')
+mapper.addMapping(form.geburtstagInput,'geburtstag')
 
 
 
