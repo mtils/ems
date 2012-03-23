@@ -3,13 +3,17 @@ Created on 04.03.2012
 
 @author: michi
 '''
-from PyQt4.QtCore import QString
+from PyQt4.QtCore import QString, Qt
 from PyQt4.QtGui import QSpinBox, QDoubleSpinBox
 
 from ems.xtype.base import UnitType #@UnresolvedImport
 from ems.qt4.gui.itemdelegate.xtypedelegate import XTypeDelegate #@UnresolvedImport
 
 class NumberTypeDelegate(XTypeDelegate):
+    
+    def __init__(self, xType, parent=None):
+        XTypeDelegate.__init__(self, xType, parent)
+        self.textAlignment = Qt.AlignRight | Qt.AlignVCenter
     
     def createEditor(self, parent, option, index):
         if self.xType.pyType == float:
@@ -20,7 +24,7 @@ class NumberTypeDelegate(XTypeDelegate):
             widget = QSpinBox(parent)
         else:
             XTypeDelegate.createEditor(self, parent, option, index)
-        
+        self.configureEditor(widget, self.xType)
         return widget
     
     def configureEditor(self, widget, xType):

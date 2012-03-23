@@ -15,7 +15,7 @@ class XTypeDelegate(QStyledItemDelegate):
         QStyledItemDelegate.__init__(self, parent)
         self.xType = xType
         self._lastValue = ''
-        self.textAlignment = Qt.AlignRight | Qt.AlignVCenter
+        self.textAlignment = Qt.AlignLeft | Qt.AlignVCenter
         
     def getString(self, value):
         if value is None:

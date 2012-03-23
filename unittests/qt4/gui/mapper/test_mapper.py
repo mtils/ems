@@ -155,13 +155,6 @@ form.show()
 
 model.addRow({'vorname':'Leo','nachname':'Tils','alter':1,'gewicht':8.9,'einkommen':850.0,'verheiratet':True})
 model.addRow(vorname='Fabian',nachname='Tils',alter=29,gewicht=67.2,einkommen=2600.0,verheiratet=False)
-#model.addRow
-
-for type_ in (bool,int, float, str, unicode, dict, list, tuple, set,
-              type(datetime.date.today()), type(datetime.datetime.now()),
-              ):
-    print 'nativePy2X:',type_, native2XType(type_)
-
 
 dlg.editor = ItemViewEditor(dlg.view, parent=dlg)
 dlg.view.setModel(model)

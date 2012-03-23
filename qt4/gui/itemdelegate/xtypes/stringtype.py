@@ -12,6 +12,7 @@ from ems.qt4.gui.itemdelegate.xtypedelegate import XTypeDelegate #@UnresolvedImp
 class StringTypeDelegate(XTypeDelegate):
     def createEditor(self, parent, option, index):
         widget = QLineEdit(parent)
+        self.configureEditor(widget, self.xType)
         return widget
     
     def configureEditor(self, widget, xType):

@@ -22,7 +22,6 @@ class DateTypeDelegate(XTypeDelegate):
     
     def createEditor(self, parent, option, index):
         widget = QDateEdit(parent)
-        
         self.configureEditor(widget, self.xType)
         return widget
     
