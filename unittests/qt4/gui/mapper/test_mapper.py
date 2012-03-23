@@ -20,7 +20,7 @@ from ems.qt4.gui.itemdelegate.xtypedelegate import XTypeDelegate #@UnresolvedImp
 from ems.qt4.gui.itemdelegate.xtypes.unittype import UnitTypeDelegate #@UnresolvedImport
 from ems.qt4.gui.itemdelegate.xtypemapdelegate import XTypeMapDelegate #@UnresolvedImport
 from ems.xtype.base import ListOfDictsType #@UnresolvedImport
-from ems.qt4.gui.mapper.base import BaseMapper #@UnresolvedImport
+from ems.qt4.gui.mapper.base import BaseMapper, MapperDefaults #@UnresolvedImport
 from ems.xtype.base import native2XType #@UnresolvedImport
 import datetime
 
@@ -37,6 +37,16 @@ testData = [{'vorname':'Leo','nachname':'Tils','alter':1,'gewicht':8.9,'einkomme
             {'vorname':'Sonja','nachname':'Bentz','alter':28,'gewicht':65.9,'einkommen':450.0,'verheiratet':True},
             {'vorname':'Patrick','nachname':'Arnold','alter':29,'gewicht':79.6,'einkommen':3850.0,'verheiratet':False}]
 
+
+mapperDefaults = MapperDefaults.getInstance()
+mapperDefaults.addStrategy(StringStrategy())
+boolStrategy = BoolStrategy()
+boolStrategy.valueNames = {True:QString.fromUtf8('Wahr'),
+                           False:QString.fromUtf8('Falsch'),
+                           None: QString.fromUtf8('Keine Angabe')}
+mapperDefaults.addStrategy(boolStrategy)
+mapperDefaults.addStrategy(NumberStrategy())
+mapperDefaults.addStrategy(DateStrategy())
 
 class Importer(QObject):
     def __init__(self, model, parent):
@@ -166,14 +176,7 @@ dlg.layout().addWidget(dlg.editor)
 #############################################################################'''
 
 mapper = BaseMapper(model, dlg)
-mapper.addStrategy(StringStrategy())
-boolStrategy = BoolStrategy()
-boolStrategy.valueNames = {True:QString.fromUtf8('Wahr'),
-                           False:QString.fromUtf8('Falsch'),
-                           None: QString.fromUtf8('Keine Angabe')}
-mapper.addStrategy(boolStrategy)
-mapper.addStrategy(NumberStrategy())
-mapper.addStrategy(DateStrategy())
+
 
 '''##########################################################################'''
 

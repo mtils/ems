@@ -90,6 +90,12 @@ class BaseMapper(QObject, MapperInterfaceMixin):
         
     model = property(getModel, setModel)
     
+    def getStrategy(self, type_):
+        for strategy in self._strategies:
+            if strategy.match(type_):
+                return strategy
+        return self._defaults.getStrategy(type_)
+    
     def getDelegateForItemView(self, parent=None):
         return MapperItemViewDelegate(self, parent)
     
