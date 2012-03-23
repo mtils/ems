@@ -17,6 +17,7 @@ class XType:
     BOOL = 4
     NON_SCALAR = 5
     TEMPORAL = 6
+    MIXED = 7
     
     
     def __init__(self, canBeNone=None, defaultValue=None):
@@ -229,6 +230,16 @@ class EnumType(NonScalarType):
     
     def __len__(self):
         return len(self.enum)
+
+class OneOfAListType(XType):
+    def __init__(self, canBeNone=None, defaultValue=None):
+        XType.__init__(self, canBeNone=canBeNone, defaultValue=defaultValue)
+        self.possibleValues = ()
+        self.xTypeOfItems = None
+        
+    @property
+    def group(self):
+        return XType.MIXED
     
 
 class ListOfDictsType(NonScalarType):

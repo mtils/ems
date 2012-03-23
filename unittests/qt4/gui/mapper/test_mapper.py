@@ -7,7 +7,7 @@ Created on 04.03.2012
 import sys
 import copy
 
-from PyQt4.QtCore import QString, QObject
+from PyQt4.QtCore import QString, QObject, QVariant
 from PyQt4.QtGui import QTableView, QApplication, QDialog, QVBoxLayout, \
     QPushButton, QWidget, QFormLayout, QLineEdit, QLabel, QSpinBox, \
     QDoubleSpinBox, QDateEdit, QComboBox
@@ -141,6 +141,7 @@ form.l.addRow(form.einkommenLabel, form.einkommenInput)
 
 form.verheiratetLabel = QLabel(model.getKeyLabel('verheiratet'), form)
 form.verheiratetInput = QComboBox(form)
+form.verheiratetInput.setProperty('name', QVariant('formCombo'))
 form.l.addRow(form.verheiratetLabel, form.verheiratetInput)
 
 form.geburtstagLabel = QLabel(model.getKeyLabel('geburtstag'), form)
@@ -173,7 +174,11 @@ dlg.layout().addWidget(dlg.editor)
 
 mapper = BaseMapper(model, dlg)
 mapper.addStrategy(StringStrategy())
-mapper.addStrategy(BoolStrategy())
+boolStrategy = BoolStrategy()
+boolStrategy.valueNames = {True:QString.fromUtf8('Wahr'),
+                           False:QString.fromUtf8('Falsch'),
+                           None: QString.fromUtf8('Keine Angabe')}
+mapper.addStrategy(boolStrategy)
 mapper.addStrategy(NumberStrategy())
 mapper.addStrategy(DateStrategy())
 
