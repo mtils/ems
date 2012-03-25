@@ -28,23 +28,23 @@ class ListOfDictsDelegate(XTypeDelegate):
         self.htmlDelegate.paint(painter, option, index, option.text)
         
     def getString(self, value):
-        rows = ['<table>']
+        rows = [u'<table>']
         if isinstance(value, list):
             pyKey2Key = {}
             for row in value:
-                rows.append('<tr>')
+                rows.append(u'<tr>')
                 
                 pyKey2Key.clear()
                 for key in row:
                     pyKey2Key[unicode(key)] = key
                     
                 for pyKey in self.xType.keys():
-                    rows.append('<td>')
+                    rows.append(u'<td>')
                     rows.append(self.xType.keyType(pyKey).value2String(row[pyKey2Key[pyKey]]))
-                    rows.append('</td>')
-                rows.append('</tr>')
+                    rows.append(u'</td>')
+                rows.append(u'</tr>')
             
-        rows.append('</table>')
+        rows.append(u'</table>')
         return u"".join(rows)
     
     def createEditor(self, parent, option, index):
