@@ -8,9 +8,11 @@ from PyQt4.QtCore import QAbstractTableModel, QModelIndex, Qt, QVariant, \
 from PyQt4.QtGui import QColor
 
 from ems import qt4
-from ems.qt4.util import variant_to_pyobject
+from ems.qt4.util import variant_to_pyobject, VariantContainer
 from ems.xtype.base import XType #@UnresolvedImport
 from ems.qt4.itemmodel.reflectable_mixin import ReflectableMixin #@UnresolvedImport
+from ems.xtype.base import ListOfDictsType #@UnresolvedImport
+from copy import copy
 #from pprint import pprint
 
 class ListOfDictsModel(QAbstractTableModel, ReflectableMixin):
@@ -25,6 +27,7 @@ class ListOfDictsModel(QAbstractTableModel, ReflectableMixin):
         self.isEditable = True
         self._standardRow = None
         self.standardRowBackground = '#00E3F3'
+        self.__childModels = {}
         self.hHeaderAlignment = Qt.AlignLeft|Qt.AlignVCenter
         self.vHeaderAlignment = Qt.AlignRight|Qt.AlignVCenter
     
@@ -50,11 +53,48 @@ class ListOfDictsModel(QAbstractTableModel, ReflectableMixin):
             return self.__keyLabels[key]
         return key
     
+    def _getChildModelHash(self, index):
+        return "{0}|{1}".format(index.row(), index.column())
+    
+    def childModel(self, index):
+        childHash = self._getChildModelHash(index)
+        if not self.__childModels.has_key(childHash):
+            xType = self.columnType(index.column())
+            if not isinstance(xType, ListOfDictsType):
+                raise TypeError("The XType of a childModel column " + \
+                                "has to be ListOfDictType not {0}".format(xType))
+            
+            self.__childModels[childHash] = ListOfDictsModel(xType, self)
+            colName = unicode(self.nameOfColumn(index.column()))
+            keyPrefix = colName + '.'
+            for key in self.__keyLabels:
+                if key.startswith(keyPrefix):
+                    self.__childModels[childHash].setKeyLabel(key[len(keyPrefix):],
+                                                              self.__keyLabels[key])
+            
+            
+        return self.__childModels[childHash]
+    
     def index(self, row, column, parent=QModelIndex()):
         return self.createIndex(row, column, object=0)
     
     def rowCount(self, index=QModelIndex()):
-        return len(self.__modelData)
+        
+        rowCount = len(self.__modelData)
+        if rowCount == 0:
+            
+            if len(self.__xType.defaultValue):
+                self.__modelData = copy(self.__xType.defaultValue)
+                
+            elif self.__xType.defaultLength != 0:
+                for i in range(self.__xType.defaultLength):
+                    self.__modelData.append(self.getRowTemplate())
+                    
+            rowCount = len(self.__modelData)
+                
+        
+        return rowCount
+        
     
     def columnCount(self, index=QModelIndex()):
         return len(self.__xType)
@@ -84,7 +124,11 @@ class ListOfDictsModel(QAbstractTableModel, ReflectableMixin):
         if role in (Qt.DisplayRole, Qt.EditRole):
             try:
                 keyName = self.__xType.keyName(index.column())
-                return QVariant(self.__modelData[index.row()][keyName])
+                value = self.__modelData[index.row()][keyName]
+                if not isinstance(value, (dict, list)):
+                    return QVariant(value)
+                else:
+                    return QVariant(VariantContainer((value,)))
             except KeyError:
                 return QVariant()
             except AttributeError:

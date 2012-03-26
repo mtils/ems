@@ -8,6 +8,35 @@ import datetime
 from PyQt4.QtCore import QVariant, pyqtSignal
 from PyQt4.QtGui import QColor
 
+class VariantContainer(tuple):
+    '''
+    This is an Container to protected the contents of an
+    "varianted" PyObject
+    
+    If you do something like this:
+    
+    qValue = QVariant({'a':23}
+    
+    and then:
+    
+    pyValue = variant_to_pyobject(qValue)
+    
+    you get:
+    
+    {PyQt4.QtCore.QString(u'a':23)}
+    
+    ...which is mostly not what you want.
+    
+    so instead do:
+    
+    qValue = QVariant(VariantContainer({'a':23}))
+    
+    and variant_to_pyobject will return you original dict.
+    The works because VariantContainer extends tuple which is immutable
+    
+    '''
+    pass
+
 def variant_to_pyobject(qvariant=None): 
     """Try to convert a QVariant to a python object as good as possible""" 
     
@@ -45,7 +74,9 @@ def variant_to_pyobject(qvariant=None):
     elif type == QVariant.Color: 
         value = QColor(qvariant) 
     else: 
-        value = qvariant.toPyObject() 
+        value = qvariant.toPyObject()
+        if isinstance(value, VariantContainer):
+            value = value[0]
    
     return value
 

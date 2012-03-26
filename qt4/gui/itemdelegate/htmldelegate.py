@@ -50,5 +50,8 @@ class HtmlDelegate(QStyledItemDelegate):
             doc.setHtml(options.text)
         else:
             doc.setHtml(manualText)
-        doc.setTextWidth(options.rect.width())
+        #doc.setTextWidth(options.rect.width())
+        #print options.rect.width(), doc.idealWidth(), doc.size().width()
+        #return QSize(doc.size().width(),doc.size().height())
+        #return QSize(doc.idealWidth(), doc.size().height())
         return QSize(doc.idealWidth(), doc.size().height())

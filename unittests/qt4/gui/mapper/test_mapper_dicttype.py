@@ -32,11 +32,11 @@ from ems.qt4.gui.mapper.strategies.date_strategy import DateStrategy #@Unresolve
 from ems.qt4.gui.mapper.strategies.listofdicts_strategy import ListOfDictsStrategy #@UnresolvedImport
 from pprint import pprint
 
-testData = [{'vorname':'Leo','nachname':'Tils','alter':1,'gewicht':8.9,'einkommen':850.0,'verheiratet':False},
-            {'vorname':'Kristina','nachname':'Bentz','alter':31,'gewicht':68.9,'einkommen':1450.0,'verheiratet':False},
-            {'vorname':'Fabian','nachname':'Tils','alter':29,'gewicht':72.9,'einkommen':2850.0,'verheiratet':False},
-            {'vorname':'Sonja','nachname':'Bentz','alter':28,'gewicht':65.9,'einkommen':450.0,'verheiratet':True},
-            {'vorname':'Patrick','nachname':'Arnold','alter':29,'gewicht':79.6,'einkommen':3850.0,'verheiratet':False}]
+testData = [{'vorname':'Leo','alter':1,'registriert':False},
+            {'vorname':'Kristina','alter':31,'registriert':True},
+            {'vorname':'Fabian','alter':29,'registriert':False},
+            {'vorname':'Sonja','alter':28,'registriert':True},
+            {'vorname':'Patrick','alter':29,'registriert':False}]
 
 
 mapperDefaults = MapperDefaults.getInstance()
@@ -48,6 +48,7 @@ boolStrategy.valueNames = {True:QString.fromUtf8('Wahr'),
 mapperDefaults.addStrategy(boolStrategy)
 mapperDefaults.addStrategy(NumberStrategy())
 mapperDefaults.addStrategy(DateStrategy())
+mapperDefaults.addStrategy(ListOfDictsStrategy())
 
 class Importer(QObject):
     def __init__(self, model, parent):
@@ -84,51 +85,37 @@ alterType.minValue = 0
 alterType.maxValue = 140
 alterType.value2UnitSpace = 1
 
-gewichtType = UnitType('kg', float)
-gewichtType.minValue = 1
-gewichtType.maxValue = 300
-gewichtType.value2UnitSpace = 1
-gewichtType.decimalsCount = 1
-gewichtType.thousandsSeparator = '.'
-gewichtType.decimalsSeparator = ','
-
-geldType = UnitType(u'€', float)
-geldType.minValue = 400.0
-geldType.maxValue = 15000.0
-geldType.value2UnitSpace = 1
-geldType.decimalsCount = 2
-geldType.thousandsSeparator = '.'
-geldType.decimalsSeparator = ','
-
-verheiratetType = BoolType()
-
-birthdayType = DateType()
-birthdayType.minDate = datetime.date(1900,1,1)
-birthdayType.maxDate = datetime.date.today()
-
 registriertType = BoolType()
 
+stationDatumType = DateType()
+stationDatumType.minDate = datetime.date(1900,01,01)
+stationDatumType.maxDate = datetime.date.today()
+
+stationTextType = StringType()
+stationTextType.maxLength = 64
+
+stationenType = ListOfDictsType()
+stationenType.addKey('datum',stationDatumType)
+stationenType.addKey('text',stationTextType)
+#stationenType.defaultLength = 3
+stationenType.defaultValue = [{'datum':datetime.date(2011,03,05),'text':'Geburt'},
+                              {'datum':datetime.date(2012,02,14),'text':'Laufen'},
+                              {'datum':datetime.date.today(),'text':'Fabians Geburtstag'}]
 personType = ListOfDictsType()
 
 model = ListOfDictsModel(personType, dlg.view)
 
 personType.addKey('vorname', namenType)
-personType.addKey('nachname', namenType)
 personType.addKey('alter', alterType)
-personType.addKey('gewicht', gewichtType)
-personType.addKey('einkommen', geldType)
-personType.addKey('verheiratet', verheiratetType)
-personType.addKey('geburtstag', birthdayType)
 personType.addKey('registriert', registriertType)
+personType.addKey('stationen', stationenType)
 
 model.setKeyLabel('vorname', QString.fromUtf8('Name'))
-model.setKeyLabel('nachname', QString.fromUtf8('Familienname'))
 model.setKeyLabel('alter', QString.fromUtf8('Alter'))
-model.setKeyLabel('gewicht', QString.fromUtf8('Gewicht'))
-model.setKeyLabel('einkommen', QString.fromUtf8('Einkommen'))
-model.setKeyLabel('verheiratet', label=QString.fromUtf8('Verheiratet'))
-model.setKeyLabel('geburtstag', label=QString.fromUtf8('Geburtstag'))
 model.setKeyLabel('registriert', label=QString.fromUtf8('Registriert'))
+model.setKeyLabel('stationen', label=QString.fromUtf8('Stationen'))
+model.setKeyLabel('stationen.datum', label=QString.fromUtf8('Datum'))
+model.setKeyLabel('stationen.text', label=QString.fromUtf8('Ergeignis'))
 
 form = QDialog(dlg)
 form.l = QFormLayout(form) 
@@ -138,34 +125,17 @@ form.vornameLabel = QLabel(model.getKeyLabel('vorname'),form)
 form.vornameInput = QLineEdit(form)
 form.l.addRow(form.vornameLabel, form.vornameInput)
 
-form.nachnameLabel = QLabel(model.getKeyLabel('nachname'), form)
-form.nachnameInput = QLineEdit(form)
-form.l.addRow(form.nachnameLabel, form.nachnameInput)
-
 form.alterLabel = QLabel(model.getKeyLabel('alter'), form)
 form.alterInput = QSpinBox(form)
 form.l.addRow(form.alterLabel, form.alterInput)
 
-form.gewichtLabel = QLabel(model.getKeyLabel('gewicht'), form)
-form.gewichtInput = QDoubleSpinBox(form)
-form.l.addRow(form.gewichtLabel, form.gewichtInput)
-
-form.einkommenLabel = QLabel(model.getKeyLabel('einkommen'), form)
-form.einkommenInput = QDoubleSpinBox(form)
-form.l.addRow(form.einkommenLabel, form.einkommenInput)
-
-form.verheiratetLabel = QLabel(model.getKeyLabel('verheiratet'), form)
-form.verheiratetInput = QComboBox(form)
-form.verheiratetInput.setProperty('name', QVariant('formCombo'))
-form.l.addRow(form.verheiratetLabel, form.verheiratetInput)
-
-form.geburtstagLabel = QLabel(model.getKeyLabel('geburtstag'), form)
-form.geburtstagInput = QDateEdit(form)
-form.l.addRow(form.geburtstagLabel, form.geburtstagInput)
-
 form.registriertLabel = QLabel(model.getKeyLabel('registriert'), form)
 form.registriertInput = QCheckBox(form)
 form.l.addRow(form.registriertLabel, form.registriertInput)
+
+form.stationenLabel = QLabel('Stationen', form)
+form.stationenInput = QTableView(form)
+form.l.addRow(form.stationenLabel, form.stationenInput)
 
 form.show()
 
@@ -190,15 +160,13 @@ mapper = BaseMapper(model, dlg)
 '''##########################################################################'''
 
 dlg.view.setItemDelegate(mapper.getDelegateForItemView())
+dlg.view.horizontalHeader().setResizeMode(dlg.view.horizontalHeader().ResizeToContents)
+dlg.view.verticalHeader().setResizeMode(dlg.view.verticalHeader().ResizeToContents)
 
 mapper.addMapping(form.vornameInput, 'vorname')
-mapper.addMapping(form.nachnameInput, 'nachname')
 mapper.addMapping(form.alterInput, 'alter')
-mapper.addMapping(form.gewichtInput, 'gewicht')
-mapper.addMapping(form.einkommenInput, 'einkommen')
-mapper.addMapping(form.verheiratetInput, 'verheiratet')
-mapper.addMapping(form.geburtstagInput,'geburtstag')
 mapper.addMapping(form.registriertInput,'registriert')
+mapper.addMapping(form.stationenInput, 'stationen')
 
 
 

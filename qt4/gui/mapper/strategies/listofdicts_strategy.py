@@ -3,7 +3,7 @@ Created on 21.03.2012
 
 @author: michi
 '''
-from PyQt4.QtGui import QComboBox
+from PyQt4.QtGui import QTableView
 
 from ems.qt4.gui.mapper.base import BaseStrategy #@UnresolvedImport
 from ems.xtype.base import ListOfDictsType #@UnresolvedImport
@@ -20,10 +20,10 @@ class ListOfDictsStrategy(BaseStrategy):
         return ListOfDictsDelegate(type_, parent)
     
     def addMapping(self, mapper, widget, columnName, type_):
-        if isinstance(widget, QComboBox):
-            widget.boolDelegate = self.getDelegateForItem(mapper, type_, None)
-            widget.boolDelegate.configureEditor(widget, type_)
-            widget.boolDelegate.valueNames = self.valueNames
-        columnIndex = mapper.model.columnOfName(columnName)
-        mapper.dataWidgetMapper.addMapping(widget, columnIndex)
+        if isinstance(widget, QTableView):
+            
+            #widget.setModel(mapper.model.childModel())
+            
+            columnIndex = mapper.model.columnOfName(columnName)
+            mapper.dataWidgetMapper.addMapping(widget, columnIndex)
     

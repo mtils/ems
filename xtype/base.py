@@ -252,6 +252,8 @@ class ListOfDictsType(NonScalarType):
         self.__keys = []
         self.maxLength = None
         self.minLength = None
+        self.defaultLength = 0
+        self.defaultRow = {}
     
     def addKey(self, name, xType):
         self.__keys.append(name)

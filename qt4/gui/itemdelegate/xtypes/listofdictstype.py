@@ -40,7 +40,7 @@ class ListOfDictsDelegate(XTypeDelegate):
                     
                 for pyKey in self.xType.keys():
                     rows.append(u'<td>')
-                    rows.append(self.xType.keyType(pyKey).value2String(row[pyKey2Key[pyKey]]))
+                    rows.append(unicode(self.xType.keyType(pyKey).value2String(row[pyKey2Key[pyKey]])))
                     rows.append(u'</td>')
                 rows.append(u'</tr>')
             
@@ -60,25 +60,16 @@ class ListOfDictsDelegate(XTypeDelegate):
     
     def setEditorData(self, editor, index):
         from ems.qt4.gui.itemdelegate.xtypemapdelegate import XTypeMapDelegate #@UnresolvedImport
-        
-        model = ListOfDictsModel(self.xType, self)
+        model = index.model().childModel(index)
         pyList = variant_to_pyobject(index.data())
+        
         delegate = XTypeMapDelegate(editor)
         delegate.setXTypeMap(self.xType.xTypeMap)
         editor.setItemDelegate(delegate)
-        if isinstance(index.model(), ListOfDictsModel):
-            for key in self.xType.keys():
-                label = index.model().getKeyLabel(key)
-                model.setKeyLabel(key, label)
+
         if isinstance(pyList, list) and len(pyList):
             model.setModelData(pyList)
-        else:
-            model.addRow({})
-            model.addRow({})
-            model.addRow({})
-            model.addRow({})
         editor.setModel(model)
-        #super(ListOfDictsDelegate, self).setEditorData(editor, index)
     
     def setModelData(self, editor, model, index):
         pyDict = editor.model().exportModelData(True)
