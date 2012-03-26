@@ -10,7 +10,7 @@ import copy
 from PyQt4.QtCore import QString, QObject, QVariant
 from PyQt4.QtGui import QTableView, QApplication, QDialog, QVBoxLayout, \
     QPushButton, QWidget, QFormLayout, QLineEdit, QLabel, QSpinBox, \
-    QDoubleSpinBox, QDateEdit, QComboBox
+    QDoubleSpinBox, QDateEdit, QComboBox, QCheckBox
     
 
 from ems.qt4.itemmodel.listofdictsmodel import ListOfDictsModel #@UnresolvedImport
@@ -105,6 +105,8 @@ birthdayType = DateType()
 birthdayType.minDate = datetime.date(1900,1,1)
 birthdayType.maxDate = datetime.date.today()
 
+registriertType = BoolType()
+
 personType = ListOfDictsType()
 
 model = ListOfDictsModel(personType, dlg.view)
@@ -116,6 +118,7 @@ personType.addKey('gewicht', gewichtType)
 personType.addKey('einkommen', geldType)
 personType.addKey('verheiratet', verheiratetType)
 personType.addKey('geburtstag', birthdayType)
+personType.addKey('registriert', registriertType)
 
 model.setKeyLabel('vorname', QString.fromUtf8('Name'))
 model.setKeyLabel('nachname', QString.fromUtf8('Familienname'))
@@ -124,6 +127,7 @@ model.setKeyLabel('gewicht', QString.fromUtf8('Gewicht'))
 model.setKeyLabel('einkommen', QString.fromUtf8('Einkommen'))
 model.setKeyLabel('verheiratet', label=QString.fromUtf8('Verheiratet'))
 model.setKeyLabel('geburtstag', label=QString.fromUtf8('Geburtstag'))
+model.setKeyLabel('registriert', label=QString.fromUtf8('Registriert'))
 
 form = QDialog(dlg)
 form.l = QFormLayout(form) 
@@ -158,6 +162,10 @@ form.geburtstagLabel = QLabel(model.getKeyLabel('geburtstag'), form)
 form.geburtstagInput = QDateEdit(form)
 form.l.addRow(form.geburtstagLabel, form.geburtstagInput)
 
+form.registriertLabel = QLabel(model.getKeyLabel('registriert'), form)
+form.registriertInput = QCheckBox(form)
+form.l.addRow(form.registriertLabel, form.registriertInput)
+
 form.show()
 
 
@@ -189,6 +197,7 @@ mapper.addMapping(form.gewichtInput, 'gewicht')
 mapper.addMapping(form.einkommenInput, 'einkommen')
 mapper.addMapping(form.verheiratetInput, 'verheiratet')
 mapper.addMapping(form.geburtstagInput,'geburtstag')
+mapper.addMapping(form.registriertInput,'registriert')
 
 
 
