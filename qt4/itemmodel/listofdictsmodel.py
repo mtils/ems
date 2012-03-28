@@ -31,6 +31,10 @@ class ListOfDictsModel(QAbstractTableModel, ReflectableMixin):
         self.hHeaderAlignment = Qt.AlignLeft|Qt.AlignVCenter
         self.vHeaderAlignment = Qt.AlignRight|Qt.AlignVCenter
     
+    @property
+    def xType(self):
+        return self.__xType
+    
     def columnType(self, column):
         return self.__xType.keyType(column)
     
@@ -162,6 +166,11 @@ class ListOfDictsModel(QAbstractTableModel, ReflectableMixin):
     
     def flags(self, index):
         if not self.isEditable:
+            return Qt.ItemIsSelectable | Qt.ItemIsEnabled
+        
+        xType = self.columnType(index.column())
+        
+        if not xType.canBeEdited:
             return Qt.ItemIsSelectable | Qt.ItemIsEnabled
         
         return Qt.ItemIsSelectable | Qt.ItemIsEnabled  | Qt.ItemIsEditable

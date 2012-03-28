@@ -5,7 +5,13 @@ Created on 20.06.2011
 '''
 
 from sqlalchemy.orm import object_mapper
+from sqlalchemy.orm.attributes import InstrumentedAttribute
 
+def friendly_name(classProperty):
+    if isinstance(classProperty, InstrumentedAttribute):
+        if hasattr(classProperty.class_,'__ormDecorator__'):
+            deco = classProperty.class_.__ormDecorator__()
+            return deco.getPropertyFriendlyName(classProperty.key)
 
 class OrmDecorator(object):
     def __init__(self, cls):

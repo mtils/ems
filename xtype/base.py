@@ -25,6 +25,8 @@ class XType:
             canBeNone = True
         self.canBeNone = True
         self.defaultValue = defaultValue
+        self.canBeEdited = True
+        self.forceInteraction = False
     
     @abstractproperty
     def group(self):
