@@ -142,6 +142,7 @@ class StringType(XType):
         self.minLength = 0
         self.maxLength = 10000000
         self.defaultValue = unicode()
+        self.hints = []
     
     @property
     def group(self):

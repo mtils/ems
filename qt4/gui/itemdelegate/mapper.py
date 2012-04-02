@@ -17,6 +17,10 @@ class MapperItemViewDelegate(GenericDelegate):
         self._columnDelegates = {}
         #self.model.modelReset.connect(self.resetDelegates)
     
+    def columnDelegate(self, column):
+        if self._columnDelegates.has_key(column):
+            return self._columnDelegates[column]
+    
     def getMapper(self):
         return self._mapper
     
