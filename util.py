@@ -4,7 +4,25 @@ Created on 02.07.2011
 
 @author: michi
 '''
+
+import sys
+
 from difflib import SequenceMatcher
+
+platformNames = {
+                 'linux':'Linux',
+                 'linux2':'Linux',
+                 'win32':'Windows',
+                 'cygwin':'Windows/Cygwin',
+                 'darwin':'Mac OS X',
+                 'os2':'OS/2',
+                 'os2emx':'OS/2 EMX',
+                 'riscos':'RiscOS',
+                 'atheos':'AtheOS'
+                 }
+
+def platformName():
+    return platformNames[sys.platform]
 
 class GenClause(object):
     def __init__(self, left):

@@ -4,9 +4,11 @@ Created on 01.02.2010
 @author: michi
 '''
 import os.path
+import sys
 
 from PyQt4.QtGui import QApplication
 
+from ems.util import platformName
 
 class MainApplication(QApplication):
     '''
@@ -36,4 +38,6 @@ class MainApplication(QApplication):
         if not path.startswith(os.path.sep):
             return os.path.join(self.appPath, path)
         return path
-        
+    
+    def platform(self):
+        return platformName()
