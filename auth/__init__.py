@@ -154,6 +154,9 @@ class Authentication(Singleton):
         self.__authenticatedUser = authUser
         self.__setIsAuthenticated(True)
         
+    def logout(self):
+        self.__setIsAuthenticated(False)
+        self.__authenticatedUser = None
     
     def _getExistingAdapter(self):
         if not isinstance(self._currentAdapter, AuthenticationAdapter):
