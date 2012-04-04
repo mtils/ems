@@ -166,7 +166,6 @@ class AlchemyCore(OutputWriter):
                     try:
                         table = self.metaData.tables[self.__currentTableName]
                     except KeyError,e:
-                        print self.metaData.tables
                         raise SchemaItemNotFoundException(str(e))
                     
                     #From here actual write action

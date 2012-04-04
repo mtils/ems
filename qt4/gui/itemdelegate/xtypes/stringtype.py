@@ -15,7 +15,6 @@ class HintListModel(QAbstractProxyModel):
         QAbstractProxyModel.__init__(self, parent)
     
     def match(self, start, role, value, hits=1, flags=Qt.MatchStartsWith | Qt.MatchWrap):
-        print start, value
         return QStringListModel.match(self, start, role, value, hits, flags)
 
 class StringTypeDelegate(XTypeDelegate):

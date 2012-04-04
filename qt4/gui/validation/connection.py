@@ -76,7 +76,7 @@ class ValidatorConnection(QObject):
             if hasattr(self.__changeListener,'onAcceptable'):
                 self.__changeListener.onAcceptable()
             else:
-                print self.__changeListener
+                pass
         elif state == QValidator.Intermediate:
             self._onIntermediate()
             if hasattr(self.__changeListener,'onIntermediate'):

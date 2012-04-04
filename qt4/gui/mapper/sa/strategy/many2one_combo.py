@@ -31,7 +31,6 @@ class ComboBoxRelationDelegate(QItemDelegate):
         
     def setEditorData(self, editor, index):
         #print "setEditorData %s" % index.data().toString()
-        print "ComboboxDelegate.setEditorData" % variant_to_pyobject(index.data())
         currentIndex = self._fk2Index[variant_to_pyobject(index.data())]
         #print "currentIndex %s" % currentIndex
         #print self._itemModel.data(self._itemModel.index(index.row(),0)).toString()
@@ -41,7 +40,6 @@ class ComboBoxRelationDelegate(QItemDelegate):
     def setModelData(self, editor, model, index):
         #print "setModelData %s" % index.data().toString()
         fkVal = self._index2Fk[editor.currentIndex()]
-        print "fkVal: %s" % fkVal
         model.setData(index, QVariant(fkVal))
         #super(ComboBoxRelationDelegate, self).setModelData(editor, model, index)
     
@@ -132,7 +130,6 @@ class Many2OneComboStrategy(BaseStrategy):
         
     
     def getWidget(self, mapper, propertyName, rProperty, parent=None):
-        print "getWidget %s" % propertyName
         
         model = self._getObjModel(mapper, propertyName, rProperty)
         

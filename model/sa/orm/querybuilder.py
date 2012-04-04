@@ -320,7 +320,6 @@ class SAQueryBuilder(object):
                 clause = self._convertPathClause(filter, aliases)
                 query = query.filter(clause)
             except Exception, e:
-                print "Cannot convert PathClause %s" % clause
                 raise e
         
         return query
@@ -336,7 +335,7 @@ class SAQueryBuilder(object):
                     clauses.append(c)
             query = query.order_by(*clauses)
         except Exception, e:
-            print "Cannot convert PathClause %s %s" % (clause, e)
+            pass
         
         return query
     
@@ -418,7 +417,7 @@ class SAQueryBuilder(object):
                     try:
                         saClause.append(self._convertPathClause(clause, aliases))
                     except:
-                        print "Cannot convert PathClause %s" % clause
+                        pass
                          
                 elif isinstance(clause, PathClauseList):
                     saClause.append(self._convertPathClauseList(clause, aliases, saClause))
@@ -459,7 +458,7 @@ class SAQueryBuilder(object):
                 method = self._translateOperator(clause.operator)
                 return aliases[parentName].__getattr__(propName).__getattr__(method)(clause.right)
         else:
-            print "PathClause contained unknown clause {0}".format(property)
+            pass
     
     def _translateOperator(self, operator):
         table = {'==':'__eq__',
@@ -609,7 +608,7 @@ class SAQueryBuilder(object):
                         pathStack.pop()
  
             else:
-                print "Property Type {0} is unknown".format(prop)
+                pass
 #            else:
 #                print prop, type(prop)
         

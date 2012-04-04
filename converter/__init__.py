@@ -65,7 +65,7 @@ class Converter(object):
 #                        print self.plugins[self.reader][reader]
                         return self.plugins[self.reader][reader]
         except StopIteration, e:
-            print e
+            pass
         
         raise NotImplementedError("Keinen passenden Importer zu Datei %s gefunden" % filename) 
         
