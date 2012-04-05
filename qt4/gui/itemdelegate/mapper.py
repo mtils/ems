@@ -21,6 +21,12 @@ class MapperItemViewDelegate(GenericDelegate):
         if self._columnDelegates.has_key(column):
             return self._columnDelegates[column]
     
+    def columnDelegates(self):
+        return self._columnDelegates
+    
+    def count(self):
+        return len(self._columnDelegates)
+    
     def getMapper(self):
         return self._mapper
     

@@ -101,6 +101,8 @@ class BaseMapper(QObject, MapperInterfaceMixin):
     
     def getDelegateForItem(self, type_,  parent=None):
         strategy = self.getStrategy(type_)
+        if strategy is None:
+            raise TypeError("No strategy found for type {0}".format(type_))
         return strategy.getDelegateForItem(self, type_, parent)
     
     def getEditor(self, propertyName, parent=None):

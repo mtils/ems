@@ -21,7 +21,7 @@ class ListOfDictsModel(QAbstractTableModel, ReflectableMixin):
     
     def __init__(self, xType, parent=None):
         QAbstractTableModel.__init__(self, parent)
-        self.__modelData = []
+        self._modelData = []
         self.__xType = xType
         self.__keyLabels = {}
         self.isEditable = True
@@ -84,19 +84,18 @@ class ListOfDictsModel(QAbstractTableModel, ReflectableMixin):
     
     def rowCount(self, index=QModelIndex()):
         
-        rowCount = len(self.__modelData)
+        rowCount = len(self._modelData)
         if rowCount == 0:
             
             if len(self.__xType.defaultValue):
-                self.__modelData = copy(self.__xType.defaultValue)
+                self._modelData = copy(self.__xType.defaultValue)
                 
             elif self.__xType.defaultLength != 0:
                 for i in range(self.__xType.defaultLength):
-                    self.__modelData.append(self.getRowTemplate())
+                    self._modelData.append(self.getRowTemplate())
                     
-            rowCount = len(self.__modelData)
+            rowCount = len(self._modelData)
                 
-        
         return rowCount
         
     
@@ -128,7 +127,7 @@ class ListOfDictsModel(QAbstractTableModel, ReflectableMixin):
         if role in (Qt.DisplayRole, Qt.EditRole):
             try:
                 keyName = self.__xType.keyName(index.column())
-                value = self.__modelData[index.row()][keyName]
+                value = self._modelData[index.row()][keyName]
                 if not isinstance(value, (dict, list)):
                     return QVariant(value)
                 else:
@@ -147,7 +146,7 @@ class ListOfDictsModel(QAbstractTableModel, ReflectableMixin):
         if role == qt4.ColumnNameRole:
             return QVariant(unicode(self.__xType.keyName(index.column())))
         if role == qt4.RowObjectRole:
-            return QVariant(self.__modelData[index.row()])
+            return QVariant(self._modelData[index.row()])
         
         return QVariant()
     
@@ -160,7 +159,9 @@ class ListOfDictsModel(QAbstractTableModel, ReflectableMixin):
     def setData(self, index, value, role=Qt.EditRole):
         keyName = self.__xType.keyName(index.column())
         pyValue = variant_to_pyobject(value)
-        self.__modelData[index.row()][keyName] = pyValue
+        if pyValue == self._modelData[index.row()][keyName]:
+            return False
+        self._modelData[index.row()][keyName] = pyValue
         self.dataChanged.emit(index, index)
         return True
     
@@ -187,7 +188,7 @@ class ListOfDictsModel(QAbstractTableModel, ReflectableMixin):
                 return False
             
         self.beginInsertRows(parent, row, row)
-        self.__modelData.append(self.getRowTemplate())
+        self._modelData.append(self.getRowTemplate())
         self.endInsertRows()
         return True
     
@@ -200,7 +201,7 @@ class ListOfDictsModel(QAbstractTableModel, ReflectableMixin):
                 return False
             
         self.beginRemoveRows(parentIndex, row, row)
-        self.__modelData.pop(row)
+        self._modelData.pop(row)
         self.endRemoveRows()
         
         return True
@@ -221,12 +222,12 @@ class ListOfDictsModel(QAbstractTableModel, ReflectableMixin):
             if rowTpl.has_key(key):
                 rowTpl[key] = data[key]
         
-        nextIndex = len(self.__modelData)
+        nextIndex = len(self._modelData)
         if nextIndex < 0:
             nextIndex = 0
         
         self.beginInsertRows(QModelIndex(), nextIndex, nextIndex+1)
-        self.__modelData.append(rowTpl)
+        self._modelData.append(rowTpl)
         self.endInsertRows()
     
     def getRowTemplate(self):
@@ -242,7 +243,7 @@ class ListOfDictsModel(QAbstractTableModel, ReflectableMixin):
     def setModelData(self, modelData):
         self.beginResetModel()
         
-        self.__modelData = []
+        self._modelData = []
         
         
         i = 0    
@@ -253,7 +254,7 @@ class ListOfDictsModel(QAbstractTableModel, ReflectableMixin):
                 if rowTpl.has_key(pyKey):
                     rowTpl[pyKey] = row[key]
                 
-            self.__modelData.append(rowTpl)
+            self._modelData.append(rowTpl)
             
             i += 1
             if self.__xType.maxLength is not None:
@@ -266,10 +267,10 @@ class ListOfDictsModel(QAbstractTableModel, ReflectableMixin):
     @pyqtSlot()
     def exportModelData(self, omitEmptyRows=False):
         if not omitEmptyRows:
-            return self.__modelData
+            return self._modelData
         else:
             result = []
-            for row in self.__modelData:
+            for row in self._modelData:
                 rowIsEmpty = True
                 for key in self.__xType.keys():
                     if row.has_key(key) and row[key]:
