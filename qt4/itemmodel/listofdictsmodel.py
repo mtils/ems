@@ -199,7 +199,14 @@ class ListOfDictsModel(QAbstractTableModel, ReflectableMixin):
         if self.__xType.minLength is not None:
             if self.rowCount() <= self.__xType.minLength:
                 return False
-            
+        
+        
+        try:
+            data = self._modelData[row]
+        except IndexError:
+            return False
+        
+        
         self.beginRemoveRows(parentIndex, row, row)
         self._modelData.pop(row)
         self.endRemoveRows()

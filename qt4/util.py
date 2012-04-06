@@ -82,6 +82,9 @@ def variant_to_pyobject(qvariant=None):
 
 def hassig(obj, signalName):
     if hasattr(obj.__class__, signalName):
-        if isinstance(obj.__class__.__dict__[signalName], pyqtSignal):
-            return True
+        try:
+            if isinstance(obj.__class__.__dict__[signalName], pyqtSignal):
+                return True
+        except KeyError:
+            pass 
     return False

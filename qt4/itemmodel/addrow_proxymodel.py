@@ -11,6 +11,7 @@ from ems.qt4.util import hassig
 from ems.xtype.base import NumberType #@UnresolvedImport
 
 
+
 class AddRowProxyModel(EditableProxyModel):
     
     #modelReset = pyqtSignal()
@@ -20,12 +21,36 @@ class AddRowProxyModel(EditableProxyModel):
     
     def __init__(self, parent):
         super(AddRowProxyModel, self).__init__(parent)
+        self.pseudoAddType = NumberType(int)
+        self.addPixmap = None
+        self.removePixmap = None
+    
+    def onIndexPressed(self, index):
+        if index.column() == 0:
+            if index.row() == self.rowCount() - 1:
+                self.insertRow(index.row())
+            else:
+                self.removeRow(index.row())
+    
+    def data(self, index, role=Qt.DisplayRole):
+        if index.column() == 0:
+            if role == Qt.DecorationRole:
+                if self.addPixmap is not None:
+                    if index.row() == (self.rowCount() - 1):
+                        return QVariant(self.addPixmap)
+                if self.removePixmap is not None:
+                    if index.row() < (self.rowCount() - 1):
+                        return QVariant(self.removePixmap)
+            if role == Qt.TextAlignmentRole:
+                return Qt.AlignCenter | Qt.AlignVCenter
+                
+        return EditableProxyModel.data(self, index, role)
     
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if orientation == Qt.Horizontal:
             if role == Qt.DisplayRole:
                 if section == 0:
-                    return QVariant("Aktion")
+                    return QVariant(self.trUtf8("Aktion"))
                 return self.sourceModel().headerData(section-1, orientation, role)
             
         if orientation == Qt.Vertical:
@@ -71,7 +96,7 @@ class AddRowProxyModel(EditableProxyModel):
             return Qt.ItemIsEnabled
         if index.row() == self.rowCount() - 1:
             return Qt.ItemIsEnabled
-        return self.sourceModel().flags(index)
+        return self.sourceModel().flags(self.mapToSource(index))
     
     def mapFromSource(self, sourceIndex):
         #if sourceIndex.column() == 0:
@@ -79,13 +104,11 @@ class AddRowProxyModel(EditableProxyModel):
         return self.index(sourceIndex.row(), sourceIndex.column()+1)
     
     def mapToSource(self, proxyIndex):
-#        print "mapToSource"
         if not proxyIndex.isValid():
             return QModelIndex()
         
         if proxyIndex.column() == 0:
             return QModelIndex()
-            #return self.createIndex(proxyIndex.row(), 0)
         
         return self.sourceModel().index(proxyIndex.row(), proxyIndex.column()-1)
     
@@ -94,4 +117,9 @@ class AddRowProxyModel(EditableProxyModel):
     
     def columnCount(self, parentIndex=QModelIndex()):
         return self.sourceModel().columnCount(parentIndex) + 1
+    
+    def columnType(self, column):
+        if column == 0:
+            return self.pseudoAddType
+        return EditableProxyModel.columnType(self, column)
     

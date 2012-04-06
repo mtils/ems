@@ -17,6 +17,7 @@ from ems.qt4.gui.itemdelegate.xtypedelegate import XTypeDelegate #@UnresolvedImp
 from ems.qt4.gui.itemdelegate.xtypes.unittype import UnitTypeDelegate #@UnresolvedImport
 from ems.qt4.gui.itemdelegate.xtypemapdelegate import XTypeMapDelegate #@UnresolvedImport
 from ems.qt4.itemmodel.addrow_proxymodel import AddRowProxyModel #@UnresolvedImport
+from ems.xtype.base import ListOfDictsType #@UnresolvedImport
 
 
 testData = [{'vorname':'Leo','nachname':'Tils','alter':1,'gewicht':8.9,'einkommen':850.0,'verheiratet':False},
@@ -34,6 +35,23 @@ class Importer(QObject):
     def importData(self):
         self.model.setModelData(copy.copy(testData))
         self.model.setStandardRow(1)
+    
+    def onIndexActivated(self, index):
+        print 'activated:',index.row(), index.column()
+    
+    def onIndexDoubleClicked(self, index):
+        print 'doubleClicked:',index.row(), index.column()
+    
+    def onIndexEntered(self, index):
+        print 'entered:',index.row(), index.column()
+    
+    def onIndexPressed(self, index):
+        print 'pressed:',index.row(), index.column()
+        
+    def onIndexClicked(self, index):
+        print 'clicked:',index.row(), index.column()
+    
+    
         
 app = QApplication(sys.argv)
 
@@ -43,7 +61,8 @@ dlg.setWindowTitle("List of Dicts Model")
 
 dlg.view = QTableView(dlg)
 
-model = ListOfDictsModel(dlg.view)
+
+
 
 namenType = StringType()
 namenType.minLength=1
@@ -72,17 +91,19 @@ geldType.decimalsSeparator = ','
 
 verheiratetType = BoolType()
 
+lType = ListOfDictsType()
 
-model.addKey('vorname', namenType, QString.fromUtf8('Name'))
-model.addKey('nachname', namenType, QString.fromUtf8('Familienname'))
-model.addKey('alter', alterType, QString.fromUtf8('Alter'))
-model.addKey('gewicht', gewichtType, QString.fromUtf8('Gewicht'))
-model.addKey('einkommen', geldType, QString.fromUtf8('Einkommen'))
-model.addKey('verheiratet', verheiratetType, label=QString.fromUtf8('Verheiratet'))
+lType.addKey('vorname', namenType)
+lType.addKey('nachname', namenType)
+lType.addKey('alter', alterType)
+lType.addKey('gewicht', gewichtType)
+lType.addKey('einkommen', geldType)
+lType.addKey('verheiratet', verheiratetType)
+
+model = ListOfDictsModel(lType, dlg.view)
 
 model.addRow({'vorname':'Leo','nachname':'Tils','alter':1,'gewicht':8.9,'einkommen':850.0,'verheiratet':True})
 model.addRow(vorname='Fabian',nachname='Tils',alter=29,gewicht=67.2,einkommen=2600.0,verheiratet=False)
-#model.addRow
 
 dlg.editor = ItemViewEditor(dlg.view, parent=dlg)
 
@@ -96,14 +117,24 @@ dlg.layout().addWidget(dlg.editor)
 
 
 dlg.view.setItemDelegate(XTypeMapDelegate(dlg.view))
-dlg.view.itemDelegate().setXTypeMap(dlg.view.model().xTypeMap())
-dlg.view.model().xTypeMapChanged.connect(dlg.view.itemDelegate().setXTypeMap)
+#dlg.view.itemDelegate().setXTypeMap(dlg.view.model().xTypeMap())
+#dlg.view.model().xTypeMapChanged.connect(dlg.view.itemDelegate().setXTypeMap)
 
 dlg.exportButton = QPushButton("Export", dlg)
 dlg.layout().addWidget(dlg.exportButton)
 dlg.exportButton.clicked.connect(model.exportModelData)
 
 dlg.importer = Importer(model, dlg)
+
+dlg.view.pressed.connect(dlg.addModel.onIndexPressed)
+
+#dlg.view.activated.connect(dlg.importer.onIndexActivated)
+#dlg.view.clicked.connect(dlg.importer.onIndexClicked)
+#dlg.view.doubleClicked.connect(dlg.importer.onIndexDoubleClicked)
+#dlg.view.entered.connect(dlg.importer.onIndexEntered)
+#dlg.view.pressed.connect(dlg.importer.onIndexPressed)
+
+
 dlg.importButton = QPushButton("Import", dlg)
 dlg.layout().addWidget(dlg.importButton)
 dlg.importButton.clicked.connect(dlg.importer.importData)

@@ -7,8 +7,9 @@ Created on 22.09.2011
 from PyQt4.QtCore import QModelIndex, Qt, pyqtSignal
 from PyQt4.QtGui import QAbstractProxyModel
 
+from ems.qt4.itemmodel.reflectable_mixin import ReflectableMixin #@UnresolvedImport
 
-class EditableProxyModel(QAbstractProxyModel):
+class EditableProxyModel(QAbstractProxyModel, ReflectableMixin):
     
     #modelReset = pyqtSignal()
     #layoutChanged = pyqtSignal()
@@ -24,7 +25,7 @@ class EditableProxyModel(QAbstractProxyModel):
     def setSourceModel(self, sourceModel):
         sourceModel.rowsAboutToBeInserted.connect(self.onSourceModelRowsInserted)
         sourceModel.rowsAboutToBeRemoved.connect(self.onSourceModelRowsDeleted)
-        sourceModel.dataChanged.connect(self.onDataChanged)
+        #sourceModel.dataChanged.connect(self.onDataChanged)
         sourceModel.modelReset.connect(self.modelReset)
         sourceModel.layoutChanged.connect(self.layoutChanged)
         sourceModel.headerDataChanged.connect(self.headerDataChanged)
@@ -71,3 +72,16 @@ class EditableProxyModel(QAbstractProxyModel):
         if fromIndexProxy.isValid():
             self.dataChanged.emit(fromIndexProxy,
                                   self.mapFromSource(toIndex))
+    
+    def columnType(self, column):
+        srcColumn = self.mapToSource(self.index(0, column)).column()
+        return self.sourceModel().columnType(srcColumn)
+    
+    def nameOfColumn(self, column):
+        srcColumn = self.mapToSource(self.index(0, column)).column()
+        return self.sourceModel().nameOfColumn(srcColumn)
+    
+    def columnOfName(self, name):
+        col = self.sourceModel().columnOfName(name)
+        return self.mapToSource(self.index(0, col)).column()
+    
