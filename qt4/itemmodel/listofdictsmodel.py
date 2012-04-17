@@ -261,7 +261,8 @@ class ListOfDictsModel(QAbstractTableModel, ReflectableMixin):
                 if rowTpl.has_key(pyKey):
                     rowTpl[pyKey] = row[key]
                 
-            self._modelData.append(rowTpl)
+            self._appendToModelData(rowTpl)
+            #self._modelData.append(rowTpl)
             
             i += 1
             if self.__xType.maxLength is not None:
@@ -270,6 +271,9 @@ class ListOfDictsModel(QAbstractTableModel, ReflectableMixin):
             
         
         self.endResetModel()
+    
+    def _appendToModelData(self, row):
+        self._modelData.append(row)
     
     @pyqtSlot()
     def exportModelData(self, omitEmptyRows=False):

@@ -85,3 +85,7 @@ class EditableProxyModel(QAbstractProxyModel, ReflectableMixin):
         col = self.sourceModel().columnOfName(name)
         return self.mapToSource(self.index(0, col)).column()
     
+    def childModel(self, index):
+        srcIndex = self.mapToSource(index)
+        return self.sourceModel().childModel(srcIndex)
+    
