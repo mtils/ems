@@ -15,7 +15,7 @@ class XType:
     NUMBER = 2
     STRING = 3
     BOOL = 4
-    NON_SCALAR = 5
+    COMPLEX = 5
     TEMPORAL = 6
     MIXED = 7
     
@@ -23,7 +23,7 @@ class XType:
     def __init__(self, canBeNone=None, defaultValue=None):
         if canBeNone is None:
             canBeNone = True
-        self.canBeNone = True
+        self.canBeNone = canBeNone
         self.defaultValue = defaultValue
         self.canBeEdited = True
         self.forceInteraction = False
@@ -218,21 +218,28 @@ class UnitType(NumberType):
         self._value2UnitSpace = space
         self.unit = self.unit
 
-class NonScalarType(XType):
+class DateType(XType):
+    def __init__(self):
+        XType.__init__(self)
+        self.minDate = None
+        self.maxDate = None
+        self.defaultValue = date.today()
+    
+    @property
+    def group(self):
+        return XType.TEMPORAL
+    
+    def value2String(self, value):
+        return unicode(value)
+
+
+class ComplexType(XType):
     def __init__(self, canBeNone=None, defaultValue=None):
         XType.__init__(self, canBeNone=canBeNone, defaultValue=defaultValue)
     
     @property
     def group(self):
-        return XType.NON_SCALAR
-    
-class EnumType(NonScalarType):
-    def __init__(self, canBeNone=None, defaultValue=None):
-        NonScalarType.__init__(self, canBeNone=canBeNone, defaultValue=defaultValue)
-        self.enum = ()
-    
-    def __len__(self):
-        return len(self.enum)
+        return XType.COMPLEX
 
 class OneOfAListType(XType):
     def __init__(self, canBeNone=None, defaultValue=None):
@@ -243,20 +250,14 @@ class OneOfAListType(XType):
     @property
     def group(self):
         return XType.MIXED
-    
 
-class ListOfDictsType(NonScalarType):
-    
+class NamedFieldType(ComplexType):
     def __init__(self, canBeNone=None, defaultValue=None):
-        NonScalarType.__init__(self, canBeNone=canBeNone,
+        ComplexType.__init__(self, canBeNone=canBeNone,
                                defaultValue=defaultValue)
-        self.defaultValue = []
+        self.defaultValue = {}
         self.__xTypeMap = {}
         self.__keys = []
-        self.maxLength = None
-        self.minLength = None
-        self.defaultLength = 0
-        self.defaultRow = {}
     
     def addKey(self, name, xType):
         self.__keys.append(name)
@@ -280,21 +281,39 @@ class ListOfDictsType(NonScalarType):
     
     def __len__(self):
         return len(self.__keys)
-        
-class DateType(XType):
-    def __init__(self):
-        XType.__init__(self)
-        self.minDate = None
-        self.maxDate = None
-        self.defaultValue = date.today()
-    
-    @property
-    def group(self):
-        return XType.TEMPORAL
-    
-    def value2String(self, value):
-        return unicode(value)
 
+class SequenceType(ComplexType):
+    def __init__(self, itemType, canBeNone=None, defaultValue=None):
+        ComplexType.__init__(self, canBeNone=canBeNone,
+                               defaultValue=defaultValue)
+        self.defaultValue = []
+        self.maxLength = None
+        self.minLength = None
+        self.defaultLength = 0
+        self.defaultItem = None
+        self.itemType = itemType
+
+class ListOfDictsType(NamedFieldType):
+    
+    def __init__(self, canBeNone=None, defaultValue=None):
+        NamedFieldType.__init__(self, canBeNone=canBeNone,
+                               defaultValue=defaultValue)
+        self.defaultValue = []
+        self.maxLength = None
+        self.minLength = None
+        self.defaultLength = 0
+        self.defaultRow = {}
+    
+
+class DictType(NamedFieldType):
+    pass
+
+class ObjectInstanceType(NamedFieldType):
+    def __init__(self, cls,  canBeNone=None, defaultValue=None):
+        NamedFieldType.__init__(self, canBeNone=canBeNone,
+                               defaultValue=None)
+        self.cls = cls
+        
 def native2XType(type_):
     if type_ in (int, float):
         return NumberType(type_)
@@ -303,6 +322,6 @@ def native2XType(type_):
     if type_ in (str, unicode):
         return StringType()
     if type_ in (dict, list, tuple, set):
-        return NonScalarType()
+        return ComplexType()
     if type_ in (datetime.datetime, datetime.date):
         return DateType()

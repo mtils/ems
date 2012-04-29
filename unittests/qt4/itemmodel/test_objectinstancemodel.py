@@ -6,27 +6,25 @@ Created on 04.03.2012
 '''
 import sys
 import copy
-import pprint
 
 from PyQt4.QtCore import QString, QObject, Qt, QSize
 from PyQt4.QtGui import QTableView, QApplication, QDialog, QVBoxLayout, \
     QPushButton, QTableWidget, QStyledItemDelegate, QStyle, QStyleOptionViewItemV4,\
     QDialog
 
-from ems.qt4.itemmodel.listofdictsmodel import ListOfDictsModel #@UnresolvedImport
 from ems.qt4.gui.widgets.itemview.itemview_editor import ItemViewEditor
 from ems.xtype.base import StringType, NumberType, UnitType, BoolType #@UnresolvedImport
 from ems.qt4.util import variant_to_pyobject
 from ems.xtype.base import ListOfDictsType #@UnresolvedImport
+from ems.xtype.base import DictType #@UnresolvedImport
+from ems.qt4.itemmodel.xtype.namedfieldmodel import NamedFieldModel #@UnresolvedImport
+import pprint
+from ems.xtype.base import ObjectInstanceType #@UnresolvedImport
+from ems.qt4.itemmodel.xtype.objectinstancemodel import ObjectInstanceModel #@UnresolvedImport
 from ems.qt4.gui.mapper.base import BaseMapper #@UnresolvedImport
-from ems.xtype.base import SequenceType #@UnresolvedImport
 
 
-testData = [{'vorname':'Leo','nachname':'Tils','alter':1,'gewicht':8.9,'einkommen':850.0,'verheiratet':False},
-            {'vorname':'Kristina','nachname':'Bentz','alter':31,'gewicht':68.9,'einkommen':1450.0,'verheiratet':False},
-            {'vorname':'Fabian','nachname':'Tils','alter':29,'gewicht':72.9,'einkommen':2850.0,'verheiratet':False},
-            {'vorname':'Sonja','nachname':'Bentz','alter':28,'gewicht':65.9,'einkommen':450.0,'verheiratet':True},
-            {'vorname':'Patrick','nachname':'Arnold','alter':29,'gewicht':79.6,'einkommen':3850.0,'verheiratet':False}]
+testData = {'vorname':'Leo','nachname':'Tils','alter':1,'gewicht':8.9,'einkommen':850.0,'verheiratet':False}
 
 import lib.ems.unittests.qt4.mapper.baseconfig
 
@@ -37,20 +35,17 @@ class Importer(QObject):
     
     def importData(self):
         self.model.setModelData(copy.copy(testData))
-        self.model.setStandardRow(1)
     
     def exportData(self):
-        pprint.pprint(self.model.exportModelData())
-            
+        pprint.pprint(self.model.modelData())
+        
 app = QApplication(sys.argv)
 
 dlg = QDialog()
 dlg.setLayout(QVBoxLayout(dlg))
-dlg.setWindowTitle("List of Dicts Model")
+dlg.setWindowTitle("ObjectInstance-Model")
 
 dlg.view = QTableView(dlg)
-
-
 
 namenType = StringType()
 namenType.minLength=1
@@ -76,21 +71,33 @@ geldType.value2UnitSpace = 1
 geldType.decimalsCount = 2
 geldType.thousandsSeparator = '.'
 geldType.decimalsSeparator = ','
+geldType.defaultValue = 1250.0
 
 verheiratetType = BoolType()
+verheiratetType.defaultValue = True
 
-itemType = ListOfDictsType()
-itemType.addKey('vorname', namenType)
-itemType.addKey('nachname', namenType)
-itemType.addKey('alter', alterType)
-itemType.addKey('gewicht', gewichtType)
-itemType.addKey('einkommen', geldType)
-itemType.addKey('verheiratet', verheiratetType)
-itemType.maxLength = 8
-itemType.minLength = 1
+class Person(object):
+    vorname = ""
+    nachname = ""
+    alter = 0
+    gewicht = 1.0
+    einkommen = 400.0
+    verheiratet = False
+    
+    def __repr__(self):
+        return "<Person vorname:{0} nachname:{1} alter: {2} gewicht: {3} einkommen: {4} verheiratet: {5}>".format(self.vorname, self.nachname, self.alter,
+                                  self.gewicht, self.einkommen,
+                                  self.verheiratet)
 
-listType = SequenceType(itemType)
-model = ListOfDictsModel(listType, dlg.view)
+classType = ObjectInstanceType(Person)
+classType.addKey('vorname', namenType)
+classType.addKey('nachname', namenType)
+classType.addKey('alter', alterType)
+classType.addKey('gewicht', gewichtType)
+classType.addKey('einkommen', geldType)
+classType.addKey('verheiratet', verheiratetType)
+
+model = ObjectInstanceModel(classType, dlg.view)
 
 model.setKeyLabel('vorname', QString.fromUtf8('Name'))
 model.setKeyLabel('nachname', QString.fromUtf8('Familienname'))
@@ -100,7 +107,7 @@ model.setKeyLabel('einkommen', QString.fromUtf8('Einkommen'))
 model.setKeyLabel('verheiratet', QString.fromUtf8('Verheiratet'))
 
 model.addRow({'vorname':'Leo','nachname':'Tils','alter':1,'gewicht':8.9,'einkommen':850.0,'verheiratet':True})
-model.addRow(vorname='Fabian',nachname='Tils',alter=29,gewicht=67.2,einkommen=2600.0,verheiratet=False)
+#model.addRow(vorname='Fabian',nachname='Tils',alter=29,gewicht=67.2,einkommen=2600.0,verheiratet=False)
 #model.addRow
 
 dlg.editor = ItemViewEditor(dlg.view, parent=dlg)
@@ -108,14 +115,13 @@ dlg.view.setModel(model)
 dlg.view.setMinimumSize(640, 480)
 dlg.layout().addWidget(dlg.editor)
 
-
 dlg.mapper = BaseMapper(model)
 dlg.delegate = dlg.mapper.getDelegateForItemView(dlg.view)
 dlg.view.setItemDelegate(dlg.delegate)
 
-
 dlg.exportButton = QPushButton("Export", dlg)
 dlg.layout().addWidget(dlg.exportButton)
+
 
 dlg.importer = Importer(model, dlg)
 dlg.importButton = QPushButton("Import", dlg)

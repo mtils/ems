@@ -174,7 +174,6 @@ mapper.addMapping(form.stationenInput, 'stationen')
 
 #dlg.view.setItemDelegate(XTypeMapDelegate(dlg.view))
 #dlg.view.itemDelegate().setXTypeMap(dlg.view.model().xTypeMap())
-#dlg.view.model().xTypeMapChanged.connect(dlg.view.itemDelegate().setXTypeMap)
 
 dlg.exportButton = QPushButton("Export", dlg)
 dlg.layout().addWidget(dlg.exportButton)

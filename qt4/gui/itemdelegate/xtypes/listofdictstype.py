@@ -10,7 +10,6 @@ from PyQt4.QtGui import QTableView
 from ems.xtype.base import UnitType #@UnresolvedImport
 from ems.qt4.gui.itemdelegate.xtypedelegate import XTypeDelegate #@UnresolvedImport
 from ems.qt4.util import variant_to_pyobject
-from ems.qt4.itemmodel.listofdictsmodel import ListOfDictsModel #@UnresolvedImport
 from ems.qt4.gui.itemdelegate.htmldelegate import HtmlDelegate
 
 

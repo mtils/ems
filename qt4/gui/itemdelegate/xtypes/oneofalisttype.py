@@ -6,7 +6,6 @@ Created on 22.03.2012
 from PyQt4.QtCore import QString, Qt, QAbstractListModel, QAbstractItemModel
 from PyQt4.QtGui import QComboBox
 
-from ems.xtype.base import EnumType #@UnresolvedImport
 from ems.qt4.gui.itemdelegate.xtypedelegate import XTypeDelegate #@UnresolvedImport
 from ems.qt4.util import variant_to_pyobject
 from ems.qt4.itemmodel.xtype.oneofalistmodel import OneOfAListModel #@UnresolvedImport
@@ -45,7 +44,7 @@ class OneOfAListDelegate(XTypeDelegate):
     
     def configureEditor(self, editor, xType):
         if isinstance(editor, QComboBox):
-            editor.setModel(self.model)
+            editor.setModel(self.getModel())
         
     def setEditorData(self, editor, index):
         if isinstance(editor, QComboBox):
@@ -62,7 +61,7 @@ class OneOfAListDelegate(XTypeDelegate):
     def setModelData(self, editor, model, index):
         if isinstance(editor, QComboBox):
             value = editor.itemData(editor.currentIndex(), Qt.EditRole)
-            model.setData(index,value)
+            model.setData(index, value, Qt.EditRole)
             return None
         return XTypeDelegate.setModelData(self, editor, model, index)
 
