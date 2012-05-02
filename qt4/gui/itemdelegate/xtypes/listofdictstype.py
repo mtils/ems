@@ -37,9 +37,9 @@ class ListOfDictsDelegate(XTypeDelegate):
                 for key in row:
                     pyKey2Key[unicode(key)] = key
                     
-                for pyKey in self.xType.keys():
+                for pyKey in self.xType.itemType.keys():
                     rows.append(u'<td>')
-                    rows.append(unicode(self.xType.keyType(pyKey).value2String(row[pyKey2Key[pyKey]])))
+                    rows.append(unicode(self.xType.itemType.keyType(pyKey).value2String(row[pyKey2Key[pyKey]])))
                     rows.append(u'</td>')
                 rows.append(u'</tr>')
             
@@ -63,7 +63,7 @@ class ListOfDictsDelegate(XTypeDelegate):
         pyList = variant_to_pyobject(index.data())
         
         delegate = XTypeMapDelegate(editor)
-        delegate.setXTypeMap(self.xType.xTypeMap)
+        delegate.setXTypeMap(self.xType.itemType.xTypeMap)
         editor.setItemDelegate(delegate)
 
         if isinstance(pyList, list) and len(pyList):

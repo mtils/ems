@@ -11,6 +11,7 @@ from ems.xtype.base import XType, ComplexType, SequenceType, NamedFieldType #@Un
 from ems import qt4
 from ems.qt4.util import VariantContainer, variant_to_pyobject
 from ems.qt4.itemmodel.reflectable_mixin import ReflectableMixin #@UnresolvedImport
+from ems.qt4.itemmodel.xtype.factory import getModelForXType #@UnresolvedImport
 
 
 class AbstractXtypeItemModel(QAbstractItemModel, ReflectableMixin):
@@ -69,11 +70,7 @@ class AbstractXtypeItemModel(QAbstractItemModel, ReflectableMixin):
         childHash = self._getChildModelHash(index)
         if not self._childModels.has_key(childHash):
             xType = self.columnType(index.column())
-            if not isinstance(xType, ListOfDictsType):
-                raise TypeError("The XType of a childModel column " + \
-                                "has to be ListOfDictType not {0}".format(xType))
-            
-            self._childModels[childHash] = ListOfDictsModel(xType, self)
+            self._childModels[childHash] = getModelForXType(xType, self)
             colName = unicode(self.nameOfColumn(index.column()))
             keyPrefix = colName + '.'
             for key in self._keyLabels:
