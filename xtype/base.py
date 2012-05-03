@@ -293,18 +293,6 @@ class SequenceType(ComplexType):
         self.defaultItem = None
         self.itemType = itemType
 
-class ListOfDictsType(NamedFieldType):
-    
-    def __init__(self, canBeNone=None, defaultValue=None):
-        NamedFieldType.__init__(self, canBeNone=canBeNone,
-                               defaultValue=defaultValue)
-        self.defaultValue = []
-        self.maxLength = None
-        self.minLength = None
-        self.defaultLength = 0
-        self.defaultRow = {}
-    
-
 class DictType(NamedFieldType):
     pass
 

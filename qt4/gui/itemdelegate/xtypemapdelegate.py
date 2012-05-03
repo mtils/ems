@@ -9,7 +9,6 @@ from PyQt4.QtCore import Qt, pyqtSlot
 from ems import qt4
 
 from ems.xtype.base import StringType, NumberType, UnitType, BoolType #@UnresolvedImport\ 
-from ems.xtype.base import DateType, ListOfDictsType #@UnresolvedImport
 
 from ems.qt4.gui.mapper.base import BaseMapper #@UnresolvedImport
 from ems.qt4.gui.itemdelegate.xtypedelegate import XTypeDelegate #@UnresolvedImport

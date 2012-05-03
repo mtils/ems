@@ -13,11 +13,11 @@ from PyQt4.QtGui import QTableView, QApplication, QDialog, QVBoxLayout, QPushBut
 from ems.qt4.itemmodel.listofdictsmodel import ListOfDictsModel #@UnresolvedImport
 from ems.qt4.gui.widgets.itemview.itemview_editor import ItemViewEditor
 from ems.xtype.base import StringType, NumberType, UnitType, BoolType #@UnresolvedImport
-from ems.qt4.gui.itemdelegate.xtypedelegate import XTypeDelegate #@UnresolvedImport
-from ems.qt4.gui.itemdelegate.xtypes.unittype import UnitTypeDelegate #@UnresolvedImport
-from ems.qt4.gui.itemdelegate.xtypemapdelegate import XTypeMapDelegate #@UnresolvedImport
 from ems.qt4.itemmodel.addrow_proxymodel import AddRowProxyModel #@UnresolvedImport
-from ems.xtype.base import ListOfDictsType #@UnresolvedImport
+from ems.xtype.base import DictType, SequenceType #@UnresolvedImport
+from ems.qt4.gui.mapper.base import BaseMapper #@UnresolvedImport
+
+import lib.ems.unittests.qt4.mapper.baseconfig
 
 
 testData = [{'vorname':'Leo','nachname':'Tils','alter':1,'gewicht':8.9,'einkommen':850.0,'verheiratet':False},
@@ -61,9 +61,6 @@ dlg.setWindowTitle("List of Dicts Model")
 
 dlg.view = QTableView(dlg)
 
-
-
-
 namenType = StringType()
 namenType.minLength=1
 namenType.maxLength=12
@@ -91,7 +88,7 @@ geldType.decimalsSeparator = ','
 
 verheiratetType = BoolType()
 
-lType = ListOfDictsType()
+lType = DictType()
 
 lType.addKey('vorname', namenType)
 lType.addKey('nachname', namenType)
@@ -100,7 +97,9 @@ lType.addKey('gewicht', gewichtType)
 lType.addKey('einkommen', geldType)
 lType.addKey('verheiratet', verheiratetType)
 
-model = ListOfDictsModel(lType, dlg.view)
+lsType = SequenceType(lType)
+
+model = ListOfDictsModel(lsType, dlg.view)
 
 model.addRow({'vorname':'Leo','nachname':'Tils','alter':1,'gewicht':8.9,'einkommen':850.0,'verheiratet':True})
 model.addRow(vorname='Fabian',nachname='Tils',alter=29,gewicht=67.2,einkommen=2600.0,verheiratet=False)
@@ -115,8 +114,8 @@ dlg.view.setMinimumSize(640, 480)
 dlg.layout().addWidget(dlg.editor)
 
 
-
-dlg.view.setItemDelegate(XTypeMapDelegate(dlg.view))
+mapper = BaseMapper(dlg.sourceModel)
+dlg.view.setItemDelegate(mapper.getDelegateForItemView(dlg.view))
 #dlg.view.itemDelegate().setXTypeMap(dlg.view.model().xTypeMap())
 
 dlg.exportButton = QPushButton("Export", dlg)

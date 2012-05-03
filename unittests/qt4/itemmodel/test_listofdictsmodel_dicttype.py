@@ -17,9 +17,8 @@ from ems.qt4.itemmodel.listofdictsmodel import ListOfDictsModel #@UnresolvedImpo
 from ems.qt4.gui.widgets.itemview.itemview_editor import ItemViewEditor
 from ems.xtype.base import StringType, NumberType, UnitType, BoolType #@UnresolvedImport
 from ems.qt4.util import variant_to_pyobject
-from ems.xtype.base import ListOfDictsType #@UnresolvedImport
 from ems.qt4.gui.mapper.base import BaseMapper #@UnresolvedImport
-from ems.xtype.base import SequenceType #@UnresolvedImport
+from ems.xtype.base import SequenceType, DictType #@UnresolvedImport
 
 
 testData = [{'vorname':'Leo','nachname':'Tils','alter':1,'gewicht':8.9,'einkommen':850.0,'verheiratet':False},
@@ -79,7 +78,7 @@ geldType.decimalsSeparator = ','
 
 verheiratetType = BoolType()
 
-itemType = ListOfDictsType()
+itemType = DictType()
 itemType.addKey('vorname', namenType)
 itemType.addKey('nachname', namenType)
 itemType.addKey('alter', alterType)

@@ -12,8 +12,8 @@ def getModelForXType(xType, parent=None):
             return ListOfDictsModel(xType, parent)
     
     if isinstance(xType, DictType):
-        from ems.qt4.itemmodel.xtype.namedfieldmodel import NamedFieldModel #@UnresolvedImport
-        return NamedFieldModel(xType, parent)
+        from ems.qt4.itemmodel.xtype.dictmodel import DictModel #@UnresolvedImport
+        return DictModel(xType, parent)
     
     if isinstance(xType, ObjectInstanceType):
         from ems.qt4.itemmodel.xtype.objectinstancemodel import ObjectInstanceModel #@UnresolvedImport

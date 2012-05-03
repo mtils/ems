@@ -6,7 +6,7 @@ Created on 21.03.2012
 from PyQt4.QtGui import QTableView
 
 from ems.qt4.gui.mapper.base import BaseStrategy #@UnresolvedImport
-from ems.xtype.base import DictType, SequenceType, ListOfDictsType #@UnresolvedImport
+from ems.xtype.base import DictType, SequenceType #@UnresolvedImport
 from ems.qt4.gui.itemdelegate.xtypes.listofdictstype import ListOfDictsDelegate #@UnresolvedImport
 
 class ListOfDictsStrategy(BaseStrategy):
@@ -14,9 +14,6 @@ class ListOfDictsStrategy(BaseStrategy):
     def match(self, param):
         if isinstance(param, SequenceType) and isinstance(param.itemType,
                                                           DictType):
-            return True
-        
-        if isinstance(param, ListOfDictsType):
             return True
         
         return False

@@ -16,12 +16,8 @@ from PyQt4.QtGui import QTableView, QApplication, QDialog, QVBoxLayout, \
 from ems.qt4.itemmodel.listofdictsmodel import ListOfDictsModel #@UnresolvedImport
 from ems.qt4.gui.widgets.itemview.itemview_editor import ItemViewEditor
 from ems.xtype.base import StringType, NumberType, UnitType, BoolType #@UnresolvedImport
-from ems.qt4.gui.itemdelegate.xtypedelegate import XTypeDelegate #@UnresolvedImport
-from ems.qt4.gui.itemdelegate.xtypes.unittype import UnitTypeDelegate #@UnresolvedImport
-from ems.qt4.gui.itemdelegate.xtypemapdelegate import XTypeMapDelegate #@UnresolvedImport
-from ems.xtype.base import ListOfDictsType #@UnresolvedImport
+from ems.xtype.base import DictType, SequenceType #@UnresolvedImport
 from ems.qt4.gui.mapper.base import BaseMapper, MapperDefaults #@UnresolvedImport
-from ems.xtype.base import native2XType #@UnresolvedImport
 import datetime
 
 from ems.qt4.gui.mapper.strategies.string_strategy import StringStrategy #@UnresolvedImport
@@ -29,7 +25,6 @@ from ems.qt4.gui.mapper.strategies.bool_strategy import BoolStrategy #@Unresolve
 from ems.qt4.gui.mapper.strategies.number_strategy import NumberStrategy #@UnresolvedImport
 from ems.xtype.base import DateType #@UnresolvedImport
 from ems.qt4.gui.mapper.strategies.date_strategy import DateStrategy #@UnresolvedImport
-from ems.qt4.gui.mapper.strategies.listofdicts_strategy import ListOfDictsStrategy #@UnresolvedImport
 from pprint import pprint
 
 testData = [{'vorname':'Leo','nachname':'Tils','alter':1,'gewicht':8.9,'einkommen':850.0,'verheiratet':False},
@@ -108,9 +103,8 @@ birthdayType.maxDate = datetime.date.today()
 
 registriertType = BoolType()
 
-personType = ListOfDictsType()
+personType = DictType()
 
-model = ListOfDictsModel(personType, dlg.view)
 
 personType.addKey('vorname', namenType)
 personType.addKey('nachname', namenType)
@@ -120,6 +114,11 @@ personType.addKey('einkommen', geldType)
 personType.addKey('verheiratet', verheiratetType)
 personType.addKey('geburtstag', birthdayType)
 personType.addKey('registriert', registriertType)
+
+personenType = SequenceType(personType)
+
+model = ListOfDictsModel(personenType, dlg.view)
+
 
 model.setKeyLabel('vorname', QString.fromUtf8('Name'))
 model.setKeyLabel('nachname', QString.fromUtf8('Familienname'))

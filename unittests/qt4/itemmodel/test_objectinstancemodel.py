@@ -14,10 +14,7 @@ from PyQt4.QtGui import QTableView, QApplication, QDialog, QVBoxLayout, \
 
 from ems.qt4.gui.widgets.itemview.itemview_editor import ItemViewEditor
 from ems.xtype.base import StringType, NumberType, UnitType, BoolType #@UnresolvedImport
-from ems.qt4.util import variant_to_pyobject
-from ems.xtype.base import ListOfDictsType #@UnresolvedImport
-from ems.xtype.base import DictType #@UnresolvedImport
-from ems.qt4.itemmodel.xtype.namedfieldmodel import NamedFieldModel #@UnresolvedImport
+
 import pprint
 from ems.xtype.base import ObjectInstanceType #@UnresolvedImport
 from ems.qt4.itemmodel.xtype.objectinstancemodel import ObjectInstanceModel #@UnresolvedImport

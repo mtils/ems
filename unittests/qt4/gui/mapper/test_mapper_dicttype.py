@@ -19,7 +19,7 @@ from ems.xtype.base import StringType, NumberType, UnitType, BoolType #@Unresolv
 from ems.qt4.gui.itemdelegate.xtypedelegate import XTypeDelegate #@UnresolvedImport
 from ems.qt4.gui.itemdelegate.xtypes.unittype import UnitTypeDelegate #@UnresolvedImport
 from ems.qt4.gui.itemdelegate.xtypemapdelegate import XTypeMapDelegate #@UnresolvedImport
-from ems.xtype.base import ListOfDictsType #@UnresolvedImport
+from ems.xtype.base import DictType, SequenceType #@UnresolvedImport
 from ems.qt4.gui.mapper.base import BaseMapper, MapperDefaults #@UnresolvedImport
 from ems.xtype.base import native2XType #@UnresolvedImport
 import datetime
@@ -94,21 +94,24 @@ stationDatumType.maxDate = datetime.date.today()
 stationTextType = StringType()
 stationTextType.maxLength = 64
 
-stationenType = ListOfDictsType()
-stationenType.addKey('datum',stationDatumType)
-stationenType.addKey('text',stationTextType)
+stationType = DictType()
+stationType.addKey('datum',stationDatumType)
+stationType.addKey('text',stationTextType)
+stationenType = SequenceType(stationType)
 #stationenType.defaultLength = 3
 stationenType.defaultValue = [{'datum':datetime.date(2011,03,05),'text':'Geburt'},
                               {'datum':datetime.date(2012,02,14),'text':'Laufen'},
                               {'datum':datetime.date.today(),'text':'Fabians Geburtstag'}]
-personType = ListOfDictsType()
-
-model = ListOfDictsModel(personType, dlg.view)
-
+personType = DictType()
 personType.addKey('vorname', namenType)
 personType.addKey('alter', alterType)
 personType.addKey('registriert', registriertType)
 personType.addKey('stationen', stationenType)
+
+personenType = SequenceType(personType)
+
+model = ListOfDictsModel(personenType, dlg.view)
+
 
 model.setKeyLabel('vorname', QString.fromUtf8('Name'))
 model.setKeyLabel('alter', QString.fromUtf8('Alter'))

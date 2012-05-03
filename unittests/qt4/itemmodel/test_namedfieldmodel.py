@@ -14,12 +14,8 @@ from PyQt4.QtGui import QTableView, QApplication, QDialog, QVBoxLayout, \
 
 from ems.qt4.gui.widgets.itemview.itemview_editor import ItemViewEditor
 from ems.xtype.base import StringType, NumberType, UnitType, BoolType #@UnresolvedImport
-from ems.qt4.gui.itemdelegate.xtypedelegate import XTypeDelegate #@UnresolvedImport
-from ems.qt4.gui.itemdelegate.xtypes.unittype import UnitTypeDelegate #@UnresolvedImport
-from ems.qt4.util import variant_to_pyobject
-from ems.xtype.base import ListOfDictsType #@UnresolvedImport
 from ems.xtype.base import DictType #@UnresolvedImport
-from ems.qt4.itemmodel.xtype.namedfieldmodel import NamedFieldModel #@UnresolvedImport
+from ems.qt4.itemmodel.xtype.dictmodel import DictModel #@UnresolvedImport
 from ems.qt4.gui.mapper.base import BaseMapper #@UnresolvedImport
 
 import pprint
@@ -84,7 +80,7 @@ dictType.addKey('gewicht', gewichtType)
 dictType.addKey('einkommen', geldType)
 dictType.addKey('verheiratet', verheiratetType)
 
-model = NamedFieldModel(dictType, dlg.view)
+model = DictModel(dictType, dlg.view)
 
 model.setKeyLabel('vorname', QString.fromUtf8('Name'))
 model.setKeyLabel('nachname', QString.fromUtf8('Familienname'))

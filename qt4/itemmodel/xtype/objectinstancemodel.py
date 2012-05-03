@@ -3,17 +3,7 @@ Created on 26.04.2012
 
 @author: michi
 '''
-from PyQt4.QtCore import QAbstractTableModel, QModelIndex, Qt, QVariant, \
-    pyqtSignal, pyqtSlot
-from PyQt4.QtGui import QColor
-
-from ems import qt4
-from ems.qt4.util import variant_to_pyobject, VariantContainer
-from ems.xtype.base import XType #@UnresolvedImport
-from ems.qt4.itemmodel.reflectable_mixin import ReflectableMixin #@UnresolvedImport
-from ems.xtype.base import ListOfDictsType #@UnresolvedImport
-from namedfieldmodel import NamedFieldModel #@UnresolvedImport
-from copy import copy
+from PyQt4.QtCore import QModelIndex, pyqtSlot
 
 from ems.qt4.itemmodel.xtype.base import SingleRowObjectModel #@UnresolvedImport
 #from pprint import pprint
