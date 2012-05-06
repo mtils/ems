@@ -127,8 +127,13 @@ class AbstractXtypeItemModel(QAbstractItemModel, ReflectableMixin):
     
     
     def setData(self, index, value, role=Qt.EditRole):
+        if not index.isValid() or \
+           not (0 <= index.row() < self.rowCount()):
+            return False
+        
         keyName = self.nameOfColumn(index.column())
         pyValue = variant_to_pyobject(value)
+        
         if pyValue == self._pyData(index.row(), keyName, role):
             return False
         result = self._setPyData(index.row(), keyName, pyValue, role)
@@ -211,7 +216,10 @@ class SingleRowModel(AbstractXtypeItemModel):
         return True
     
     def modelData(self):
-        return self._modelData[0]
+        try:
+            return self._modelData[0]
+        except IndexError:
+            return None
     
     def setModelData(self, modelData):
         self.beginResetModel()
@@ -342,6 +350,8 @@ class ObjectGetSetInterface(object):
         return True
     
     def getRowTemplate(self, values=None):
+        if isinstance(values, self._rowType().cls):
+            return values
         template = self._rowType().cls.__new__(self._rowType().cls)
         for key in self._rowType().keys():
             xType = self._rowType().keyType(key)

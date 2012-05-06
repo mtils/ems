@@ -34,16 +34,10 @@ class ObjectInstanceDelegate(XTypeDelegate):
         return widget
     
     def setEditorData(self, editor, index):
-        from ems.qt4.gui.itemdelegate.xtypemapdelegate import XTypeMapDelegate #@UnresolvedImport
         model = index.model().childModel(index)
-        pyList = variant_to_pyobject(index.data())
-        
-        #delegate = XTypeMapDelegate(editor)
-        #delegate.setXTypeMap(self.xType.itemType.xTypeMap)
-        #editor.setItemDelegate(delegate)
-
-        if isinstance(pyList, list) and len(pyList):
-            model.setModelData(pyList)
+        pyObject = variant_to_pyobject(index.data())
+        if isinstance(pyObject, model.xType.cls):
+            model.setModelData(pyObject)
         editor.setModel(model)
     
     def setModelData(self, editor, model, index):

@@ -12,6 +12,9 @@ def friendly_name(classProperty):
         if hasattr(classProperty.class_,'__ormDecorator__'):
             deco = classProperty.class_.__ormDecorator__()
             return deco.getPropertyFriendlyName(classProperty.key)
+    elif hasattr(classProperty, '__ormDecorator__'):
+        return classProperty.__ormDecorator__().\
+            getReprasentiveString(classProperty)
 
 class OrmDecorator(object):
     def __init__(self, cls):
