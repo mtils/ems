@@ -328,6 +328,9 @@ class DictGetSetInterface(object):
     
     def getRowTemplate(self, values=None):
         template = {}
+#        if self._rowType().defaultValue:
+#            #template = self._rowType().defaultValue
+#            print self._rowType().defaultValue
         for key in self._rowType().keys():
             xType = self._rowType().keyType(key)
             if isinstance(values, dict) and values.has_key(key):
