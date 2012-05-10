@@ -18,19 +18,33 @@ class AddRowProxyModel(EditableProxyModel):
     #layoutChanged = pyqtSignal()
     #headerDataChanged = pyqtSignal(Qt.Orientation, int, int)
     xTypeMapChanged = pyqtSignal(dict)
+    rowInsertionRequested = pyqtSignal(int, QModelIndex)
+    rowRemovalRequested = pyqtSignal(int, QModelIndex)
     
-    def __init__(self, parent):
+    def __init__(self, parent, connectModificationSignals=True):
         super(AddRowProxyModel, self).__init__(parent)
         self.pseudoAddType = NumberType(int)
         self.addPixmap = None
         self.removePixmap = None
+        if connectModificationSignals:
+            self.connectModificationSingals()
+    
+    def connectModificationSingals(self):
+        self.rowInsertionRequested.connect(self.insertRow)
+        self.rowRemovalRequested.connect(self.removeRow)
+    
+    def disconnectModificationSignals(self):
+        self.rowInsertionRequested.disconnect(self.insertRow)
+        self.rowRemovalRequested.disconnect(self.removeRow)
     
     def onIndexPressed(self, index):
         if index.column() == 0:
             if index.row() == self.rowCount() - 1:
-                self.insertRow(index.row())
+                self.rowInsertionRequested.emit(index.row(), index.parent())
+                #self.insertRow(index.row(), index.parent())
             else:
-                self.removeRow(index.row())
+                self.rowRemovalRequested.emit(index.row(), index.parent())
+                #self.removeRow(index.row(), index.parent())
     
     def data(self, index, role=Qt.DisplayRole):
         if index.column() == 0:

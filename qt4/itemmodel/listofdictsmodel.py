@@ -32,8 +32,6 @@ class ListOfDictsModel(MultipleRowDictModel):
         if args:
             data = args[0]
             
-        print data
-        
         rowTpl = self.getRowTemplate(data)
         
         nextIndex = len(self._modelData)
