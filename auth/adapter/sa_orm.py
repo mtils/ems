@@ -3,7 +3,6 @@ Created on 23.09.2011
 
 @author: michi
 '''
-import getpass
 from ems.auth import AuthenticationAdapter, AuthenticatedUser,AuthGroup #@UnresolvedImport
 
 class SAOrmAuthGroup(AuthGroup):
@@ -98,9 +97,8 @@ class SAOrmAuthAdapter(AuthenticationAdapter):
         return self._propertyMap[name]
         
     def __getUserFromDB(self, **kwargs):
-        if kwargs.has_key('useEnvironmentUser') and kwargs['useEnvironmentUser'] == True:
-            envUserName = getpass.getuser()
-            filterByArgs = {self.getPropertyName(self.USER_NAME):envUserName}
+        if kwargs.has_key('skipPasswordCheck') and kwargs['skipPasswordCheck'] == True:
+            filterByArgs = {self.getPropertyName(self.USER_NAME):kwargs['username']}
         else:
             if not kwargs.has_key('username') or not kwargs.has_key('password'):
                 raise TypeError('SAOrmAuthAdapter needs username and password param')

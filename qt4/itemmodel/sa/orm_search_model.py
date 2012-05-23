@@ -518,8 +518,10 @@ class SAOrmSearchModel(QAbstractTableModel):
         return True
     
     def getObject(self, row):
+        self.perform()
         if self._objectCache.has_key(row):
             return self._objectCache[row]
+        
     
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if role == Qt.TextAlignmentRole:

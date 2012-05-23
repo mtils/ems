@@ -52,6 +52,8 @@ class GenericDelegate(QStyledItemDelegate):
 
 
     def setEditorData(self, editor, index):
+        if not index.isValid():
+            return
         delegate = self._getDelegate(index)
         if delegate is not None:
             return delegate.setEditorData(editor, index)
@@ -60,6 +62,8 @@ class GenericDelegate(QStyledItemDelegate):
 
 
     def setModelData(self, editor, model, index):
+        if not index.isValid():
+            return
         delegate = self._getDelegate(index)
         if delegate is not None:
             return delegate.setModelData(editor, model, index)

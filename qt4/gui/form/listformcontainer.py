@@ -83,7 +83,8 @@ class ListFormContainer(QWidget):
             page = self.pagesWidget.widget(idx)
             if hasattr(page, 'accept') and callable(page.accept):
                 page.accept()
-        self.reject()
+        self.aboutToClose.emit()
+        self.close()
     
     @pyqtSlot()
     def reject(self):
