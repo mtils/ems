@@ -8,18 +8,32 @@ from PyQt4.QtCore import QSize, Qt
 from PyQt4.QtGui import QStyledItemDelegate, QApplication, QStyle, \
     QStyleOptionButton, QIcon
 from ems.qt4.util import variant_to_pyobject
+from ems.qt4.itemmodel.addrow_proxymodel import AddRowProxyModel #@UnresolvedImport
 
 class AddRowDelegate(QStyledItemDelegate):
     
     def __init__(self, parent=None):
         QStyledItemDelegate.__init__(self, parent)
+        self.addIcon = None
+        self.removeIcon = None
+        self.addText = None
+        self.removeText = None
         
     def paint(self, painter, option, index):
         options = QStyleOptionButton()
         options.rect = option.rect
         options.state = QStyle.State_Enabled
-        pixmap = variant_to_pyobject(index.data(Qt.DecorationRole))
-        options.icon = QIcon(pixmap)
+        if self.addIcon and self.removeIcon:
+            action = variant_to_pyobject(index.data(Qt.UserRole))
+            if action == AddRowProxyModel.ADD:
+                options.icon = self.addIcon
+            if action == AddRowProxyModel.REMOVE:
+                options.icon = self.removeIcon
+        if self.addText is not None and self.removeText is not None:
+            if action == AddRowProxyModel.ADD:
+                options.text = self.addText
+            if action == AddRowProxyModel.REMOVE:
+                options.text = self.removeText 
         
         QApplication.style().drawControl(QStyle.CE_PushButton, options, painter)
     

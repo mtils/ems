@@ -21,6 +21,9 @@ class AddRowProxyModel(EditableProxyModel):
     rowInsertionRequested = pyqtSignal(int, QModelIndex)
     rowRemovalRequested = pyqtSignal(int, QModelIndex)
     
+    ADD = 1
+    REMOVE = 2
+    
     def __init__(self, parent, connectModificationSignals=True):
         super(AddRowProxyModel, self).__init__(parent)
         self.pseudoAddType = NumberType(int)
@@ -55,6 +58,12 @@ class AddRowProxyModel(EditableProxyModel):
                 if self.removePixmap is not None:
                     if index.row() < (self.rowCount() - 1):
                         return QVariant(self.removePixmap)
+            if role == Qt.UserRole:
+                if index.row() == (self.rowCount() - 1):
+                    return QVariant(self.ADD)
+                if index.row() < (self.rowCount() - 1):
+                    return QVariant(self.REMOVE)
+                
             if role == Qt.TextAlignmentRole:
                 return Qt.AlignCenter | Qt.AlignVCenter
                 
