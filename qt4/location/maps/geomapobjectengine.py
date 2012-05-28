@@ -16,6 +16,7 @@ from ems.qt4.location.projwrapper import \
 ProjCoordinateSystem, ProjCoordinate, ProjPolygon #@UnresolvedImport
 from geomaprouteobject import GeoMapRouteObject #@UnresolvedImport
 from geomapgroupobject import GeoMapGroupObject #@UnresolvedImport
+import logging
 
 class GeoMapObjectEngine(QObject):
     '''
@@ -908,13 +909,13 @@ class GeoMapObjectEngine(QObject):
         
         
         needsPixelUpdate = False
-        #try:
-        for item in self.latLonItemsRev[obj]:
-            if item.boundingRect().intersects(view):
-                needsPixelUpdate = True
-                break
-#        except KeyError:
-#            pass
+        try:
+            for item in self.latLonItemsRev[obj]:
+                if item.boundingRect().intersects(view):
+                    needsPixelUpdate = True
+                    break
+        except KeyError, e:
+            logging.warn(str(e))
         
         if needsPixelUpdate:
             self.objectsForPixelUpdate.append(obj)

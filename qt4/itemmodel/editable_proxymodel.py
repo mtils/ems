@@ -25,7 +25,7 @@ class EditableProxyModel(QAbstractProxyModel, ReflectableMixin):
     def setSourceModel(self, sourceModel):
         sourceModel.rowsAboutToBeInserted.connect(self.onSourceModelRowsInserted)
         sourceModel.rowsAboutToBeRemoved.connect(self.onSourceModelRowsDeleted)
-        #sourceModel.dataChanged.connect(self.onDataChanged)
+        sourceModel.dataChanged.connect(self.onDataChanged)
         sourceModel.modelReset.connect(self.modelReset)
         sourceModel.layoutChanged.connect(self.layoutChanged)
         sourceModel.headerDataChanged.connect(self.headerDataChanged)
@@ -68,10 +68,8 @@ class EditableProxyModel(QAbstractProxyModel, ReflectableMixin):
         return QAbstractProxyModel.setData(self, index, value, role)
     
     def onDataChanged(self, fromIndex, toIndex):
-        fromIndexProxy = self.mapFromSource(fromIndex)
-        if fromIndexProxy.isValid():
-            self.dataChanged.emit(fromIndexProxy,
-                                  self.mapFromSource(toIndex))
+        self.dataChanged.emit(self.mapFromSource(fromIndex),
+                              self.mapFromSource(toIndex))
     
     def columnType(self, column):
         srcColumn = self.mapToSource(self.index(0, column)).column()
