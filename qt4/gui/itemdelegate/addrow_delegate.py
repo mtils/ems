@@ -24,7 +24,6 @@ class AddRowDelegate(QStyledItemDelegate):
         options.rect = option.rect
         options.state = QStyle.State_Enabled
         if self.addIcon and self.removeIcon:
-            print self.addIcon
             action = variant_to_pyobject(index.data(Qt.UserRole))
             if action == AddRowProxyModel.ADD:
                 options.icon = self.addIcon
