@@ -24,11 +24,14 @@ class AddRowDelegate(QStyledItemDelegate):
         options.rect = option.rect
         options.state = QStyle.State_Enabled
         if self.addIcon and self.removeIcon:
+            print self.addIcon
             action = variant_to_pyobject(index.data(Qt.UserRole))
             if action == AddRowProxyModel.ADD:
                 options.icon = self.addIcon
             if action == AddRowProxyModel.REMOVE:
                 options.icon = self.removeIcon
+            options.text = ""
+            options.features = QStyleOptionButton.DefaultButton
         if self.addText is not None and self.removeText is not None:
             if action == AddRowProxyModel.ADD:
                 options.text = self.addText
@@ -36,6 +39,9 @@ class AddRowDelegate(QStyledItemDelegate):
                 options.text = self.removeText 
         
         QApplication.style().drawControl(QStyle.CE_PushButton, options, painter)
+        QApplication.style().drawItemPixmap(painter, options.rect,
+                                            Qt.AlignCenter | Qt.AlignVCenter,
+                                            options.icon.pixmap(48,48))
     
     def sizeHint_(self, option, index):
 #        options = QStyleOptionViewItemV4(option)
