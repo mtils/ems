@@ -13,15 +13,15 @@ class ListFormContainer(QWidget):
     aboutToClose = pyqtSignal()
     def __init__(self, parent=None, **kwargs):
         super(ListFormContainer, self).__init__(parent)
-        self._iconSize = 64
+        self._iconSize = None
         self._processKwArgs(kwargs)
         self._kwargs = kwargs
         #init icon view on right
         self.contentsWidget = QListWidget()
         self.contentsWidget.setViewMode(QListView.IconMode)
-        self.contentsWidget.setIconSize(QSize(self._iconSize, self._iconSize))
+        self.setIconSize(QSize(64,64))
         self.contentsWidget.setMovement(QListView.Static)
-        self.contentsWidget.setFixedWidth(2 * self._iconSize)
+        
         self.contentsWidget.setFlow(QListView.TopToBottom)
         self.contentsWidget.setUniformItemSizes(True)
         self.contentsWidget.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -39,6 +39,14 @@ class ListFormContainer(QWidget):
         self.setLayout(mainLayout)
         
         self.contentsWidget.currentItemChanged.connect(self.changePage)
+    
+    def setIconSize(self, size):
+        if self._iconSize != size:
+            self._iconSize = size
+            self.contentsWidget.setFixedWidth(2 * self._iconSize.width())
+            self.contentsWidget.setIconSize(self._iconSize)
+            self.contentsWidget.setGridSize(QSize(self.contentsWidget.width(),
+                                                  self._iconSize.width()+20))
     
     def _processKwArgs(self, args):
         if args.has_key('windowTitle'):
@@ -75,7 +83,7 @@ class ListFormContainer(QWidget):
         itemWidth = self.contentsWidget.contentsRect().width()
         fm = QFontMetricsF(item.font())
         itemHeight = fm.boundingRect("9").height() + 4
-        item.setSizeHint(QSize(itemWidth,self._iconSize + itemHeight))
+        item.setSizeHint(QSize(itemWidth,self._iconSize.height() + itemHeight))
     
     @pyqtSlot()
     def accept(self):
