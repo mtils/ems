@@ -37,7 +37,7 @@ class AddRowDelegate(QStyledItemDelegate):
             if action == AddRowProxyModel.REMOVE:
                 options.text = self.removeText 
         
-        QApplication.style().drawControl(QStyle.CE_PushButton, options, painter)
+        QApplication.style().drawControl(QStyle.CE_PushButtonBevel, options, painter)
         QApplication.style().drawItemPixmap(painter, options.rect,
                                             Qt.AlignCenter | Qt.AlignVCenter,
                                             options.icon.pixmap(48,48))
