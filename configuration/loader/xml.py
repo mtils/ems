@@ -164,4 +164,7 @@ class Xml(Base):
                 self.__addEntries(profilePart, profile)
             tree = ET.ElementTree(root)
             tree.write(fileName, 'utf-8')
-        pass
+        else:
+            self.__addEntries(root, self.configObj)
+            tree = ET.ElementTree(root)
+            tree.write(fileName, 'utf-8')

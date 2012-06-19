@@ -80,6 +80,9 @@ class Config(object):
                         
             return self.__calculatedDefaultProfile
         return self.__defaultProfile
+    
+    def clear(self):
+        self.__profiles = OrderedDict()
 
     def getProfiles(self):
         if self.__autoload:
@@ -118,6 +121,7 @@ class Config(object):
     def __setitem__(self,key,val):
         names = self.__getProfileAndVarName(key)
 #        print self.__profiles
+#        print names
         self.__profiles[names[0]][names[1]] = val
         if not self._loadInProgress:
             self.notifyPlugins('entryChanged', (names[0],names[1],val))
