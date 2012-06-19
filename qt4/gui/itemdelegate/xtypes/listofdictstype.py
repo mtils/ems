@@ -22,12 +22,15 @@ class ListOfDictsDelegate(XTypeDelegate):
     
     def paint(self, painter, option, index):
         value = variant_to_pyobject(index.data())
-        string = self.getString(value)
+        string = self.getString(value, option)
         option.text = QString.fromUtf8(string)
         self.htmlDelegate.paint(painter, option, index, option.text)
         
-    def getString(self, value):
-        rows = [u'<table>']
+    def getString(self, value, styleOption=None):
+        if styleOption is None:
+            rows = [u'<table>']
+        else:
+            rows = [u'<table style="color:{0}">'.format(styleOption.palette.text().color().name())]
         if isinstance(value, list):
             pyKey2Key = {}
             for row in value:
