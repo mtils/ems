@@ -38,6 +38,7 @@ class MapperItemViewDelegate(GenericDelegate):
             model = index.model()
             if isinstance(model, ReflectableMixin):
                 type_ = model.columnType(index.column())
+                #print "_getDelegate({0})".format(type_)
             self._columnDelegates[col] = self._mapper.getDelegateForItem(type_)
         return self._columnDelegates[col]
     

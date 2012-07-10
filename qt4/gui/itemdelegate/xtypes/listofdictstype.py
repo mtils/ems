@@ -11,6 +11,8 @@ from ems.xtype.base import UnitType #@UnresolvedImport
 from ems.qt4.gui.itemdelegate.xtypedelegate import XTypeDelegate #@UnresolvedImport
 from ems.qt4.util import variant_to_pyobject
 from ems.qt4.gui.itemdelegate.htmldelegate import HtmlDelegate
+from ems.qt4.itemmodel.addrow_proxymodel import AddRowProxyModel #@UnresolvedImport
+from ems.qt4.gui.mapper.base import BaseMapper
 
 
 class ListOfDictsDelegate(XTypeDelegate):
@@ -63,15 +65,26 @@ class ListOfDictsDelegate(XTypeDelegate):
     def setEditorData(self, editor, index):
         from ems.qt4.gui.itemdelegate.xtypemapdelegate import XTypeMapDelegate #@UnresolvedImport
         model = index.model().childModel(index)
+        #print "setEditorData {0}".format(model)
         pyList = variant_to_pyobject(index.data())
         
-        delegate = XTypeMapDelegate(editor)
-        delegate.setXTypeMap(self.xType.itemType.xTypeMap)
-        editor.setItemDelegate(delegate)
+        editorModel = AddRowProxyModel(model)
+        editorModel.setSourceModel(model)
+        
+        mapper = BaseMapper(editorModel,editor) 
+        editor.setItemDelegate(mapper.getDelegateForItemView())
+        
+        
+        
+        #delegate = XTypeMapDelegate(editor)
+        #delegate.setXTypeMap(self.xType.itemType.xTypeMap)
+        #editor.setItemDelegate(delegate)
 
         if isinstance(pyList, list) and len(pyList):
             model.setModelData(pyList)
-        editor.setModel(model)
+        
+        editor.setModel(editorModel)
+        #editor.setModel(model)
     
     def setModelData(self, editor, model, index):
         pyDict = editor.model().exportModelData(True)
