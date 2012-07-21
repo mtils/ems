@@ -258,6 +258,7 @@ class NamedFieldType(ComplexType):
         self.defaultValue = {}
         self.__xTypeMap = {}
         self.__keys = []
+        
     
     def addKey(self, name, xType):
         self.__keys.append(name)
