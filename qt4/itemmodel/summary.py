@@ -37,12 +37,10 @@ class SummaryModel(QAbstractItemModel):
             for row in range(self._sourceModel.rowCount()):
                 index = self._sourceModel.index(row, col)
                 value = variant_to_pyobject(self._sourceModel.data(index))
-                print col, value
                 if isinstance(value, (int,float)):
                     colSum += value
             self._resultCache[col] = QVariant(colSum)
         
-        print colSum
         self.dataChanged.emit(self.index(0,columns[0]),
                               self.index(0,col))
             
