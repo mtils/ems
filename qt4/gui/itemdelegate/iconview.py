@@ -25,7 +25,8 @@ class IconViewDelegate(QStyledItemDelegate):
             else options.widget.style()
         
         if self.alwaysUseActiveStyle:
-            options.state = options.state | QStyle.State_HasFocus | QStyle.State_Active
+            #options.state = options.state | QStyle.State_HasFocus | QStyle.State_Active
+            options.state = options.state | QStyle.State_Active
         
         painter.setRenderHints(QPainter.Antialiasing | QPainter.SmoothPixmapTransform)
         
