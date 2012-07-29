@@ -5,14 +5,15 @@ Created on 04.03.2012
 '''
 from datetime import date 
 from PyQt4.QtCore import QString, QDate, Qt, QVariant
-from PyQt4.QtGui import QTableView
+from PyQt4.QtGui import QTableView, QIcon
 
 from ems.xtype.base import UnitType #@UnresolvedImport
 from ems.qt4.gui.itemdelegate.xtypedelegate import XTypeDelegate #@UnresolvedImport
 from ems.qt4.util import variant_to_pyobject
 from ems.qt4.gui.itemdelegate.htmldelegate import HtmlDelegate
 from ems.qt4.itemmodel.addrow_proxymodel import AddRowProxyModel #@UnresolvedImport
-from ems.qt4.gui.mapper.base import BaseMapper
+from ems.qt4.gui.mapper.base import BaseMapper #@UnresolvedImport
+from ems.qt4.gui.itemdelegate.addrow_delegate import AddRowDelegate #@UnresolvedImport
 
 
 class ListOfDictsDelegate(XTypeDelegate):
@@ -21,6 +22,8 @@ class ListOfDictsDelegate(XTypeDelegate):
         XTypeDelegate.__init__(self, xType, parent)
         self.htmlDelegate = HtmlDelegate(self)
         self.headerLabels = {}
+        self.addPixmap = None
+        self.removePixmap = None
     
     def paint(self, painter, option, index):
         value = variant_to_pyobject(index.data())
@@ -71,8 +74,25 @@ class ListOfDictsDelegate(XTypeDelegate):
         editorModel = AddRowProxyModel(model)
         editorModel.setSourceModel(model)
         
-        mapper = BaseMapper(editorModel,editor) 
-        editor.setItemDelegate(mapper.getDelegateForItemView())
+        mapper = BaseMapper(editorModel,editor)
+        viewDelegate = mapper.getDelegateForItemView()
+        
+            
+        addRowDelegate = AddRowDelegate(editor)
+        
+        if self.addPixmap is not None:
+            editorModel.addPixmap = self.addPixmap
+            addRowDelegate.addIcon = QIcon(self.addPixmap)
+        if self.removePixmap is not None:
+            editorModel.removePixmap = self.removePixmap
+            addRowDelegate.removeIcon = QIcon(self.removePixmap)
+        
+        
+        
+        viewDelegate.columnDelegates()[0] = addRowDelegate
+        
+        editor.setItemDelegate(viewDelegate)
+        
         
         
         
@@ -84,6 +104,8 @@ class ListOfDictsDelegate(XTypeDelegate):
             model.setModelData(pyList)
         
         editor.setModel(editorModel)
+        if isinstance(editor, QTableView):
+            editor.pressed.connect(editorModel.onIndexPressed)
         #editor.setModel(model)
     
     def setModelData(self, editor, model, index):

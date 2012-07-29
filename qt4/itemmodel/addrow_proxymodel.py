@@ -4,11 +4,12 @@ Created on 22.09.2011
 @author: michi
 '''
 
-from PyQt4.QtCore import QModelIndex, Qt, pyqtSignal, QVariant
+from PyQt4.QtCore import QModelIndex, Qt, pyqtSignal, QVariant, pyqtSlot
 from PyQt4.QtGui import QAbstractProxyModel
 from ems.qt4.itemmodel.editable_proxymodel import EditableProxyModel
 from ems.qt4.util import hassig
 from ems.xtype.base import NumberType #@UnresolvedImport
+from pprint import pprint
 
 
 
@@ -39,6 +40,10 @@ class AddRowProxyModel(EditableProxyModel):
     def disconnectModificationSignals(self):
         self.rowInsertionRequested.disconnect(self.insertRow)
         self.rowRemovalRequested.disconnect(self.removeRow)
+    
+    @pyqtSlot()
+    def exportModelData(self, omitEmptyRows=False):
+        return self.sourceModel().exportModelData(omitEmptyRows)
     
     def onIndexPressed(self, index):
         if index.column() == 0:

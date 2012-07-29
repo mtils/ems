@@ -15,8 +15,11 @@ class DateTypeDelegate(XTypeDelegate):
     
     def getString(self, value):
         #print "Isch bins"
-        qValue = QDate(value.year, value.month, value.day)
-        strValue = unicode(qValue.toString(Qt.SystemLocaleShortDate))
+        if isinstance(value, date):
+            qValue = QDate(value.year, value.month, value.day)
+            strValue = unicode(qValue.toString(Qt.SystemLocaleShortDate))
+        else:
+            strValue = ""
         
         return self.xType.value2String(strValue)
     

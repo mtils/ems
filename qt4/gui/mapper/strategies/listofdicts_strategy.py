@@ -11,6 +11,11 @@ from ems.qt4.gui.itemdelegate.xtypes.listofdictstype import ListOfDictsDelegate 
 
 class ListOfDictsStrategy(BaseStrategy):
     
+    def __init__(self, parent=None):
+        BaseStrategy.__init__(self, parent)
+        self.addPixmap = None
+        self.removePixmap = None
+        
     def match(self, param):
         if isinstance(param, SequenceType) and isinstance(param.itemType,
                                                           DictType):
@@ -19,7 +24,12 @@ class ListOfDictsStrategy(BaseStrategy):
         return False
     
     def getDelegateForItem(self, mapper, type_, parent=None):
-        return ListOfDictsDelegate(type_, parent)
+        delegate = ListOfDictsDelegate(type_, parent)
+        if self.addPixmap is not None:
+            delegate.addPixmap = self.addPixmap
+        if self.removePixmap is not None:
+            delegate.removePixmap = self.removePixmap 
+        return delegate
     
     def addMapping(self, mapper, widget, columnName, type_):
         if isinstance(widget, QTableView):
