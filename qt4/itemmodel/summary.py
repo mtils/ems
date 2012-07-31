@@ -28,6 +28,9 @@ class SummaryModel(QAbstractItemModel):
                 maxVal = max(maxVal, value)
         return maxVal
     
+    def recalculateAll(self):
+        self.recalculate(range(self._sourceModel.columnCount()))
+    
     def recalculate(self, columns):
         if not self._sourceModel or not len(columns):
             return
@@ -83,6 +86,7 @@ class SummaryModel(QAbstractItemModel):
             self._sourceModel.dataChanged.disconnect(self.onSourceModelDataChanged)
         self._sourceModel = sourceModel
         self._sourceModel.dataChanged.connect(self.onSourceModelDataChanged)
+        self._sourceModel.modelReset.connect(self.recalculateAll)
         return self
     
     
