@@ -81,10 +81,27 @@ def variant_to_pyobject(qvariant=None):
     return value
 
 def hassig(obj, signalName):
-    if hasattr(obj.__class__, signalName):
+#    if signalName == 'windowTitleChanged':
+#        print "Hunulululu"
+    if isinstance(obj, type):
+        cls = obj
+    else:
+        cls = obj.__class__
+        
+    if cls.__dict__.has_key(signalName):
         try:
-            if isinstance(obj.__class__.__dict__[signalName], pyqtSignal):
+            if isinstance(cls.__dict__[signalName], pyqtSignal):
                 return True
         except KeyError:
-            pass 
+            pass
+    else:
+        #print "Class", cls,'has no signal named', signalName
+        for parentCls in cls.__bases__:
+            #print "PARENT CLASS",parentCls
+            if not parentCls is cls:
+                hasSignal = hassig(parentCls, signalName)
+                if hasSignal:
+                    return True
+#                else:
+#                    print "no.... parentClass", parentCls, "has:", hasSignal
     return False

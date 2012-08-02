@@ -17,8 +17,10 @@ class DialogableWidget(QWidget):
     rejectButton = None
     _result = QDialog.Rejected
     _isDone = False
+    
     accepted = pyqtSignal()
     rejected = pyqtSignal()
+    windowTitleChanged = pyqtSignal(QString)
     
     @pyqtSlot(QString)
     def setAcceptButtonText(self, text):
@@ -79,6 +81,14 @@ class DialogableWidget(QWidget):
         dlg._dialogInitFinished()
         
         return dlg
+    
+    def windowTitle(self):
+        return QWidget.windowTitle(self)
+    
+    def setWindowTitle(self, title):
+        if self.windowTitle() != title:
+            QWidget.setWindowTitle(self, title)
+            self.windowTitleChanged.emit(title)
     
     @staticmethod
     def _addButtonBox2Dialog(dlg):
