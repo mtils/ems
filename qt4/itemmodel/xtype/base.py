@@ -27,6 +27,7 @@ class AbstractXtypeItemModel(QAbstractItemModel, ReflectableMixin):
         self._keyLabels = {}
         self.isEditable = True
         self._childModels = {}
+        self._enabledFlagColumn = None
         
     @property
     def xType(self):
@@ -47,6 +48,12 @@ class AbstractXtypeItemModel(QAbstractItemModel, ReflectableMixin):
     def columnCount(self, index=QModelIndex()):
         return len(self._rowType())
     
+    def setEnabledFlagColumn(self, enabledFlagColumn):
+        self._enabledFlagColumn = enabledFlagColumn
+    
+    def enabledFlagColumn(self):
+        return self._enabledFlagColumn
+        
     def rowCount(self, index=QModelIndex()):
         return len(self._modelData)
     
@@ -144,14 +151,24 @@ class AbstractXtypeItemModel(QAbstractItemModel, ReflectableMixin):
         return True
     
     def flags(self, index):
+        
+        itemIsEnabled = True
+        if self._enabledFlagColumn is not None:
+            itemIsEnabled = variant_to_pyobject(self.index(index.row(),
+                                                           self._enabledFlagColumn).data())
+             
         if not self.isEditable:
-            return Qt.ItemIsSelectable | Qt.ItemIsEnabled
+            if itemIsEnabled:
+                return Qt.ItemIsSelectable | Qt.ItemIsEnabled
+            return Qt.ItemIsSelectable
         
         xType = self.columnType(index.column())
         
         if not xType.canBeEdited:
             return Qt.ItemIsSelectable | Qt.ItemIsEnabled
         
+        if not itemIsEnabled:
+            return Qt.ItemIsSelectable | Qt.ItemIsEditable
         return Qt.ItemIsSelectable | Qt.ItemIsEnabled  | Qt.ItemIsEditable
     
     def parent(self, index):
