@@ -30,6 +30,12 @@ class TabBarConnector(QObject):
             raise TypeError("modelColumn has to be instance of int")
         self._modelColumn = column
     
+    def tabDataColumn(self):
+        return self._tabDataColumn
+    
+    def setTabDataColumn(self, column):
+        self._tabDataColumn = column
+    
     def tabBar(self):
         return self._tabBar
     
@@ -97,9 +103,7 @@ class TabBarConnector(QObject):
             
             self._updateTabEnabledState(row)
             self._updateTabToolTip(row)
-            #print self._model.index(row, self._modelColumn)
-            
-            
+            self._updateTabData(row)
             
     def _updateTabEnabledState(self, row):
         flags = self._model.flags(self._model.index(row, self._modelColumn))
@@ -116,6 +120,12 @@ class TabBarConnector(QObject):
                                       .data(Qt.ToolTipRole))
         if toolTip:
             self._tabBar.setTabToolTip(row, QString.fromUtf8(toolTip))
+    
+    def _updateTabData(self, row):
+        if self._tabDataColumn is not None:
+            tabData = self._model.index(row, self._tabDataColumn).data(Qt.DisplayRole)
+            if tabData:
+                self._tabBar.setTabData(row, tabData)
     
     def onRowsInserted(self, parent, start, end):
         print "onRowsInserted"
