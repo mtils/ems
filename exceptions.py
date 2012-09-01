@@ -9,3 +9,5 @@ class DuplicateIdentifierError(Exception):
     pass
 class UserAbortError(UserWarning):
     pass
+class UserInteractionRequiredError(UserWarning):
+    pass
