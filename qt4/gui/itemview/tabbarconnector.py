@@ -83,7 +83,15 @@ class TabBarConnector(QObject):
         
     
     def onDataChanged(self, topLeft, bottomRight):
-        pass
+        for row in range(topLeft.row(), bottomRight.row()+1):
+            for col in range(topLeft.column(), bottomRight.column()+1):
+                if col == self._modelColumn:
+                    self._updateTabText(row)
+                    self._updateTabToolTip(row)
+                if col == self._tabDataColumn:
+                    self._updateTabData(row)
+                if col == self._model.enabledFlagColumn():
+                    self._updateTabEnabledState(row)
     
     def onModelReset(self):
         for i in range(self._tabBar.count()):
