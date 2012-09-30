@@ -71,6 +71,10 @@ class SAOrmSearchModel(QAbstractTableModel):
         self._dirty = True
         self.unsubmittetColor = QColor('#ffff00')
     
+    @property
+    def queriedObject(self):
+        return self._queriedObject
+    
     def index(self, row, column, parent=QModelIndex()):
         return self.createIndex(row, column, object=0)
     
