@@ -27,6 +27,7 @@ from geotiledmapcustomobjectinfo import GeoTiledMapCustomObjectInfo #@Unresolved
 from geotiledmapreply import GeoTiledMapReply #@UnresolvedImport
 from ems.qt4.location.maps.geomapobjectengine import GeoMapObjectEngine
 from geotiledmaprequest import GeoTiledMapRequest #@UnresolvedImport
+import time
 
 def rmod(a, b):
     div = int(float(a) / float(b))
@@ -909,7 +910,7 @@ class GeoTiledMapData(GeoMapData):
         return QPointF(offsetX, offsetY)
     
     def _updateMapImage(self):
-        
+
         if self._zoomLevel == -1.0 or not self._windowSize.isValid():
             return
         wasEmpty = (len(self._requests) == 0)
@@ -998,7 +999,8 @@ class GeoTiledMapData(GeoMapData):
         @param option: The StyleOption
         @type option: QStyleOptionGraphicsItem
         '''
-        
+        #starttime = time.time()
+        #print "start paintObjects"
         painter.save()
         painter.setRenderHint(QPainter.Antialiasing)
         
@@ -1013,35 +1015,45 @@ class GeoTiledMapData(GeoMapData):
         
         painter.setClipRect(target)
         
+        nextStamp = time.time()
         self._oe.updateTransforms()
-        
+        #print "after updateTransforms in {0}s".format((nextStamp-starttime*1000))
         items = self._oe.pixelScene.items(target,
                                           Qt.IntersectsItemShape,
                                           Qt.AscendingOrder)
         
-#        print "pixelScene: {0}x{1}".format(self._oe.pixelScene.width(),
-#                                           self._oe.pixelScene.height())
-#        print "latLonScene: {0}x{1}".format(self._oe.latLonScene.width(),
-#                                            self._oe.latLonScene.height())
-        
+        nextStamp2 = time.time()
+        #print "after collecting Items in {0}s".format((nextStamp2-nextStamp*1000))
         objsDone = set()
         
         baseTrans = painter.transform()
         
         style = QStyleOptionGraphicsItem()
         
+        #stamps = {}
+        
+        i = 0
         for item in items:
+            #stamps[i] = time.time()
+            #print "next Item"
             obj = self._oe.pixelItems[item]
             
+            
+            
             if obj.isVisible() and not (obj in objsDone):
+                #nextStamp = time.time()
+                #print "if obj.isVisible() and not (obj in objsDone) in {0}s".format((nextStamp - stamps[i])*1000)
                 if self._oe.pixelExact.has_key(obj):
+                    #nextStampFett = time.time()
+                    
                     for it in self._oe.pixelExact[obj]:
                         painter.setTransform(baseTrans)
-                        
                         it.paint(painter, style)
+                    #print "for it in self._oe.pixelExact in {0}s".format((time.time() - nextStampFett)*1000)
                 else:
-                    gItem = self._oe.graphicsItemFromMapObject(obj)
-                    if gItem:
+                    #print "Doch was im Cache?"
+                    try:
+                        gItem = obj.info().graphicsItem
                         for trans in self._oe.pixelTrans[obj]:
                             painter.setTransform(trans * baseTrans)
                             #painter.setTransform(baseTrans)
@@ -1050,10 +1062,16 @@ class GeoTiledMapData(GeoMapData):
                                 painter.setTransform(child.transform() * trans * baseTrans)
                                 painter.translate(child.pos())
                                 child.paint(painter, style)
+                    except AttributeError:
+                        pass
             
             objsDone.add(obj)
+            i += 1
+        
+        
         painter.restore()
-        del style
+        #del style
+        #print "end paintObjects after {0}s".format((time.time()-nextStamp2)*1000)
     
     def _cleanupCaches(self):
         boundaryTiles = 3

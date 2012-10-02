@@ -145,23 +145,6 @@ def stringSimilarity(a, b, returnPercent=False):
         return result
     return current[n]
 
-if __name__ == '__main__':
-    tests = (
-             ("Östliche Rheinbrückenstraße","Östliche Rheinbrückenstr."),
-             ("Östliche Rheinbrückenstraße","Östliche Rheinbrückenstraße"),
-             ("Östliche Rheinbrückenstraße","Rheinbrückenstr."),
-             ("Östliche Rheinbrückenstraße","Östl. Rheinbrückenstr."),
-             ("Östliche Rheinbrückenstraße","Marienweg"),
-             ("Hauptstraße","Hauptstr."),
-             ("Cresbacher Str.", "Breslauer Str."),
-             (u"Im Gässle", u"Im Gäßle"),
-             (u"Hafenweg", u"HAFENWEG")
-             )
-    for test in tests:
-        print "%s (%s) %s:" % (test[0], len(test[0]), test[1])
-        print "%s %s%%" % (stringSimilarity(*test), stringSimilarity(*test, returnPercent=True))
-#    clause = GenClause('oma.name').like == 'Pups'
-#    print clause
 
 def splitIntAlpha(intString):
     integer = []
@@ -192,3 +175,37 @@ def isiterable(obj):
         return True
     except TypeError:
         return False
+    
+def items2list(listOfItemAccessable, keyName):
+    result = []
+    for row in listOfItemAccessable:
+        result.append(row.__getitem__(keyName))
+    return result
+
+def properties2list(listOfAttributeAccessable, propertyName):
+    result = []
+    for row in listOfAttributeAccessable:
+        result.append(row.__getattribute__(propertyName))
+    return result
+
+def methodResuls2list(listOfAttributeAccessable, methodName):
+    result = []
+    for row in listOfAttributeAccessable:
+        result.append(row.__getattribute__(methodName)())
+    return result
+
+if __name__ == '__main__':
+    tests = (
+             ("Östliche Rheinbrückenstraße","Östliche Rheinbrückenstr."),
+             ("Östliche Rheinbrückenstraße","Östliche Rheinbrückenstraße"),
+             ("Östliche Rheinbrückenstraße","Rheinbrückenstr."),
+             ("Östliche Rheinbrückenstraße","Östl. Rheinbrückenstr."),
+             ("Östliche Rheinbrückenstraße","Marienweg"),
+             ("Hauptstraße","Hauptstr."),
+             ("Cresbacher Str.", "Breslauer Str."),
+             (u"Im Gässle", u"Im Gäßle"),
+             (u"Hafenweg", u"HAFENWEG")
+             )
+    for test in tests:
+        print "%s (%s) %s:" % (test[0], len(test[0]), test[1])
+        print "%s %s%%" % (stringSimilarity(*test), stringSimilarity(*test, returnPercent=True))

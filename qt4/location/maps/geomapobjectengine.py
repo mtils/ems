@@ -3,7 +3,7 @@ Created on 03.11.2011
 
 @author: michi
 '''
-import math
+import math, time
 
 from PyQt4.QtCore import QObject, QPointF, Qt, QRectF
 from PyQt4.QtGui import QGraphicsScene, QGraphicsPolygonItem, \
@@ -902,7 +902,7 @@ class GeoMapObjectEngine(QObject):
         @param obj: The GeoMapObject
         @type obj: GeoMapObject
         '''
-        
+        #print "invalidateObject"
         self.updateLatLonTransform(obj)
         
         view = self.latLonViewport().boundingRect()
@@ -996,19 +996,25 @@ class GeoMapObjectEngine(QObject):
                     pass
         
     def rebuildScenes(self):
+        #return
+        #starttime = time.time()
+        #print "Start rebuildScenes"
+        
+        #clear is not working
         for i in self.latLonScene.items():
             self.latLonScene.removeItem(i)
         for i in self.pixelScene.items():
             self.pixelScene.removeItem(i)
     
-        del self.latLonScene
-        del self.pixelScene
+        #del self.latLonScene
+        #del self.pixelScene
     
-        self.latLonScene = QGraphicsScene()
-        self.pixelScene = QGraphicsScene()
-        self.pixelScene.setItemIndexMethod(QGraphicsScene.NoIndex)
+        #self.latLonScene = QGraphicsScene()
+        #self.pixelScene = QGraphicsScene()
+        #self.pixelScene.setItemIndexMethod(QGraphicsScene.NoIndex)
     
         self.addGroupToScene(self, self.mdp._containerObject)
+        #print "End rebuildScenes in {0}".format((time.time()-starttime)*1000)
     
     '''
     ****************************************************************************
@@ -1254,14 +1260,7 @@ class GeoMapObjectEngine(QObject):
         return r
     
     def graphicsItemFromMapObject(self, obj):
-        if not obj or not obj.info():
+        try:
+            return obj.info().graphicsItem
+        except AttributeError:
             return None
-        tiledInfo = obj.info()
-        
-        if tiledInfo:
-            return tiledInfo.graphicsItem
-        
-        return None
-        
-        
-        
