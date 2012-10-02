@@ -34,6 +34,7 @@ class SAOrmSearchModel(QAbstractTableModel):
             querybuilder = SAQueryBuilder(queriedObject)
         self._queryBuilder = querybuilder
         
+        self.__didPerform = False
         self._queriedObject = queriedObject
         self._currentlyEditedRow = None
         self._resultCache = {}
@@ -100,7 +101,9 @@ class SAOrmSearchModel(QAbstractTableModel):
     def setFilter(self, filter):
         self._filter = filter
         self._dirty = True
-        self.perform()
+        #only update if data/rowCount/... was called
+        if self.__didPerform:
+            self.perform()
     
     filter = property(getFilter, setFilter)
     
@@ -112,7 +115,9 @@ class SAOrmSearchModel(QAbstractTableModel):
             raise TypeError("setOrderBy needs 1 parameter as minimum")
         self._orderBy = args
         self._dirty = True
-        self.perform()
+        #only update if data/rowCount/... was called
+        if self.__didPerform:
+            self.perform()
     
     orderBy = property(getOrderBy, setOrderBy)
             
@@ -167,7 +172,9 @@ class SAOrmSearchModel(QAbstractTableModel):
     def setColumns(self, cols):
         self._columns = cols
         self._dirty = True
-        self.perform()
+        #Only perform is someome has called data()/rowCount()/etc...
+        if self.__didPerform:
+            self.perform()
     
     columns = property(getColumns, setColumns)
     
@@ -519,7 +526,11 @@ class SAOrmSearchModel(QAbstractTableModel):
         #print obj.benutzer
         self.endRemoveRows()
         self.submit()
+        
         return True
+    
+    def didPerform(self):
+        return self.__didPerform
     
     def getObject(self, row):
         self.perform()
@@ -593,6 +604,7 @@ class SAOrmSearchModel(QAbstractTableModel):
         
         if not self._dirty:
             return
+        self.__didPerform = True
         #self.beginResetModel()
         #print "%s : I actually perform" % self._queriedObject
         #print self._session.get_bind(self._queriedObject)
