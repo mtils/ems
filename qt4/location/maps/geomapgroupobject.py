@@ -38,7 +38,7 @@ class GeoMapGroupObject(GeoMapObject):
     '''This signal will be emitted when the map object \a childObject
     belonging to the group is updated.'''
     
-    _children = []
+    childs = []
     
     def __init__(self):
         '''
@@ -46,7 +46,8 @@ class GeoMapGroupObject(GeoMapObject):
         '''
         #QObject.__init__(self, None)
         GeoMapObject.__init__(self, None)
-        self._children = []
+        self.childs = []
+        
     
     def type_(self):
         '''
@@ -64,13 +65,13 @@ class GeoMapGroupObject(GeoMapObject):
         @return: GeoBoundingBox
         '''
         bounds = GeoBoundingBox()
-        if len(self._children) == 0:
+        if len(self.childs) == 0:
             return bounds
         
-        bounds <<= self._children[0].boundingBox()
+        bounds <<= self.childs[0].boundingBox()
         
-        for i in range(len(self._children)):
-            bounds <<= bounds.united(self._children[i].boundingBox())
+        for i in range(len(self.childs)):
+            bounds <<= bounds.united(self.childs[i].boundingBox())
         
         
         return bounds
@@ -88,7 +89,7 @@ class GeoMapGroupObject(GeoMapObject):
         @type coordinate: GeoCoordinate
         @return: bool
         '''
-        for child in self._children:
+        for child in self.childs:
             if child.contains(coordinate):
                 return True
         return False
@@ -117,12 +118,12 @@ class GeoMapGroupObject(GeoMapObject):
         @param childObject: The GeoMapObject
         @type childObject: GeoMapObject
         '''
-        if not childObject or (childObject in self._children):
+        if not childObject or (childObject in self.childs):
             return
         
-        childObject.setMapData(self.mapData())
+        childObject.setMapData(self._mapData)
         childObject.serial = (self.serial + 1)
-        self._children.append(childObject)
+        self.childs.append(childObject)
         
         childObject.zValueChanged.connect(self._childChangedZValue)
         self.childAdded.emit(childObject)
@@ -140,7 +141,7 @@ class GeoMapGroupObject(GeoMapObject):
             return
         
         try:
-            self._children.remove(childObject)
+            self.childs.remove(childObject)
             childObject.zValueChanged.disconnect(self._childChangedZValue)
             self.childRemoved.emit(childObject)
             childObject.setMapData(None)
@@ -154,7 +155,7 @@ class GeoMapGroupObject(GeoMapObject):
         
         @return: list
         '''
-        return self._children
+        return self.childs
     
     def clearChildObjects(self):
         '''
@@ -162,10 +163,10 @@ class GeoMapGroupObject(GeoMapObject):
 
         The child objects will be deleted.
         '''
-        for child in self._children:
+        for child in self.childs:
             self.removeChildObject(child)
             del child
-        self._children = []
+        self.childs = []
     
     def setVisible(self, visible):
         '''
@@ -174,7 +175,7 @@ class GeoMapGroupObject(GeoMapObject):
         @param visible: Visibility
         @type visible: bool
         '''
-        for child in self._children:
+        for child in self.childs:
             child.setVisible(visible)
         
         super(GeoMapGroupObject, self).setVisible(visible)
@@ -186,7 +187,7 @@ class GeoMapGroupObject(GeoMapObject):
         @param mapData: The mapdata
         @type mapData: GeoMapData
         '''
-        for child in self._children:
+        for child in self.childs:
             child.setMapData(mapData)
             if mapData:
                 self.childAdded.emit(child)
@@ -205,8 +206,8 @@ class GeoMapGroupObject(GeoMapObject):
             return
         
         try:
-            self._children.remove(child)
-            self._children.append(child)
+            self.childs.remove(child)
+            self.childs.append(child)
             self.childUpdated.emit(child)
         except ValueError:
             pass

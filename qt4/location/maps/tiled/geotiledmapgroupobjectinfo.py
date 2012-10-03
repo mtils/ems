@@ -26,7 +26,7 @@ class GeoTiledMapGroupObjectInfo(GeoTiledMapObjectInfo):
         
         self.pathItem.setPos(0.0, 0.0)
         
-        objects = self.group.childObjects()
+        objects = self.group.childs
         for obj in objects:
             info = obj.info()
             if info:
@@ -48,7 +48,7 @@ class GeoTiledMapGroupObjectInfo(GeoTiledMapObjectInfo):
             except TypeError:
                 pass
             info.graphicsItem.setParentItem(self.graphicsItem)
-            self._mapData.update(self.mapObject())
+            self._mapData.update(self._mapObject)
     
     @pyqtSlot(GeoMapObject)
     def childUpdated(self, childObject):
@@ -57,7 +57,7 @@ class GeoTiledMapGroupObjectInfo(GeoTiledMapObjectInfo):
         info = childObject.info()
         
         if info and info.graphicsItem:
-            self._mapData.update(self.mapObject())
+            self._mapData.update(self._mapObject)
             info.zValueChanged(childObject.zValue())
     
     @pyqtSlot(GeoMapObject)

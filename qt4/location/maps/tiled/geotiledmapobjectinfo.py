@@ -22,8 +22,8 @@ class GeoTiledMapObjectInfo(GeoMapObjectInfo):
     
     def init(self):
         if self.graphicsItem:
-            self.graphicsItem.setZValue(self.mapObject().zValue())
-            self.graphicsItem.setVisible(self.mapObject().isVisible())
+            self.graphicsItem.setZValue(self._mapObject.zValue())
+            self.graphicsItem.setVisible(self._mapObject.isVisible())
         self.inited = True
         if self.updateAfterInit:
             self.tiledMapData._updateMapDisplay()
@@ -65,7 +65,7 @@ class GeoTiledMapObjectInfo(GeoMapObjectInfo):
         
         e = self.tiledMapData._oe
         
-        obj = self.mapObject()
+        obj = self._mapObject
         
         e.updateTransforms()
         
@@ -122,7 +122,7 @@ class GeoTiledMapObjectInfo(GeoMapObjectInfo):
         e.updateTransforms()
         latLonPoint = QPointF(coordinate.longitude()*3600.0, coordinate.latitude()*3600.0)
         
-        obj = self.mapObject()
+        obj = self._mapObject
         
         if e.latLonExact.contains(obj):
             items = e.latLonExact.values(obj)
@@ -149,7 +149,7 @@ class GeoTiledMapObjectInfo(GeoMapObjectInfo):
             self.updateAfterInit = True
             return
         
-        obj = self.mapObject()
+        obj = self._mapObject
         if obj:
             self.tiledMapData.update(obj)
         if self.graphicsItem:

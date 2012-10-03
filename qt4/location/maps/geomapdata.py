@@ -380,7 +380,7 @@ class GeoMapData(QObject):
         
         @return: list
         '''
-        return self._containerObject.childObjects()
+        return self._containerObject.childs
     
     def addMapObject(self, mapObject):
         '''
@@ -456,7 +456,7 @@ class GeoMapData(QObject):
         '''
         results = []
         coord = self.screenPositionToCoordinate(screenPosition)
-        childObjectCount = len(self._containerObject.childObjects())
+        childObjectCount = len(self._containerObject.childs)
         
         for i in range(childObjectCount):
             obj = self._containerObject.childObjects[i]
@@ -479,10 +479,10 @@ class GeoMapData(QObject):
         bottomRight = self.screenPositionToCoordinate(screenRect.bottomRight())
         
         bounds = GeoBoundingBox(topLeft, bottomRight)
-        childObjectCount = len(self._containerObject.childObjects())
+        childObjectCount = len(self._containerObject.childs)
         
         for i in range(childObjectCount):
-            obj = self._containerObject.childObjects()[i]
+            obj = self._containerObject.childs[i]
             if bounds.intersects(obj.boundingBox()) and object.isVisible():
                 results.append(obj)
         
@@ -702,7 +702,7 @@ class GeoMapData(QObject):
         self._containerObject.removeChildObject(obj)
     
     def _clearObjects(self):
-        for obj in self._containerObject.childObjects():
+        for obj in self._containerObject.childs:
             self._removeObject(obj)
             del obj
             

@@ -778,7 +778,6 @@ class GeoTiledMapData(GeoMapData):
                             break
                 else:
                     item = self._oe.graphicsItemFromMapObject(obj)
-                    
                     if item:
                         trans = self._oe.pixelTrans[obj]
                         
@@ -1204,8 +1203,8 @@ class GeoTiledMapData(GeoMapData):
     def update(self, obj):
         if obj:
             if obj.type_() == GeoMapObject.GroupType:
-                self._oe.objectsForLatLonUpdate.append(obj)
-                self._oe.objectsForPixelUpdate.append(obj)
+                self._oe.objectsForLatLonUpdate.add(obj)
+                self._oe.objectsForPixelUpdate.add(obj)
                 self.triggerUpdateMapDisplay()
             else:
                 self._oe.invalidateObject(obj)

@@ -75,8 +75,8 @@ class GeoMapObjectEngine(QObject):
         self.pixelItems = {}
         self.pixelItemsRev = {}
         
-        self.objectsForPixelUpdate = []
-        self.objectsForLatLonUpdate = []
+        self.objectsForPixelUpdate = set()
+        self.objectsForLatLonUpdate = set()
         
         self.exactMappingTolerance = 1.0 
         QObject.__init__(self, None)
@@ -98,14 +98,13 @@ class GeoMapObjectEngine(QObject):
     '''
     
     def addObject(self, obj):
-        self.objectsForLatLonUpdate.append(obj)
-        self.append(obj)
+        self.objectsForLatLonUpdate.add(obj)
         self.updateTransforms()
         self.rebuildScenes()
     
     def removeObject(self, obj):
         if obj.type_() == GeoMapObject.GroupType:
-            for child in obj.childObjects():
+            for child in obj.childs:
                 self.removeObject(child)
         else:
             rectsToUpdate = []
@@ -825,13 +824,13 @@ class GeoMapObjectEngine(QObject):
         @param group: GeoMapGroupObject
         @type group: GeoMapGroupObject
         '''
-        for obj in group.childObjects():
+        for obj in group.childs:
             if isinstance(obj, GeoMapGroupObject):
                 GeoMapObjectEngine._zoomDepsRecurse(eng, obj)
             else:
                 if obj.units() == GeoMapObject.PixelUnit:
-                    eng.objectsForLatLonUpdate.append(obj)
-                    eng.objectsForPixelUpdate.append(obj)
+                    eng.objectsForLatLonUpdate.add(obj)
+                    eng.objectsForPixelUpdate.add(obj)
     
     def invalidateZoomDependents(self):
         if self.mdp._containerObject:
@@ -839,24 +838,22 @@ class GeoMapObjectEngine(QObject):
     
     
     def invalidatePixelsForViewport(self, updateNow=True):
+        #print "GeoMapObjectEngine.invalidatePixelsForViewport"
+        
         view = self.latLonViewport()
 
-        itemsInView = []
         itemsInView = self.latLonScene.items(view, Qt.IntersectsItemShape,
                                              Qt.AscendingOrder)
         
         
         for latLonItem in itemsInView:
             for obj in self.latLonItems[latLonItem]:
-            #obj = self.latLonItems[latLonItem]
-                if not obj in self.objectsForPixelUpdate:
-                    self.objectsForPixelUpdate.append(obj)
+                self.objectsForPixelUpdate.add(obj)
         
         if updateNow:
             self.mdp.updateMapDisplay.emit(QRectF())
     
     def trimPixelTransforms(self):
-#        print "trimPixelTransforms"
 #        self.mdp.updateMapDisplay.emit(QRectF())
 #        return
         view = self.latLonViewport()
@@ -918,24 +915,24 @@ class GeoMapObjectEngine(QObject):
             logging.warn(str(e))
         
         if needsPixelUpdate:
-            self.objectsForPixelUpdate.append(obj)
+            self.objectsForPixelUpdate.add(obj)
             self.mdp.triggerUpdateMapDisplay()
         
     def updateTransforms(self):
         '''
         update the transform tables as necessary
         '''
+        #print "updateTransforms"
         groupUpdated = False
 
         for obj in self.objectsForLatLonUpdate:
-            #group = qobject_cast<QGeoMapGroupObject*>(obj);
             if obj.type_() == GeoMapObject.GroupType:
                 self.updateLatLonsForGroup(obj)
                 groupUpdated = True
             else:
                 self.updateLatLonTransform(obj)
         
-        self.objectsForLatLonUpdate = []
+        self.objectsForLatLonUpdate = set()
         
         for obj in self.objectsForPixelUpdate:
             if obj.type_() == GeoMapObject.GroupType:
@@ -944,10 +941,9 @@ class GeoMapObjectEngine(QObject):
             else:
                 self.updatePixelTransform(obj)
         
-        self.objectsForPixelUpdate = []
+        self.objectsForPixelUpdate = set()
 
         if groupUpdated:
-            #pass
             self.rebuildScenes()
     
     def updatePixelsForGroup(self, group):
@@ -955,7 +951,7 @@ class GeoMapObjectEngine(QObject):
         @param group: GeoMapGroupObject
         @type group: GeoMapGroupObject
         '''
-        for obj in group.childObjects():
+        for obj in group.childs:
             if obj.type_() == GeoMapObject.GroupType:
                 self.updatePixelsForGroup(obj)
             else:
@@ -966,7 +962,7 @@ class GeoMapObjectEngine(QObject):
         @param group: GeoMapGroupObject
         @type group: GeoMapGroupObject
         '''
-        for obj in group.childObjects():
+        for obj in group.childs:
             if obj.type_() == GeoMapGroupObject:
                 self.updateLatLonsForGroup(obj)
             else:
@@ -980,7 +976,7 @@ class GeoMapObjectEngine(QObject):
         @param group: GeoMapGroupObject
         @type group: GeoMapGroupObject
         '''
-        for obj in group.childObjects():
+        for obj in group.childs:
             if obj.type_() == GeoMapObject.GroupType:
                 GeoMapObjectEngine.addGroupToScene(eng, obj)
             else:
