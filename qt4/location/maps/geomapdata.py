@@ -413,7 +413,7 @@ class GeoMapData(QObject):
 
         The map objects will be deleted.
         '''
-        self._clearMapObjects()
+        self._clearObjects()
     
     def viewport(self):
         '''

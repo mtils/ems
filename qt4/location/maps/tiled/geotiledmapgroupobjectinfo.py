@@ -62,8 +62,11 @@ class GeoTiledMapGroupObjectInfo(GeoTiledMapObjectInfo):
     
     @pyqtSlot(GeoMapObject)
     def childRemoved(self, childObject):
-        if childObject and self._mapData._oe:
-            self._mapData._oe.removeObject(childObject)
-            self.updateItem()
+        try:
+            if childObject and self._mapData._oe:
+                self._mapData._oe.removeObject(childObject)
+                self.updateItem()
+        except AttributeError:
+            pass
     
     

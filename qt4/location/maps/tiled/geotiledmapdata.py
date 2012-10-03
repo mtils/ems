@@ -177,12 +177,19 @@ class GeoTiledMapData(GeoMapData):
         self.setZoomLevel(8.0)
         #self._tileSize = 0
     
-    def __del__(self):
+    def clearForDeletion(self):
+        self.clearMapObjects()
+        self.clearMapOverlays()
+        for req in self._requests:
+            del req
         for reply in self._replies:
             reply.abort()
             reply.deleteLater()
         if self._oe:
+            self._oe.clearForDeletion()
             del self._oe
+        #GeoMapData.deleteLayer(self)
+        
     
     def coordinateToScreenPosition(self, coordOrLon, lat=0.0):
         if isinstance(coordOrLon, GeoCoordinate):

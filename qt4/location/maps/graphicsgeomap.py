@@ -108,11 +108,6 @@ class GraphicsGeoMap(QGraphicsWidget):
         
         self.setMinimumSize(QSizeF(0,0))
         self.setPreferredSize(QSizeF(500,500))
-        
-        
-    
-    def __del__(self):
-        pass
     
     def resizeEvent(self, event):
         '''
@@ -156,11 +151,13 @@ class GraphicsGeoMap(QGraphicsWidget):
         '''
         #print "GraphicsGeoMap.updateMapDisplay({0})".format(target)
         #self.update()
-        
-        if isinstance(target, QRectF) and target.isValid():
-            self.update(target)
-        else:
-            self.update()
+        try:
+            if isinstance(target, QRectF) and target.isValid():
+                self.update(target)
+            else:
+                self.update()
+        except RuntimeError: #Obj deletion Problems
+            pass
     
     def minimumZoomLevel(self):
         '''This property holds the minimum zoom level supported by the
@@ -683,4 +680,7 @@ class GraphicsGeoMap(QGraphicsWidget):
             return self.mapData.screenPositionToCoordinate(screenPosition)
         
         return GeoCoordinate()
+    
+    def clearForDeletion(self):
+        self.mapData.clearForDeletion()
         

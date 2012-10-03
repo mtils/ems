@@ -81,16 +81,28 @@ class GeoMapObjectEngine(QObject):
         self.exactMappingTolerance = 1.0 
         QObject.__init__(self, None)
     
-    def __del__(self):
-        
+    def clearForDeletion(self):
+        self.pixelScene.clear()
+        self.latLonScene.clear()
         del self.pixelScene
         del self.latLonScene
         
+        self.latLonExact.clear()
+        self.pixelExact.clear()
+        self.latLonTrans.clear()
+        self.latLonItems.clear()
+        self.latLonItemsRev.clear()
+        self.pixelTrans.clear()
+        self.pixelItems.clear()
+        self.pixelItemsRev.clear()
+        self.objectsForPixelUpdate.clear()
+        self.objectsForLatLonUpdate.clear()
+        #return
         for i in self.latLonExact:
-            del self.latLonExact[i]
+            print self.latLonExact[i]
         
         for i in self.pixelExact:
-            del self.pixelExact[i]
+            print self.pixelExact[i]
     '''
     ****************************************************************************
      Object management
