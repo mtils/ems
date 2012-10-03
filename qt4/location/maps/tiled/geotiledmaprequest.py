@@ -76,9 +76,12 @@ class GeoTiledMapRequest(object):
         return True
     
     def cacheId(self):
-        args = (str(int(self._zoomLevel)), str(self._row), str(self._column),
-                str(self._mapType), str(self._connectivityMode))
-        return "|".join(args)
+        
+        return "{0}|{1}|{2}|{3}|{4}".format(self._zoomLevel, self._row, self._column, self._mapType, self._connectivityMode)
+        #args = (str(int(self._zoomLevel)), str(self._row), str(self._column),
+        #    str(self._mapType), str(self._connectivityMode))
+        #return "|".join(args)
+        
     
 #    def __hash__(self):
 #        hashList = []

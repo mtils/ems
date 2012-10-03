@@ -434,8 +434,8 @@ class GeoTiledMapData(GeoMapData):
                 painter3.drawPixmap(target, newImage, source)
                 painter3.end()
                 
-                self.zoomCache[req] = tile
-                self._zoomRequestsByCacheId[req.cacheId()] = req
+                self.zoomCache[cacheId] = tile
+                self._zoomRequestsByCacheId[cacheId] = req
         
         
         self._updateMapDisplay()
@@ -583,11 +583,11 @@ class GeoTiledMapData(GeoMapData):
                 #print cacheId
                 if self._zoomRequestsByCacheId.has_key(cacheId):
                     try:
-                        del self.zoomCache[self._zoomRequestsByCacheId[req.cacheId()]]
+                        del self.zoomCache[cacheId]
                     except KeyError:
                         pass
                     try:
-                        del self._zoomRequestsByCacheId[req.cacheId()]
+                        del self._zoomRequestsByCacheId[cacheId]
                     except KeyError:
                         pass
                     
@@ -630,7 +630,7 @@ class GeoTiledMapData(GeoMapData):
             if reply.error() != GeoTiledMapReply.NoError:
                 self.tileError(reply.error(), reply.errorString())
                 reply.deleteLater()
-                del self.zoomCache[reply.request()]
+                del self.zoomCache[reply.request().cacheId]
                 del self._zoomRequestsByCacheId[reply.request()]
                 continue
             
@@ -681,7 +681,7 @@ class GeoTiledMapData(GeoMapData):
         cacheId = req.cacheId()
         if self._zoomRequestsByCacheId.has_key(cacheId):
             try:
-                del self.zoomCache[self._zoomRequestsByCacheId[cacheId]]
+                del self.zoomCache[cacheId]
             except KeyError:
                 pass
             try:
@@ -722,8 +722,8 @@ class GeoTiledMapData(GeoMapData):
             reply.deleteLater()
             return
         
-        self.cache[req] = tile
-        self._requestsByCacheId[req.cacheId()] = req
+        self.cache[cacheId] = tile
+        self._requestsByCacheId[cacheId] = req
         
         #tile.save("/tmp/maptiles/{0}_{1}.png".format(req.row(), req.column() ) )
         
@@ -931,7 +931,7 @@ class GeoTiledMapData(GeoMapData):
                 #TODO: Wieder rein
                 if not self._requestRects.has_key(tileRectCacheId) and \
                     not self._replyRects.has_key(tileRectCacheId):
-                    print "_requestRect has not req {0}".format(tileRect)
+                    #print "_requestRect has not req {0}".format(tileRect)
                     self._requests.append(req)
                     self._requestRects[tileRectCacheId] = tileRect
         
@@ -982,12 +982,12 @@ class GeoTiledMapData(GeoMapData):
                 if self._requestsByCacheId.has_key(cacheId):
                 #if self.cache.has_key(req):
                     painter.drawImage(target,
-                                      self.cache[self._requestsByCacheId[cacheId]],
+                                      self.cache[cacheId],
                                       source)
                 else:
                     if self._zoomRequestsByCacheId.has_key(cacheId):
                         painter.drawPixmap(target,
-                                           self.zoomCache[self._zoomRequestsByCacheId[cacheId]],
+                                           self.zoomCache[cacheId],
                                            source)
                     else:
                         painter.fillRect(target, Qt.lightGray)
@@ -1106,12 +1106,12 @@ class GeoTiledMapData(GeoMapData):
         keys = self.cache.keys()
         for key in keys:
             #tileRect = self.cache[key].tileRect()
-            tileRect = key.tileRect()
+            tileRect = self._requestsByCacheId[key].tileRect()
             if not cacheRect1.intersects(tileRect):
                 if cacheRect2.isNull() or not cacheRect2.intersects(QRectF(tileRect)):
                     del self.cache[key]
                     try:
-                        del self._requestsByCacheId[key.cacheId()]
+                        del self._requestsByCacheId[key]
                     except KeyError:
                         pass
     
