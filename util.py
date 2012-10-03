@@ -188,7 +188,7 @@ def properties2list(listOfAttributeAccessable, propertyName):
         result.append(row.__getattribute__(propertyName))
     return result
 
-def methodResuls2list(listOfAttributeAccessable, methodName):
+def methodResults2list(listOfAttributeAccessable, methodName):
     result = []
     for row in listOfAttributeAccessable:
         result.append(row.__getattribute__(methodName)())
