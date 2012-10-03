@@ -596,33 +596,35 @@ class GeoTiledMapData(GeoMapData):
         
         processedRequests = set()
         i = 0
-#        addedRects = set()
+        addedRects = set()
         for req in self._requests:
             i += 1
             tileRect = req.tileRect()
+            tileRectCacheId = str(tileRect)
             #print "{0} -> {1} {2}".format(tileRect, req._row, req._column)
             try:
-                del self._requestRects[str(tileRect)]
+                del self._requestRects[tileRectCacheId]
             except KeyError:
                 pass
             
-            if self._replyRects.has_key(str(tileRect)) or\
+            if self._replyRects.has_key(tileRectCacheId) or\
+                (tileRect in addedRects) or \
                 not self.intersectsScreen(tileRect):
                 continue
             
-            if self._replyRects.has_key(str(tileRect)):
-                continue
+            #if self._replyRects.has_key(tileRectCacheId):
+            #    continue
             
-#            if (tileRect in addedRects) or\
-#                not self.intersectsScreen(tileRect):
+            #if (tileRect in addedRects):
+            #    continue
+            
+#            if not self.intersectsScreen(tileRect):
 #                continue
-            
-            if not self.intersectsScreen(tileRect):
-                continue
             
             reply = tiledEngine.getTileImage(req)
             
             if not reply:
+                print "no reply"
                 continue
             
             if reply.error() != GeoTiledMapReply.NoError:
@@ -638,7 +640,7 @@ class GeoTiledMapData(GeoMapData):
             self._replies.add(reply)
             
             self._replyRects[str(reply.request().tileRect())] = reply.request().tileRect()
-#            addedRects.add(reply.request().tileRect())
+            addedRects.add(reply.request().tileRect())
             
             if reply.isFinished():
                 self._replyFinished(reply)
@@ -909,7 +911,7 @@ class GeoTiledMapData(GeoMapData):
         return QPointF(offsetX, offsetY)
     
     def _updateMapImage(self):
-
+        #print "_updateMapImage"
         if self._zoomLevel == -1.0 or not self._windowSize.isValid():
             return
         wasEmpty = (len(self._requests) == 0)
@@ -921,15 +923,17 @@ class GeoTiledMapData(GeoMapData):
             i += 1
             req = it.next_()
             tileRect = req.tileRect()
+            tileRectCacheId = str(tileRect)
+
             if not self._requestsByCacheId.has_key(req.cacheId()):
             #if not self.cache.has_key(req):
-#                print "cache has not req {0} {1}".format(req.row(), req.column())
+                #print "cache has not req {0} {1}".format(req.row(), req.column())
                 #TODO: Wieder rein
-                if not self._requestRects.has_key(str(tileRect)) and \
-                    not self._replyRects.has_key(str(tileRect)):
-                    #print "_requestRect has not req {0}".format(tileRect)
+                if not self._requestRects.has_key(tileRectCacheId) and \
+                    not self._replyRects.has_key(tileRectCacheId):
+                    print "_requestRect has not req {0}".format(tileRect)
                     self._requests.append(req)
-                    self._requestRects[str(tileRect)] = tileRect
+                    self._requestRects[tileRectCacheId] = tileRect
         
         if wasEmpty and len(self._requests) > 0:
             QTimer.singleShot(0, self, SLOT("_processRequests()"))
