@@ -10,8 +10,6 @@ from sqlalchemy.engine.url import URL
 from sqlalchemy.orm import sessionmaker,scoped_session
 
 from ems.exceptions import DuplicateIdentifierError
-#TODO: This is definitly the wrong place. Support for %appPath% is needed
-from ems.application import MainApplication
 
 class DriverNotConfiguredError(KeyError):
     pass
