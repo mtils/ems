@@ -8,6 +8,7 @@ Created on 02.07.2011
 import sys
 
 from difflib import SequenceMatcher
+from uuid import uuid4
 
 platformNames = {
                  'linux':'Linux',
@@ -193,6 +194,9 @@ def methodResults2list(listOfAttributeAccessable, methodName):
     for row in listOfAttributeAccessable:
         result.append(row.__getattribute__(methodName)())
     return result
+
+def global_uid():
+    return "{" + str(uuid4()) + "}"
 
 if __name__ == '__main__':
     tests = (
