@@ -20,6 +20,8 @@ class DoubleProgressBar(QProgressBar):
         self.setMaximum(1.0)
     
     def text(self):
+        if self.value() < self.minimum():
+            return QString()
         formatString = "{0:." + str(self._decimals) + "f}"
         return QString(self.format().replace('%v',formatString.format(self.value())))
     
