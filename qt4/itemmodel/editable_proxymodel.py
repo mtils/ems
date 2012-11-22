@@ -87,3 +87,7 @@ class EditableProxyModel(QAbstractProxyModel, ReflectableMixin):
         srcIndex = self.mapToSource(index)
         return self.sourceModel().childModel(srcIndex)
     
+    def getRowAsDict(self, row):
+        sourceIndex = self.mapFromSource(self.createIndex(row,0))
+        return self.sourceModel().getRowAsDict(sourceIndex.row())
+    

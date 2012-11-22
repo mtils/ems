@@ -65,6 +65,15 @@ class AbstractXtypeItemModel(QAbstractItemModel, ReflectableMixin):
         except ValueError:
             pass
     
+    def getRowAsDict(self, row):
+        if not row < self.rowCount():
+            return {}
+        result = {}
+        for col in range(self.columnCount()):
+            colName = self.nameOfColumn(col)
+            result[colName] = self._modelData[row][colName]
+        return result
+    
     def getKeyLabel(self, key):
         if self._keyLabels.has_key(key):
             return self._keyLabels[key]
