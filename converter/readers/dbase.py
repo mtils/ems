@@ -16,8 +16,10 @@ class DBase(InputReader):
     classdocs
     '''
     def select(self,xpath):
-        if xpath == '//':
+        if xpath in ('//', '//row'):
             return self
+        elif xpath == 'fieldNames()':
+            return self.getFieldNames()
         else:
             if xpath in self.getReaderClass().fieldNames:
                 if isinstance(self.currentRow[xpath], basestring):

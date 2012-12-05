@@ -16,10 +16,16 @@ class ForEach(Tag):
             assignDataTo = False
             if xmlDict['attributes'].has_key('as'):
                 assignDataTo = xmlDict['attributes']['as']
+                if assignDataTo and assignDataTo.find(':'):
+                    assignDataTo = assignDataTo.split(':')
             if hasattr(result, '__iter__'):
                 for data in result:
                     if assignDataTo:
-                        self.converter.setVar(assignDataTo,data)
+                        if isinstance(assignDataTo, basestring):
+                            self.converter.setVar(assignDataTo,data)
+                        else:
+                            self.converter.setVar(assignDataTo[0],data)
+                            self.converter.setVar(assignDataTo[1],result[data])
                     for child in xmlDict['children']:
                         self.converter.interpretTag(child,inputReader,outputWriter)
 
