@@ -238,7 +238,7 @@ class Converter(object):
         except LookupError,e:
             if not self.plugins[self.tag].has_key(xmlDict['tag']):
                 raise SyntaxError("Tag \"%s\"is not supported or loaded" % xmlDict['tag'])
-            raise e
+            #raise e
     
     def getDictionaryOfMapping(self,mappingString):
         return xml2obj(mappingString)

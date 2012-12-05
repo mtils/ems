@@ -37,7 +37,7 @@ class OutputWriter(iomodule.IoModule):
     
     def notify(self,eventType):
         if eventType == self.startProcess:
-            if not self.target:
+            if not self.__target:
                 raise AttributeError("No target set")
             if hasattr(self, 'init') and callable(getattr(self,'init')):
                 self.init()
