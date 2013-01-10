@@ -24,7 +24,7 @@ class CSVReader(InputReader):
     quoteChar = None
     fieldNames = None
     offset = 0
-    
+    readerClass = None
     
     remapping = {}
     
