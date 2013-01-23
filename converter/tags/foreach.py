@@ -13,17 +13,24 @@ class ForEach(Tag):
         if xmlDict['attributes'].has_key('select'):
             select = xmlDict['attributes']['select']
             result = self._select(select, inputReader, outputWriter)
-            assignDataTo = False
+
+            hasAssignAttribute = False
+            assignDataTo = []
             if xmlDict['attributes'].has_key('as'):
-                assignDataTo = xmlDict['attributes']['as']
-                if assignDataTo and assignDataTo.find(':'):
-                    assignDataTo = assignDataTo.split(':')
+                assignString = xmlDict['attributes']['as']
+                if assignString:
+                    hasAssignAttribute = True
+                    if assignString.find(':'):
+                        assignDataTo = assignString.split(':')
+                    else:
+                        assignDataTo = [assignString]
+
             if hasattr(result, '__iter__'):
                 for data in result:
-                    if assignDataTo:
-                        if isinstance(assignDataTo, basestring):
-                            self.converter.setVar(assignDataTo,data)
-                        else:
+                    if hasAssignAttribute:
+                        if len(assignDataTo) == 1:
+                            self.converter.setVar(assignDataTo[0],data)
+                        if len(assignDataTo) == 2:
                             self.converter.setVar(assignDataTo[0],data)
                             self.converter.setVar(assignDataTo[1],result[data])
                     for child in xmlDict['children']:
