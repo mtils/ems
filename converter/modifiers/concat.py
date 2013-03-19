@@ -13,7 +13,10 @@ class Concat(Modifier):
         if isinstance(params, dict):
             raise ModifierException("No named params for concat")
         if isinstance(params, list):
-            return "".join(params)
+            stringedParams = []
+            for param in params:
+                stringedParams.append(unicode(param))
+            return "".join(stringedParams)
         else:
             raise ValueError("No dict with params was send to concat")
 
