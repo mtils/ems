@@ -3,7 +3,7 @@ Created on 22.09.2011
 
 @author: michi
 '''
-from PyQt4.QtCore import QModelIndex
+from PyQt4.QtCore import QModelIndex, Qt
 from ems.qt4.itemmodel.editable_proxymodel import EditableProxyModel #@UnresolvedImport
 
 class SubObjectProxyModel(EditableProxyModel):
@@ -15,12 +15,20 @@ class SubObjectProxyModel(EditableProxyModel):
         self._proxy2SourceColumnMap = {}
         self._source2ProxyColumnMap = {}
         self._property2ProxyMap = {}
+        self.sectionFriendlyNames = {}
          
         if ormPropertyNameOrProperties is not None:
             if isinstance(ormPropertyNameOrProperties, (list, tuple)):
                 self.properties = ormPropertyNameOrProperties
             if isinstance(ormPropertyNameOrProperties, basestring):
                 self.ormPropertyName = ormPropertyNameOrProperties
+
+    def headerData(self, section, orientation, role=Qt.DisplayRole):
+        if orientation == Qt.Horizontal and \
+           self.sectionFriendlyNames.has_key(section) and \
+           role == Qt.DisplayRole:
+               return self.sectionFriendlyNames[section]
+        return EditableProxyModel.headerData(self, section, orientation, role)
 
     @property
     def session(self):
