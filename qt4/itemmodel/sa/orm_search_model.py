@@ -26,7 +26,8 @@ class SAOrmSearchModel(QAbstractTableModel):
                  columns = [],
                  appendOptions = None,
                  editable = False,
-                 orderBy=None):
+                 orderBy=None,
+                 groupBy=None):
         super(SAOrmSearchModel, self).__init__()
         self._session = session
         
@@ -56,6 +57,7 @@ class SAOrmSearchModel(QAbstractTableModel):
         self._flagsCache = {}
         self._filter = filter
         self._orderBy = orderBy
+        self._groupBy = groupBy
         
         try:
             self._queryBuilder.propertyNames
@@ -621,7 +623,8 @@ class SAOrmSearchModel(QAbstractTableModel):
                                             propertySelection=self._columns,
                                             filter=self._filter,
                                             appendOptions=self._appendOptions,
-                                            orderBy=self._orderBy)
+                                            orderBy=self._orderBy,
+                                            groupBy=self._groupBy)
 #        print query
         multipleRowsPerObject = self._queryBuilder.hasMultipleRowProperties(self._columns)
         #Check if multiple Objects per row are requested (1:n,m:n,...)

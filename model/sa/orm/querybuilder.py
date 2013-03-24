@@ -3,7 +3,7 @@ Created on 26.06.2011
 
 @author: michi
 '''
-
+from pprint import pprint
 from sqlalchemy import desc
 from sqlalchemy.orm import joinedload, joinedload_all, object_mapper, \
     RelationshipProperty, ColumnProperty, aliased, contains_eager
@@ -165,6 +165,7 @@ class SAQueryBuilder(object):
         
         
         for propertyName in filterPropertyNames:
+            #pprint(self.properties.keys())
             property = self.properties[propertyName]
             if isinstance(property, RelationshipProperty):
 #                print "%s is RelationShip" % propertyName
@@ -186,6 +187,7 @@ class SAQueryBuilder(object):
 #        print self.properties.keys()
         for propertyName in propertyNames:
             #print propertyName
+            
             property = self.properties[propertyName]
             if isinstance(property, RelationshipProperty):
                 self._addJoinPath(joins, propertyName)
@@ -219,7 +221,7 @@ class SAQueryBuilder(object):
         return propertyNames
     
     def getQuery(self, session, propertySelection=[], appendOptions=None,
-                 filter=None, orderBy=None):
+                 filter=None, orderBy=None, groupBy=None):
         
 #        self._multipleRowsProperties = []
         
@@ -252,6 +254,9 @@ class SAQueryBuilder(object):
         
         if orderBy is not None:
             query = self._addOrderBy(query, orderBy, aliases)
+        
+        if groupBy is not None:
+            query = query.group_by(groupBy)
             
         containsEagers = self._getContainsEagers(propertySelection, aliases,
                                                 joinNames)            
@@ -469,7 +474,8 @@ class SAQueryBuilder(object):
          '>=':'__ge__',
          'like':'like',
          'BEFORE':'<',
-         'AFTER':'>'}
+         'AFTER':'>',
+         'in':'in_'}
         return table[operator]
     
     @property

@@ -160,7 +160,8 @@ class AbstractXtypeItemModel(QAbstractItemModel, ReflectableMixin):
         return True
     
     def flags(self, index):
-        
+        if not index.isValid():
+            return Qt.ItemIsEnabled
         itemIsEnabled = True
         if self._enabledFlagColumn is not None:
             itemIsEnabled = variant_to_pyobject(self.index(index.row(),

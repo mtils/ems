@@ -61,10 +61,17 @@ class GenClause(object):
         self.right = other
         return self
     
-    def __nonzero__(self, other):
+    def __nonzero__(self):
         self.operator = 'if'
-        self.right = other
+        self.right = ''
         return self
+    
+    def in_(self, *args):
+        self.operator = 'in'
+        self.right = args
+        return self
+        
+        
     
 #    def __getattr__(self, key):
 #        print "__getattr__(%s)" % key
@@ -199,17 +206,20 @@ def global_uid():
     return "{" + str(uuid4()) + "}"
 
 if __name__ == '__main__':
-    tests = (
-             ("Östliche Rheinbrückenstraße","Östliche Rheinbrückenstr."),
-             ("Östliche Rheinbrückenstraße","Östliche Rheinbrückenstraße"),
-             ("Östliche Rheinbrückenstraße","Rheinbrückenstr."),
-             ("Östliche Rheinbrückenstraße","Östl. Rheinbrückenstr."),
-             ("Östliche Rheinbrückenstraße","Marienweg"),
-             ("Hauptstraße","Hauptstr."),
-             ("Cresbacher Str.", "Breslauer Str."),
-             (u"Im Gässle", u"Im Gäßle"),
-             (u"Hafenweg", u"HAFENWEG")
-             )
-    for test in tests:
-        print "%s (%s) %s:" % (test[0], len(test[0]), test[1])
-        print "%s %s%%" % (stringSimilarity(*test), stringSimilarity(*test, returnPercent=True))
+    #tests = (
+             #("Östliche Rheinbrückenstraße","Östliche Rheinbrückenstr."),
+             #("Östliche Rheinbrückenstraße","Östliche Rheinbrückenstraße"),
+             #("Östliche Rheinbrückenstraße","Rheinbrückenstr."),
+             #("Östliche Rheinbrückenstraße","Östl. Rheinbrückenstr."),
+             #("Östliche Rheinbrückenstraße","Marienweg"),
+             #("Hauptstraße","Hauptstr."),
+             #("Cresbacher Str.", "Breslauer Str."),
+             #(u"Im Gässle", u"Im Gäßle"),
+             #(u"Hafenweg", u"HAFENWEG")
+             #)
+    #for test in tests:
+        #print "%s (%s) %s:" % (test[0], len(test[0]), test[1])
+        #print "%s %s%%" % (stringSimilarity(*test), stringSimilarity(*test, returnPercent=True))
+    
+    clause = GenClause('kontaktTypId').in_(14,15,178)
+    print clause

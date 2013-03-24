@@ -107,10 +107,12 @@ model.addRow({'vorname':'Leo','nachname':'Tils','alter':1,'gewicht':8.9,'einkomm
 #model.addRow(vorname='Fabian',nachname='Tils',alter=29,gewicht=67.2,einkommen=2600.0,verheiratet=False)
 #model.addRow
 
-dlg.editor = ItemViewEditor(dlg.view, parent=dlg)
+dlg.editor = ItemViewEditor(dlg.view, True, parent=dlg)
 dlg.view.setModel(model)
 dlg.view.setMinimumSize(640, 480)
 dlg.layout().addWidget(dlg.editor)
+
+#dlg.editor.rowInsertionRequested
 
 dlg.mapper = BaseMapper(model)
 dlg.delegate = dlg.mapper.getDelegateForItemView(dlg.view)
