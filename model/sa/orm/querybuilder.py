@@ -15,10 +15,6 @@ from sqlalchemy.sql.expression import and_, or_
 from ems.util import GenClause,isiterable   #@UnresolvedImport
 
 
-
-
-
-
 class PathClauseList(object):
     def __init__(self, conjunction, initialClauses=[]):
         self.conjunction = conjunction
@@ -399,15 +395,22 @@ class SAQueryBuilder(object):
             
         elif isinstance(property, hybrid_property):
             split = propertyName.split('.')
-            #TODO: Bei Relationen sollte das auch funktionieren
+            method = 'orderBy'
             if len(split) < 2:
                 hybridProp = getattr(self._ormObj.__class__, propertyName)
-                method = 'orderBy'
+                
                 if hasattr(hybridProp, method):
                     return hybridProp.__getattr__(method)(clause, isDesc)
                 else:
                     raise NotImplementedError("Please implement orderBy in your hybrid property")
-                
+            else:
+                parentName = ".".join(split[:-1])
+                propName = split[-1:][0]
+                hybridProp = aliases[parentName].__getattr__(propName)
+                if hasattr(hybridProp, method):
+                    return hybridProp.__getattr__(method)(clause, isDesc)
+                else:
+                    raise NotImplementedError("Please implement orderBy in your hybrid property")
             
         
     
