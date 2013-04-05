@@ -4,6 +4,8 @@ Created on 26.06.2011
 
 @author: michi
 '''
+import inspect
+
 from PyQt4.QtCore import QVariant, QString, Qt, pyqtSignal, QObject
 from PyQt4.QtGui import QSpinBox, QDoubleSpinBox, QLineEdit, QCheckBox,\
     QComboBox
@@ -13,6 +15,7 @@ from sqlalchemy.orm import RelationshipProperty, ColumnProperty
 from sqlalchemy.orm.query import Query
 from sqlalchemy.types import AbstractType, String, Integer, Float, Boolean
 from sqlalchemy.ext.hybrid import hybrid_property #@UnresolvedImport
+from sqlalchemy.sql.operators import ColumnOperators
 
 from ems.qt4.gui.widgets.tableview.querybuilder_tableview import RowBuilderBackend #@UnresolvedImport
 from ems.model.sa.orm.querybuilder import SAQueryBuilder, PathClause, AndList, OrList #@UnresolvedImport
@@ -254,24 +257,32 @@ class SABuilderBackend(RowBuilderBackend):
             #print prototype.__class__.__getattr__()
             operatorInput.clear()
             cmp = property.expr(prototype).comparator
-            #print dir(property.fget)
-            if hasattr(cmp,'__eq__') and callable(cmp.__eq__):
+
+            #Don't rely on base methods in ColumnOperators
+            def has_method(cm, methodName):
+                for cls in inspect.getmro(cm.__class__):
+                    if cls is ColumnOperators:
+                        return False
+                    if methodName in cls.__dict__:
+                        return True
+
+            if has_method(cmp,'__eq__'):
                 operatorInput.addItem(QString.fromUtf8('='),QVariant('='))
-            if hasattr(cmp, '__ne__'):
+            if has_method(cmp, '__ne__'):
                 operatorInput.addItem(QString.fromUtf8('!='),QVariant('!='))
-            if hasattr(cmp,'__le__'):
+            if has_method(cmp,'__le__'):
                 operatorInput.addItem(QString.fromUtf8('<='),QVariant('<='))
-            if hasattr(cmp,'__lt__'):
+            if has_method(cmp,'__lt__'):
                 operatorInput.addItem(QString.fromUtf8('<'),QVariant('<'))
-            if hasattr(cmp,'__ge__'):
+            if has_method(cmp,'__ge__'):
                 operatorInput.addItem(QString.fromUtf8('>='),QVariant('>='))
-            if hasattr(cmp,'__gt__'):
+            if has_method(cmp,'__gt__'):
                 operatorInput.addItem(QString.fromUtf8('>'),QVariant('>'))
-            #if hasattr(cmp,'__nonzero__'):
+            #if has_method(cmp,'__nonzero__'):
                 #operatorInput.addItem(QString.fromUtf8('>'),QVariant('>'))
-            #if hasattr(cmp,'in_'):
+            #if has_method(cmp,'in_'):
                 #operatorInput.addItem(QString.fromUtf8('in'),QVariant('in'))
-            if hasattr(cmp,'like'):
+            if has_method(cmp,'like'):
                 operatorInput.addItem(QString.fromUtf8(self._operatorTranslation['LIKE']),
                                       QVariant('LIKE'))
 
