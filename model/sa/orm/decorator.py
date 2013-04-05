@@ -6,6 +6,8 @@ Created on 20.06.2011
 
 from sqlalchemy.orm import object_mapper
 from sqlalchemy.orm.attributes import InstrumentedAttribute
+from sqlalchemy.exc import InvalidRequestError
+from sqlalchemy.ext.hybrid import hybrid_property
 
 def friendly_name(classProperty):
     if isinstance(classProperty, InstrumentedAttribute):
@@ -113,8 +115,14 @@ class OrmDecorator(object):
     
     def getRProperty(self, propertyName):
         if not self._rProperties.has_key(propertyName):
-            self._rProperties[propertyName] = self.objectMapper.\
-                get_property(propertyName)
+            try:
+                self._rProperties[propertyName] = self.objectMapper.\
+                    get_property(propertyName)
+            except InvalidRequestError:
+                clsProp = self._class.__getattribute__(self._class, propertyName)
+                if isinstance(clsProp, hybrid_property):
+                    functionName = clsProp.fget.__name__
+                    self._rProperties[propertyName] = clsProp
 
         return self._rProperties[propertyName]
         

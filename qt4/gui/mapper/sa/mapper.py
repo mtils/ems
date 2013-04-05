@@ -11,6 +11,7 @@ from sqlalchemy.types import AbstractType, String, Integer, Float, Boolean
 from sqlalchemy.orm import object_mapper
 from sqlalchemy.orm.properties import ColumnProperty, RelationshipProperty
 from sqlalchemy.util import symbol
+from sqlalchemy.ext.hybrid import hybrid_property, Comparator
 
 from ems.thirdparty.singletonmixin import Singleton
 from ems.qt4.itemmodel.alchemyormmodel import AlchemyOrmModel
@@ -153,8 +154,16 @@ class SAMapper(QObject, SAInterfaceMixin):
         elif isinstance(rProperty, RelationshipProperty):
             realSymbol = self.getRealRelationSymbol(rProperty)
             mappingKey = realSymbol
-            #mappingKey = rProperty.direction
-        
+
+        elif isinstance(rProperty, hybrid_property):
+            cmp = rProperty.expr(self._ormObj).comparator
+            if not isinstance(cmp, Comparator):
+                raise ValueError('Please implement a Comparator on hybrid_property "{0}"'.format(rProperty))
+            if not hasattr(cmp,'type') or not isinstance(cmp.type, AbstractType):
+                raise ValueError('Please implement {0}.type (AbstractType)'.format(cmp.__class__.__name__))
+            
+            mappingKey = cmp.type.__class__
+
         key = hash(mappingKey)
         
         self._hashToType[key] = mappingKey

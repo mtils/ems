@@ -12,6 +12,7 @@ from sqlalchemy import and_, or_
 from sqlalchemy.orm import RelationshipProperty, ColumnProperty
 from sqlalchemy.orm.query import Query
 from sqlalchemy.types import AbstractType, String, Integer, Float, Boolean
+from sqlalchemy.ext.hybrid import hybrid_property #@UnresolvedImport
 
 from ems.qt4.gui.widgets.tableview.querybuilder_tableview import RowBuilderBackend #@UnresolvedImport
 from ems.model.sa.orm.querybuilder import SAQueryBuilder, PathClause, AndList, OrList #@UnresolvedImport
@@ -193,6 +194,11 @@ class SABuilderBackend(RowBuilderBackend):
                     self._orderedProperties.append((propertyPath,
                                                     self.getFieldFriendlyName(propertyPath),
                                                     'column'))
+                if isinstance(self._queryBuilder.properties[propertyPath],
+                              hybrid_property):
+                    self._orderedProperties.append((propertyPath,
+                                                    self.getFieldFriendlyName(propertyPath),
+                                                    'column'))
             
             pathStack.pop()
         return self._orderedProperties
@@ -243,6 +249,32 @@ class SABuilderBackend(RowBuilderBackend):
             else:
                 raise NotImplementedError("ColumnProperties with more than " +
                                           "one Column are not supported")
+        elif isinstance(property, hybrid_property):
+            prototype = self._queryBuilder.ormObj
+            #print prototype.__class__.__getattr__()
+            operatorInput.clear()
+            cmp = property.expr(prototype).comparator
+            #print dir(property.fget)
+            if hasattr(cmp,'__eq__') and callable(cmp.__eq__):
+                operatorInput.addItem(QString.fromUtf8('='),QVariant('='))
+            if hasattr(cmp, '__ne__'):
+                operatorInput.addItem(QString.fromUtf8('!='),QVariant('!='))
+            if hasattr(cmp,'__le__'):
+                operatorInput.addItem(QString.fromUtf8('<='),QVariant('<='))
+            if hasattr(cmp,'__lt__'):
+                operatorInput.addItem(QString.fromUtf8('<'),QVariant('<'))
+            if hasattr(cmp,'__ge__'):
+                operatorInput.addItem(QString.fromUtf8('>='),QVariant('>='))
+            if hasattr(cmp,'__gt__'):
+                operatorInput.addItem(QString.fromUtf8('>'),QVariant('>'))
+            #if hasattr(cmp,'__nonzero__'):
+                #operatorInput.addItem(QString.fromUtf8('>'),QVariant('>'))
+            #if hasattr(cmp,'in_'):
+                #operatorInput.addItem(QString.fromUtf8('in'),QVariant('in'))
+            if hasattr(cmp,'like'):
+                operatorInput.addItem(QString.fromUtf8(self._operatorTranslation['LIKE']),
+                                      QVariant('LIKE'))
+
         else:
             operatorInput.clear()
             operatorInput.addItem(QString.fromUtf8('='),QVariant('='))

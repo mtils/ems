@@ -10,6 +10,7 @@ from PyQt4.QtGui import QLineEdit, QTextEdit, QPlainTextEdit, QSpinBox, \
 from sqlalchemy.types import AbstractType, String, Integer, Float, Boolean
 from sqlalchemy.orm import object_mapper
 from sqlalchemy.orm.properties import ColumnProperty
+from sqlalchemy.ext.hybrid import hybrid_property, Comparator #@UnresolvedImport
 
 from ems.qt4.gui.mapper.sa.delegate.base import MapperDelegate  #@UnresolvedImport
 from ems.qt4.gui.mapper.sa.delegate.unit import UnitColumnDelegate #@UnresolvedImport
@@ -71,9 +72,12 @@ class BaseStrategy(QObject):
             return widget
     
     def getColInfos(self, rProperty):
-        cols = rProperty.columns
-        if len(cols) == 1:
-            col = cols[0]
+        if isinstance(rProperty, ColumnProperty):
+            cols = rProperty.columns
+            if len(cols) == 1:
+                col = cols[0]
+        elif isinstance(rProperty, hybrid_property):
+            return {}
         return col.info
     
     def setSpinBoxOptions(self, spinbox, rProperty, colType=None):
@@ -107,7 +111,8 @@ class BaseStrategy(QObject):
     def setLineEditOptions(self, lineEdit, rProperty, colType=None):
         if colType is None:
             colType = self.extractType(rProperty)
-        lineEdit.setMaxLength(colType.length)
+        if isinstance(colType.length, int):
+            lineEdit.setMaxLength(colType.length)
     
     def extractType(self, rProperty):
         if isinstance(rProperty, ColumnProperty):
@@ -131,8 +136,27 @@ class BaseStrategy(QObject):
             else:
                 raise NotImplementedError("ColumnProperties with more than " +
                                           "one Column are not supported")
+        elif isinstance(rProperty, hybrid_property):
+            cmp = rProperty.expr(object()).comparator
+            if not isinstance(cmp, Comparator):
+                raise ValueError('Please implement a Comparator on hybrid_property "{0}"'.format(rProperty))
+            if not hasattr(cmp,'type') or not isinstance(cmp.type, AbstractType):
+                raise ValueError('Please implement {0}.type (AbstractType)'.format(cmp.__class__.__name__))
+            
+            colType = cmp.type
+            
+            
+            if isinstance(colType, AbstractType):
+                if isinstance(colType, String):
+                    return colType
+                elif isinstance(colType, Integer):
+                    return colType
+                elif isinstance(colType, Float):
+                    return colType
+                elif isinstance(colType, Boolean):
+                    raise NotImplementedError("Bools are currently not implemented")
         else:
-            raise TypeError("BaseStrategy can only handle ColumnProperties")
+            raise TypeError("BaseStrategy can only handle ColumnProperties and hybrid_property")
     
     @staticmethod
     def buildObjectHash(obj):
@@ -215,6 +239,7 @@ class BaseStrategy(QObject):
         
         
     def _setQWidgetParams(self, widget, rProperty):
-        col = rProperty.columns[0]
-        if col.doc is not None:
-            widget.setToolTip(self.trUtf8(col.doc))
+        if isinstance(rProperty, ColumnProperty):
+            col = rProperty.columns[0]
+            if col.doc is not None:
+                widget.setToolTip(self.trUtf8(col.doc))
