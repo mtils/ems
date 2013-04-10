@@ -18,26 +18,24 @@ class IconViewDelegate(QStyledItemDelegate):
         self.alwaysUseActiveStyle = False
         self.additionalItemFeatures = None
         self.textAlignment = None
-    
+
     def paint(self, painter, option, index):
         options = QStyleOptionViewItemV4(option)
         self.initStyleOption(options, index)
-        
+
         style = QApplication.style() if options.widget is None \
             else options.widget.style()
-        
-        
-        
+
         if self.alwaysUseActiveStyle:
             #options.state = options.state | QStyle.State_HasFocus | QStyle.State_Active
             options.state = options.state | QStyle.State_Active
-        
+
         painter.setRenderHints(QPainter.Antialiasing | QPainter.SmoothPixmapTransform)
-        
+
         #options.decorationAlignment = Qt.AlignCenter | Qt.AlignBottom
         options.decorationPosition = QStyleOptionViewItemV4.Top
         #options.direction = Qt.RightToLeft
-        
+
         if not self.drawText:
             options.text = ""
             options.displayAlignment = Qt.AlignCenter | Qt.AlignVCenter
