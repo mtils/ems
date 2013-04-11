@@ -5,7 +5,7 @@ from ems.qt4.util import variant_to_pyobject
 from ems.qt4.gui.widgets.graphical import ColorButton #@UnresolvedImport
 from ems.qt4.gui.itemdelegate.iconview import IconViewDelegate #@UnresolvedImport
 
-class IconNavigation(QListView):
+class IconNavigationView(QListView):
     def __init__(self, parent=None):
         QListView.__init__(self, parent)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -16,20 +16,10 @@ class IconNavigation(QListView):
         self.setSpacing(0)
         self.setUniformItemSizes(True)
         self.setMovement(QListView.Static)
-        
-        self.setSizePolicy(QSizePolicy(QSizePolicy.Fixed,QSizePolicy.Fixed))
+        #self.setTextElideMode(Qt.ElideNone)
 
-    def resizeEvent_(self, event):
-        #print event.size()
-        QListView.resizeEvent(self, event)
-        newSize = QSize(event.size().height(),event.size().height())
-        #print newSize
-        self.setGridSize(newSize)
-        if self.itemDelegate().drawText:
-            iconSize = QSize()
-            self.setIconSize(QSize(newSize.width(),newSize.height()))
-        #print self.itemDelegate().calculateTextSize()
-        print self.sizeHintForColumn(0)
+        self.setSizePolicy(QSizePolicy(QSizePolicy.Fixed,QSizePolicy.Fixed))
+        print self.setIconSize(QSize(48,48))
 
     def setModel(self, model):
         if isinstance(self.model(), QAbstractItemModel):
@@ -52,6 +42,11 @@ class IconNavigation(QListView):
 
     def sizeHint(self):
         if not self.model():
+            width = self.iconSize().width()
+            height = self.iconSize().width()
+            if isinstance(self.itemDelegate(), IconViewDelegate):
+                height = height + self.itemDelegate().calculateTextSize().height()
+            return QSize(width, height)
             return QListView.sizeHint(self)
         s = QSize()
         maxLength = 0
@@ -70,15 +65,15 @@ class IconNavigation(QListView):
 
     def scrollContentsBy(self, dx, dy):
         return
-    
+
     def setIconSize(self, newSize):
         QListView.setIconSize(self, newSize)
         self.updateGeometryByContents()
-    
+
     def _onModelChanges(self, unused1=None, unused2=None):
         self.updateGeometryByContents()
 
     def updateGeometryByContents(self):
-        if self.isVisible():
-            self.resize(self.sizeHint())
-            self.updateGeometry()
+        #if self.isVisible():
+        self.resize(self.sizeHint())
+        self.updateGeometry()
