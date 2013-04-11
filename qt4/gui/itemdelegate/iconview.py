@@ -50,7 +50,25 @@ class IconViewDelegate(QStyledItemDelegate):
             
             style.drawControl(QStyle.CE_ItemViewItem, options, painter)
 
+    def calculateTextSize(self, text=None):
+        if text is None:
+            text = 'XXXXXXXXXXXX'
+        options = QStyleOptionViewItemV4()
+        fm = options.fontMetrics
+        
+        #QApplication.style().sizeFromContents(QStyle.CT_ItemViewItem)
+        #print self.paintEngine()
+        #print self.paintEngine().painter()
+        
+        #painter = self.paintEngine().painter()
+        #fm = painter.fontMetrics()
+        return fm.size(Qt.TextSingleLine, QString.fromUtf8(text))
             
+    
+    def sizeHint(self, option, index):
+        sizeHint = QStyledItemDelegate.sizeHint(self, option, index)
+        print "Item.sizeHint called"
+        return sizeHint
     
     def sizeHint_(self, option, index, manualText=None):
         options = QStyleOptionViewItemV4(option)

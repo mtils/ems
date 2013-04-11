@@ -1,0 +1,19 @@
+<RCC>
+  <qresource prefix="icons">
+    <file>accessories-calculator.png</file>
+    <file>akonadi.png</file>
+    <file>kdevelop.png</file>
+    <file>kplato.png</file>
+    <file>kwalletmanager.png</file>
+    <file>preferences-system-bluetooth.png</file>
+    <file>qelectrotech.png</file>
+    <file>quassel.png</file>
+    <file>google.png</file>
+    <file>google-chrome-icon-250px.png</file>
+    <file>tools-media-optical-copy.png</file>
+    <file>mysql2.png</file>
+    <file>python-clear.png</file>
+    <file>subversion_ai.png</file>
+    <file>eclipse.png</file>
+  </qresource>
+</RCC>
