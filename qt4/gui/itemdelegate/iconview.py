@@ -7,7 +7,7 @@ Created on 05.07.2011
 from PyQt4.QtCore import QSize, QRect, QPoint, Qt, QString
 from PyQt4.QtGui import QStyledItemDelegate, QStyleOptionViewItemV4, \
     QApplication, QTextDocument, QStyle, QAbstractTextDocumentLayout, QIcon,\
-    QPainter, QFontMetrics, QPalette
+    QPainter, QFontMetrics, QPalette,QColor
 from ems.qt4.util import variant_to_pyobject
 
 class IconViewDelegate(QStyledItemDelegate):
@@ -22,12 +22,12 @@ class IconViewDelegate(QStyledItemDelegate):
     def paint(self, painter, option, index):
         options = QStyleOptionViewItemV4(option)
         self.initStyleOption(options, index)
+        options.showDecorationSelected = True
 
         style = QApplication.style() if options.widget is None \
             else options.widget.style()
 
         if self.alwaysUseActiveStyle:
-            #options.state = options.state | QStyle.State_HasFocus | QStyle.State_Active
             options.state = options.state | QStyle.State_Active
 
         painter.setRenderHints(QPainter.Antialiasing | QPainter.SmoothPixmapTransform)
@@ -65,7 +65,7 @@ class IconViewDelegate(QStyledItemDelegate):
         return fm.size(Qt.TextSingleLine, QString.fromUtf8(text))
             
     
-    def sizeHint(self, option, index):
+    def sizeHint__(self, option, index):
         sizeHint = QStyledItemDelegate.sizeHint(self, option, index)
         print "Item.sizeHint called"
         return sizeHint

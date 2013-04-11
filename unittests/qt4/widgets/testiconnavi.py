@@ -24,6 +24,7 @@ class IconNavi(QListView):
         self.setItemDelegate(IconViewDelegate(self))
         self.setSpacing(0)
         self.setUniformItemSizes(True)
+        self.setMovement(QListView.Static)
         
         self.setSizePolicy(QSizePolicy(QSizePolicy.Fixed,QSizePolicy.Fixed))
 
@@ -112,6 +113,7 @@ class IconNaviTest(QDialog):
         super(IconNaviTest, self).__init__(parent)
         self.setupUi()
         
+        
     def setupUi(self):
         self.mainLayout = QVBoxLayout(self)
         self.setWindowTitle("Icon View Navis")
@@ -198,7 +200,7 @@ if __name__ == "__main__":
     import sys
 
     app = QApplication(sys.argv)
-    
+    #app.setStyle(QStyleFactory.create('Plastique'))
     form = IconNaviTest()
     #form = RulerTest()
 
