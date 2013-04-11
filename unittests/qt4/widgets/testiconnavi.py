@@ -21,7 +21,7 @@ class IconNavi(QListView):
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setViewMode(QListView.IconMode)
         self.setAutoScroll(False)
-        #self.setItemDelegate(IconViewDelegate(self))
+        self.setItemDelegate(IconViewDelegate(self))
         self.setSpacing(0)
         self.setUniformItemSizes(True)
         
@@ -156,6 +156,7 @@ class IconNaviTest(QDialog):
         self.removeButton = QPushButton('Remove Item',self)
         self.inputsLayout.addRow(QLabel(''), self.removeButton)
         self.removeButton.clicked.connect(self.onRemoveButtonClicked)
+        self.iconView.itemDelegate().alwaysUseActiveStyle = True
     
     def addRow(self, text=None):
         if len(self.availableIcons) <= self.model.rowCount():
