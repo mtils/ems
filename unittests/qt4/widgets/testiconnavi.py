@@ -12,84 +12,8 @@ from PyQt4.QtGui import *
 from ems.qt4.util import variant_to_pyobject
 from ems.qt4.gui.widgets.graphical import ColorButton #@UnresolvedImport
 from ems.qt4.gui.itemdelegate.iconview import IconViewDelegate #@UnresolvedImport
+from ems.qt4.gui.itemview.iconnavigation import IconNavigation
 import icons
-
-class IconNavi(QListView):
-    def __init__(self, parent=None):
-        QListView.__init__(self, parent)
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.setViewMode(QListView.IconMode)
-        self.setAutoScroll(False)
-        self.setItemDelegate(IconViewDelegate(self))
-        self.setSpacing(0)
-        self.setUniformItemSizes(True)
-        self.setMovement(QListView.Static)
-        
-        self.setSizePolicy(QSizePolicy(QSizePolicy.Fixed,QSizePolicy.Fixed))
-
-    def resizeEvent_(self, event):
-        #print event.size()
-        QListView.resizeEvent(self, event)
-        newSize = QSize(event.size().height(),event.size().height())
-        #print newSize
-        self.setGridSize(newSize)
-        if self.itemDelegate().drawText:
-            iconSize = QSize()
-            self.setIconSize(QSize(newSize.width(),newSize.height()))
-        #print self.itemDelegate().calculateTextSize()
-        print self.sizeHintForColumn(0)
-    
-    def setModel(self, model):
-        if isinstance(self.model(), QAbstractItemModel):
-            self.model().rowsRemoved.disconnect(self._onModelChanges)
-            self.model().rowsMoved.disconnect(self._onModelChanges)
-            self.model().layoutChanged.disconnect(self._onModelChanges)
-            self.model().rowsInserted.disconnect(self._onModelChanges)
-            self.model().layoutChanged.disconnect(self._onModelChanges)
-            self.model().modelReset.disconnect(self._onModelChanges)
-
-        QListView.setModel(self, model)
-        
-        self.model().rowsRemoved.connect(self._onModelChanges)
-        self.model().rowsMoved.connect(self._onModelChanges)
-        self.model().layoutChanged.connect(self._onModelChanges)
-        self.model().rowsInserted.connect(self._onModelChanges)
-        self.model().layoutChanged.connect(self._onModelChanges)
-        self.model().modelReset.connect(self._onModelChanges)
-
-    def sizeHint(self):
-        s = QSize()
-
-        maxLength = 0
-        maxLengthRow = 0
-        for i in range(self.model().rowCount()):
-            displayText = variant_to_pyobject(self.model().index(i,0).data(Qt.DisplayRole))
-            if isinstance(displayText, basestring):
-                length = len(displayText)
-                if length > maxLength:
-                    maxLength = length
-                    maxLengthRow = i
-        itemSizeHint = self.sizeHintForIndex(self.model().index(maxLengthRow,0))
-        s.setHeight(itemSizeHint.height()+self.frameWidth()*2)
-        s.setWidth(itemSizeHint.width()*self.model().rowCount()+self.frameWidth()*2)
-        return s
-
-    def scrollContentsBy(self, dx, dy):
-        return
-    
-    def setIconSize(self, newSize):
-        QListView.setIconSize(self, newSize)
-        self.updateGeometryByContents()
-    
-    def _onModelChanges(self, unused1=None, unused2=None):
-        self.updateGeometryByContents()
-
-    def updateGeometryByContents(self):
-        if self.isVisible():
-            self.resize(self.sizeHint())
-            self.updateGeometry()
-
 
 class IconNaviTest(QDialog):
     
@@ -118,7 +42,7 @@ class IconNaviTest(QDialog):
         self.mainLayout = QVBoxLayout(self)
         self.setWindowTitle("Icon View Navis")
         self.resize(QSize(800,200))
-        self.iconView = IconNavi(self)
+        self.iconView = IconNavigation(self)
         self.mainLayout.addWidget(self.iconView)
         self.model = QStandardItemModel(self)
 
