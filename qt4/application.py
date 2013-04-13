@@ -6,7 +6,7 @@ Created on 01.02.2010
 import os.path
 
 from PyQt4.QtCore import QTimer
-from PyQt4.QtGui import QApplication
+from PyQt4.QtGui import QApplication, QAction
 
 from ems.util import platformName
 
@@ -20,15 +20,44 @@ class MainApplication(QApplication):
         Constructor
         '''
         QApplication.__init__(self,argv)
-        
+
         self._services = {}
         self._serviceTimers = {}
+        self._standardActions = {}
 
         if appPath is None:
             self.appPath = os.path.abspath(os.path.dirname(argv[0]))
         else:
             self.appPath = appPath
-            
+
+    def getStandardAction(self, name):
+        action = QAction(self)
+        if self._standardActions.has_key(name):
+            action.setCheckable(self._standardActions[name].isCheckable())
+            action.setAutoRepeat(self._standardActions[name].autoRepeat())
+            action.setData(self._standardActions[name].data())
+            action.setChecked(self._standardActions[name].isChecked())
+            action.setEnabled(self._standardActions[name].isEnabled())
+            action.setFont(self._standardActions[name].font())
+            action.setIcon(self._standardActions[name].icon())
+            action.setIconText(self._standardActions[name].iconText())
+            action.setIconVisibleInMenu(self._standardActions[name].isIconVisibleInMenu())
+            action.setMenuRole(self._standardActions[name].menuRole())
+            action.setObjectName(self._standardActions[name].objectName())
+            action.setPriority(self._standardActions[name].priority())
+            action.setShortcut(self._standardActions[name].shortcut())
+            action.setShortcutContext(self._standardActions[name].shortcutContext())
+            action.setSoftKeyRole(self._standardActions[name].softKeyRole())
+            action.setStatusTip(self._standardActions[name].statusTip())
+            action.setText(self._standardActions[name].text())
+            action.setToolTip(self._standardActions[name].toolTip())
+            action.setVisible(self._standardActions[name].isVisible())
+            action.setWhatsThis(self._standardActions[name].whatsThis())
+        return action
+
+    def setStandardAction(self, name, action):
+        self._standardActions[name] = action
+    
     def getRelativePath(self,path):
         rPath = path.replace(self.appPath, "")
         if rPath.startswith(os.path.sep):
