@@ -7,10 +7,12 @@ Created on 28.04.2012
 from PyQt4.QtCore import Qt, QObject, QModelIndex, pyqtSignal
 from PyQt4.QtGui import QCompleter, QAbstractProxyModel, QLineEdit, QComboBox
 
+from ems.qt4.util import hassig
 
 class CompleterListener(QObject):
     
     activated = pyqtSignal(QModelIndex)
+    highlighted = pyqtSignal(QModelIndex)
     
     def __init__(self, completer=None):
         self._completer = None
@@ -25,10 +27,29 @@ class CompleterListener(QObject):
     def setCompleter(self, completer):
         if not isinstance(completer, QCompleter):
             raise ValueError("setCompleter needs a QCompleter")
+
         if isinstance(self._completer, QCompleter):
-            self._completer.activated[QModelIndex].disconnect(self._setCompleterIndex)
+            if hassig(self._completer,'activatedIndex'):
+                self._completer.activatedIndex.disconnect(self._onCompleterActivated)
+            else:
+                self._completer.activated[QModelIndex].disconnect(self._onCompleterActivated)
+            if hassig(self._completer,'highlightedIndex'):
+                self._completer.highlightedIndex.disconnect(self._onCompleterHighlighted)
+            else:
+                self._completer.highlighted[QModelIndex].disconnect(self._onCompleterHighlighted)
+
         self._completer = completer
-        self._completer.activated[QModelIndex].connect(self._setCompleterIndex)
+        
+        
+        if hassig(self._completer,'activatedIndex'):
+            self._completer.activatedIndex.connect(self._onCompleterActivated)
+        else:
+            self._completer.activated[QModelIndex].connect(self._onCompleterActivated)
+        if hassig(self._completer,'highlightedIndex'):
+            self._completer.highlightedIndex.connect(self._onCompleterHighlighted)
+        else:
+            self._completer.highlighted[QModelIndex].connect(self._onCompleterHighlighted)
+
         widget = self._completer.widget()
         if isinstance(widget, QLineEdit):
             widget.textEdited.connect(self._onTextChanged)
@@ -36,12 +57,17 @@ class CompleterListener(QObject):
             if widget.isEditable():
                 widget.lineEdit().textEdited.connect(self._onTextChanged)
     
-    def _setCompleterIndex(self, index):
-        model = index.model()
-        if isinstance(model, QAbstractProxyModel):
-            srcIndex = model.mapToSource(index)
-            self.activated.emit(srcIndex)
-            self.lastIndex = srcIndex
+    def _onCompleterActivated(self, index):
+        self.activated.emit(index)
+        self.lastIndex = index
+        #model = index.model()
+        #if isinstance(model, QAbstractProxyModel):
+            #srcIndex = model.mapToSource(index)
+            #self.activated.emit(srcIndex)
+            #self.lastIndex = srcIndex
+    
+    def _onCompleterHighlighted(self, index):
+        self.highlighted.emit(index)
     
     def _onTextChanged(self, newText):
         self.lastIndex = None

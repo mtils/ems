@@ -93,12 +93,12 @@ class StringSummaryProxyModel(QAbstractProxyModel):
         return self.createIndex(row, col, parentIndex)
 
     def mapToSource(self, proxyIndex):
-        return QModelIndex()
-        return QAbstractProxyModel.mapToSource(self, proxyIndex)
+        print "mapToSource",proxyIndex.row(), proxyIndex.column(), self.rowCount()
+        return self.sourceModel().createIndex(proxyIndex.row(), proxyIndex.column())
 
     def mapFromSource(self, sourceIndex):
-        return QModelIndex()
-        return QAbstractProxyModel.mapFromSource(self, sourceIndex)
+        print "mapFromSource"
+        return self.createIndex(sourceIndex.row(), sourceIndex.column())
 
     def reset(self):
         self.beginResetModel()

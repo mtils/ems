@@ -4,7 +4,8 @@ Created on 24.03.2013
 
 @author: michi
 '''
-from PyQt4.QtCore import QObject, QAbstractItemModel, QRegExp, QStringList
+from PyQt4.QtCore import QObject, QAbstractItemModel, QRegExp, QStringList, \
+    pyqtSignal, QModelIndex
 from PyQt4.QtGui import QCompleter, QSortFilterProxyModel
 
 class FuzzyCompleter(QCompleter):
@@ -12,6 +13,9 @@ class FuzzyCompleter(QCompleter):
     StartsWith = 1
     Contains = 2
     Regex = 3
+    
+    activatedIndex = pyqtSignal(QModelIndex)
+    highlightedIndex = pyqtSignal(QModelIndex)
 
     def __init__(self, model=None, parent=None):
         '''void FuzzyCompleter.__init__(QAbstractItemModel model = None, QObject parent = None)'''
@@ -28,6 +32,21 @@ class FuzzyCompleter(QCompleter):
         if isinstance(model, QAbstractItemModel):
             self.setModel(model)
 
+        self.activated[QModelIndex].connect(self._onBaseCompleterActivated)
+        self.highlighted[QModelIndex].connect(self._onBaseCompleterHighlighted)
+
+    def _onBaseCompleterActivated(self, modelIndex):
+        if self._filtering == self.StartsWith:
+            self.activatedIndex.emit(modelIndex)
+        realIndex = self._sortFilterProxyModel.mapToSource(self._sortFilterProxyModel.index(modelIndex.row(), modelIndex.column()))
+        self.activatedIndex.emit(realIndex)
+
+    def _onBaseCompleterHighlighted(self, modelIndex):
+        if self._filtering == self.StartsWith:
+            self.highlightedIndex.emit(modelIndex)
+        realIndex = self._sortFilterProxyModel.mapToSource(self._sortFilterProxyModel.index(modelIndex.row(), modelIndex.column()))
+        self.activatedIndex.emit(realIndex)
+        
     def filtering(self):
         '''int FuzzyCompleter.filtering()'''
         return self._filtering
@@ -73,6 +92,7 @@ class FuzzyCompleter(QCompleter):
             regex.setCaseSensitivity(self.caseSensitivity())
             self._sortFilterProxyModel.setFilterRegExp(regex)
             paths = QStringList()
+
         return paths
     
     def _updateSortFilterProxyModel(self):
