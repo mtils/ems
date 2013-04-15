@@ -58,16 +58,24 @@ class CompleterListener(QObject):
                 widget.lineEdit().textEdited.connect(self._onTextChanged)
     
     def _onCompleterActivated(self, index):
-        self.activated.emit(index)
-        self.lastIndex = index
-        #model = index.model()
-        #if isinstance(model, QAbstractProxyModel):
-            #srcIndex = model.mapToSource(index)
-            #self.activated.emit(srcIndex)
-            #self.lastIndex = srcIndex
+        model = index.model()
+        if isinstance(model, QAbstractProxyModel):
+            srcIndex = model.mapToSource(index)
+            self.activated.emit(srcIndex)
+            self.lastIndex = srcIndex
+        else:
+            self.activated.emit(index)
+            self.lastIndex = index
     
     def _onCompleterHighlighted(self, index):
-        self.highlighted.emit(index)
+        model = index.model()
+        if isinstance(model, QAbstractProxyModel):
+            srcIndex = model.mapToSource(index)
+            self.activated.emit(srcIndex)
+            self.lastIndex = srcIndex
+        else:
+            self.activated.emit(index)
+            self.lastIndex = index
     
     def _onTextChanged(self, newText):
         self.lastIndex = None
