@@ -26,6 +26,10 @@ class StringComparator(object):
         self.typicalSynonyms = typicalSynonyms
     
     def compare(self, a, b):
+        if not isinstance(a, basestring):
+            return 0.0
+        if not isinstance(b, basestring):
+            return 0.0
         if a == b:
             return 1.0
         if a.lower() == b.lower():
