@@ -5,8 +5,10 @@ Created on 24.03.2013
 @author: michi
 '''
 from PyQt4.QtCore import QObject, QAbstractItemModel, QRegExp, QStringList, \
-    pyqtSignal, QModelIndex
+    pyqtSignal, QModelIndex, Qt
 from PyQt4.QtGui import QCompleter, QSortFilterProxyModel
+
+from ems.qt4.util import variant_to_pyobject
 
 class FuzzyCompleter(QCompleter):
 
@@ -16,6 +18,8 @@ class FuzzyCompleter(QCompleter):
     
     activatedIndex = pyqtSignal(QModelIndex)
     highlightedIndex = pyqtSignal(QModelIndex)
+    
+    activationRole = Qt.EditRole
 
     def __init__(self, model=None, parent=None):
         '''void FuzzyCompleter.__init__(QAbstractItemModel model = None, QObject parent = None)'''
@@ -46,7 +50,7 @@ class FuzzyCompleter(QCompleter):
             self.highlightedIndex.emit(modelIndex)
         realIndex = self._sortFilterProxyModel.mapToSource(self._sortFilterProxyModel.index(modelIndex.row(), modelIndex.column()))
         self.activatedIndex.emit(realIndex)
-        
+
     def filtering(self):
         '''int FuzzyCompleter.filtering()'''
         return self._filtering
@@ -77,7 +81,7 @@ class FuzzyCompleter(QCompleter):
                 self.setModel(self._sortFilterProxyModel)
             except TypeError:
                 pass
-                
+
         elif sourceModel.parent() is self._sortFilterProxyModel:
             sourceModel.setParent(self)
             self.setModel(sourceModel)
@@ -98,8 +102,11 @@ class FuzzyCompleter(QCompleter):
             paths = QStringList()
 
         return paths
-    
+
     def _updateSortFilterProxyModel(self):
         '''void FuzzyCompleter._updateSortFilterProxyModel()'''
         self._sortFilterProxyModel.setFilterCaseSensitivity(self.caseSensitivity())
         self._sortFilterProxyModel.setFilterKeyColumn(self.completionColumn())
+
+    def pathFromIndex(self, index):
+        return variant_to_pyobject(index.data(self.activationRole))
