@@ -71,9 +71,13 @@ class FuzzyCompleter(QCompleter):
         '''FuzzyCompleter FuzzyCompleter.setSourceModel(QAbstractItemModel sourceModel)'''
         if self._filtering != FuzzyCompleter.StartsWith:
             self._sortFilterProxyModel.setSourceModel(sourceModel)
-            if sourceModel.parent() is self:
-                sourceModel.setParent(self._sortFilterProxyModel)
-            self.setModel(self._sortFilterProxyModel)
+            try:
+                if sourceModel.parent() is self:
+                    sourceModel.setParent(self._sortFilterProxyModel)
+                self.setModel(self._sortFilterProxyModel)
+            except TypeError:
+                pass
+                
         elif sourceModel.parent() is self._sortFilterProxyModel:
             sourceModel.setParent(self)
             self.setModel(sourceModel)
