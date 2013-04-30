@@ -1,0 +1,27 @@
+<RCC>
+  <qresource prefix="imageEdit">
+    <file>icons/14_ellipse.png</file>
+    <file>icons/14_flatten.png</file>
+    <file>icons/14_gradient.png</file>
+    <file>icons/14_group.png</file>
+    <file>icons/14_image.png</file>
+    <file>icons/14_pencil.png</file>
+    <file>icons/14_polygon.png</file>
+    <file>icons/14_polyline.png</file>
+    <file>icons/14_rectangle.png</file>
+    <file>icons/14_rotate.png</file>
+    <file>icons/14_roundrect.png</file>
+    <file>icons/14_select.png</file>
+    <file>icons/14_selectnodes.png</file>
+    <file>icons/14_shear.png</file>
+    <file>icons/14_sinus.png</file>
+    <file>icons/14_spiral.png</file>
+    <file>icons/14_star.png</file>
+    <file>icons/14_text.png</file>
+    <file>icons/14_ungroup.png</file>
+    <file>icons/14_zoom.png</file>
+    <file>icons/frame_edit.png</file>
+    <file>icons/frame_image.png</file>
+    <file>icons/frame_text.png</file>
+  </qresource>
+</RCC>
