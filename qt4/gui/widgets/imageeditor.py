@@ -103,7 +103,7 @@ class ImageEditor(DialogableWidget):
         self._minimumZoomLevel = 10
         self._maximumZoomLevel = 500
         self._autoZoomEnabled = True
-        self.rsrcPath = ':/imageEditor'
+        self.rsrcPath = ':/ImageEditor'
         self._rotation = 0
         
         self._cropOverlay = None
@@ -182,7 +182,7 @@ class ImageEditor(DialogableWidget):
         return self._cropOverlay
     
     def addStandardActions(self):
-        
+
         res = QResource(self.rsrcPath + '/icons/frame_image.png')
         if not res.isValid():
             absPath = os.path.dirname(os.path.abspath(__file__))
@@ -198,7 +198,8 @@ class ImageEditor(DialogableWidget):
                 lastPart = part
             path += ('qt4','gui','widgets','icons.rcc')
             rccPath = os.path.join(*path)
-            QResource.registerResource(rccPath)
+            print rccPath
+            print QResource.registerResource(rccPath)
 
         self.openAction = QAction(self.trUtf8('Bild laden'), self)
         self.openAction.setIcon(QApplication.instance().style().standardIcon(QStyle.SP_DialogOpenButton))
@@ -206,7 +207,7 @@ class ImageEditor(DialogableWidget):
         self.addAction(self.openAction)
         
         self.cropAction = QAction(self.trUtf8('Bild zuschneiden'), self)
-        self.cropAction.setIcon(QIcon(':imageEdit/icons/frame_image.png'))
+        self.cropAction.setIcon(QIcon(self.rsrcPath + '/icons/frame_image.png'))
         self.cropAction.setCheckable(True)
         self.cropAction.toggled.connect(self.cropImage)
         self.addAction(self.cropAction)

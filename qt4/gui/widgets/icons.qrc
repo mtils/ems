@@ -1,5 +1,5 @@
 <RCC>
-  <qresource prefix="imageEdit">
+  <qresource prefix="ImageEditor">
     <file>icons/14_ellipse.png</file>
     <file>icons/14_flatten.png</file>
     <file>icons/14_gradient.png</file>
