@@ -193,8 +193,8 @@ class GeoTiledMapData(GeoMapData):
     
     def coordinateToScreenPosition(self, coordOrLon, lat=0.0):
         if isinstance(coordOrLon, GeoCoordinate):
-            lon = coordOrLon.longitude()
-            lat = coordOrLon.latitude()
+            lon = coordOrLon.lng
+            lat = coordOrLon.lat
         else:
             lon = coordOrLon
             
@@ -245,8 +245,8 @@ class GeoTiledMapData(GeoMapData):
         @type lat: float
         '''
         if isinstance(lngOrCoord, GeoCoordinate):
-            lng = lngOrCoord.longitude()
-            lat = lngOrCoord.latitude()
+            lng = lngOrCoord.lng
+            lat = lngOrCoord.lat
         else:
             lng = lngOrCoord
             
@@ -571,11 +571,10 @@ class GeoTiledMapData(GeoMapData):
             return None
     @pyqtSlot()
     def _processRequests(self):
-#        print "_processRequests"
-        i = 0
+        #print "_processRequests"
+
         for reply in self._replies:
-            i += 1
-            
+
             if not self.intersectsScreen(reply.request().tileRect()) \
                 or (self._zoomLevel != reply.request().zoomLevel()) \
                 or (self._mapType != reply.request().mapType()) \
@@ -602,10 +601,10 @@ class GeoTiledMapData(GeoMapData):
         tiledEngine = self._engine
         
         processedRequests = set()
-        i = 0
+
         addedRects = set()
         for req in self._requests:
-            i += 1
+
             tileRect = req.tileRect()
             tileRectCacheId = str(tileRect)
             #print "{0} -> {1} {2}".format(tileRect, req._row, req._column)
@@ -614,19 +613,28 @@ class GeoTiledMapData(GeoMapData):
             except KeyError:
                 pass
             
+            #I believe that this intersectsScreen method caused
+            #the random missing updates
+            #if self._replyRects.has_key(tileRectCacheId) or\
+                #(tileRect in addedRects) or \
+                #not self.intersectsScreen(tileRect):
+                #print "I'll continue"
+                #continue
+            
             if self._replyRects.has_key(tileRectCacheId) or\
-                (tileRect in addedRects) or \
-                not self.intersectsScreen(tileRect):
+                (tileRect in addedRects):
+                #not self.intersectsScreen(tileRect):
+                #print "I'll continue"
                 continue
             
             #if self._replyRects.has_key(tileRectCacheId):
-            #    continue
+                #continue
             
             #if (tileRect in addedRects):
-            #    continue
+                #continue
             
-#            if not self.intersectsScreen(tileRect):
-#                continue
+            #if not self.intersectsScreen(tileRect):
+                #continue
             
             reply = tiledEngine.getTileImage(req)
             
@@ -679,35 +687,34 @@ class GeoTiledMapData(GeoMapData):
         
 #        print "{0} -> {1} {2}".format(tileRect, req._row, req._column)
         
-        if self._replyRects.has_key(str(tileRect)):
+        try:
             del self._replyRects[str(tileRect)]
-            
-        if reply in self._replies:
+        except KeyError:
+            pass
+
+        #if reply in self._replies:
+        try:
             self._replies.remove(reply)
+        except KeyError:
+            pass
         
         cacheId = req.cacheId()
-        if self._zoomRequestsByCacheId.has_key(cacheId):
-            try:
-                del self.zoomCache[cacheId]
-            except KeyError:
-                pass
-            try:
-                del self._zoomRequestsByCacheId[cacheId]
-            except KeyError:
-                pass
-            
-#            if self.zoomCache.has_key(req):
-#                del self.zoomCache[req]
         
+        try:
+            del self._zoomRequestsByCacheId[cacheId]
+            del self.zoomCache[cacheId]
+        except KeyError:
+            pass
+
         if reply.error() != GeoTiledMapReply.NoError:
             if len(self._requests) > 0:
                 QTimer.singleShot(0, self, SLOT('_processRequests()'))
             reply.deleteLater()
             return
-        
-        if self.zoomLevel() != req.zoomLevel()\
-            or self.mapType() != req.mapType()\
-            or self.connectivityMode() != req.connectivityMode():
+
+        if self._zoomLevel != req.zoomLevel()\
+            or self._mapType != req.mapType()\
+            or self._connectivityMode != req.connectivityMode():
             if len(self._requests) > 0:
                 QTimer.singleShot(0, self, SLOT("_processRequests()"))
             reply.deleteLater()
@@ -721,7 +728,7 @@ class GeoTiledMapData(GeoMapData):
                 QTimer.singleShot(0, self, SLOT('_processRequests()'))
             reply.deleteLater()
             return
-        
+
         if tile.isNull() or tile.size().isEmpty():
             del tile
             if len(self._requests) > 0:
@@ -933,9 +940,6 @@ class GeoTiledMapData(GeoMapData):
             tileRectCacheId = str(tileRect)
 
             if not self._requestsByCacheId.has_key(req.cacheId()):
-            #if not self.cache.has_key(req):
-                #print "cache has not req {0} {1}".format(req.row(), req.column())
-                #TODO: Wieder rein
                 if not self._requestRects.has_key(tileRectCacheId) and \
                     not self._replyRects.has_key(tileRectCacheId):
                     #print "_requestRect has not req {0}".format(tileRect)
@@ -986,20 +990,32 @@ class GeoTiledMapData(GeoMapData):
                 #zoomKeys = self.zoomCache.keys()
                 cacheId = req.cacheId()
                 
-                if self._requestsByCacheId.has_key(cacheId):
-                #if self.cache.has_key(req):
+                try:
                     painter.drawImage(target,
                                       self.cache[cacheId],
                                       source)
-                else:
-                    if self._zoomRequestsByCacheId.has_key(cacheId):
+                except KeyError:
+                    try:
                         painter.drawPixmap(target,
                                            self.zoomCache[cacheId],
                                            source)
-                    else:
+                    except KeyError:
                         painter.fillRect(target, Qt.lightGray)
-                        #painter.fillRect(target, Qt.red)
-                        pass
+                
+                #if self._requestsByCacheId.has_key(cacheId):
+                ##if self.cache.has_key(req):
+                    #painter.drawImage(target,
+                                      #self.cache[cacheId],
+                                      #source)
+                #else:
+                    #if self._zoomRequestsByCacheId.has_key(cacheId):
+                        #painter.drawPixmap(target,
+                                           #self.zoomCache[cacheId],
+                                           #source)
+                    #else:
+                        #painter.fillRect(target, Qt.lightGray)
+                        ##painter.fillRect(target, Qt.red)
+                        #pass
 
     
     def paintObjects(self, painter, option):
@@ -1032,7 +1048,7 @@ class GeoTiledMapData(GeoMapData):
                                           Qt.IntersectsItemShape,
                                           Qt.AscendingOrder)
         
-        nextStamp2 = time.time()
+        #nextStamp2 = time.time()
         #print "after collecting Items in {0}s".format((nextStamp2-nextStamp*1000))
         objsDone = set()
         
@@ -1047,20 +1063,17 @@ class GeoTiledMapData(GeoMapData):
             #stamps[i] = time.time()
             #print "next Item"
             obj = self._oe.pixelItems[item]
-            
-            
-            
+
             if obj.isVisible() and not (obj in objsDone):
-                #nextStamp = time.time()
+                nextStamp = time.time()
                 #print "if obj.isVisible() and not (obj in objsDone) in {0}s".format((nextStamp - stamps[i])*1000)
-                if self._oe.pixelExact.has_key(obj):
-                    #nextStampFett = time.time()
-                    
+                try:
+                    nextStampFett = time.time()
                     for it in self._oe.pixelExact[obj]:
                         painter.setTransform(baseTrans)
                         it.paint(painter, style)
                     #print "for it in self._oe.pixelExact in {0}s".format((time.time() - nextStampFett)*1000)
-                else:
+                except KeyError:
                     #print "Doch was im Cache?"
                     try:
                         gItem = obj.info().graphicsItem
@@ -1074,6 +1087,28 @@ class GeoTiledMapData(GeoMapData):
                                 child.paint(painter, style)
                     except AttributeError:
                         pass
+                
+                #if self._oe.pixelExact.has_key(obj):
+                    #nextStampFett = time.time()
+                    
+                    #for it in self._oe.pixelExact[obj]:
+                        #painter.setTransform(baseTrans)
+                        #it.paint(painter, style)
+                    #print "for it in self._oe.pixelExact in {0}s".format((time.time() - nextStampFett)*1000)
+                #else:
+                    #print "Doch was im Cache?"
+                    #try:
+                        #gItem = obj.info().graphicsItem
+                        #for trans in self._oe.pixelTrans[obj]:
+                            #painter.setTransform(trans * baseTrans)
+                            ##painter.setTransform(baseTrans)
+                            #gItem.paint(painter, style, None)
+                            #for child in gItem.childItems():
+                                #painter.setTransform(child.transform() * trans * baseTrans)
+                                #painter.translate(child.pos())
+                                #child.paint(painter, style)
+                    #except AttributeError:
+                        #pass
             
             objsDone.add(obj)
             i += 1
@@ -1109,9 +1144,8 @@ class GeoTiledMapData(GeoMapData):
                                     cacheRect1.y(),
                                     oldWidth - cacheRect1.width(),
                                     cacheRect1.height())
-        
-        keys = self.cache.keys()
-        for key in keys:
+
+        for key in self.cache.keys():
             #tileRect = self.cache[key].tileRect()
             tileRect = self._requestsByCacheId[key].tileRect()
             if not cacheRect1.intersects(tileRect):
