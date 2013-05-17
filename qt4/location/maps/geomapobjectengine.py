@@ -131,7 +131,9 @@ class GeoMapObjectEngine(QObject):
                         del self.latLonItems[item]
                     except KeyError:
                         pass
-                    self.latLonScene.removeItem(item)
+                    #TODO The were errors that the scene differs
+                    if item.scene() is self.latLonScene:
+                        self.latLonScene.removeItem(item)
                     del item
             except KeyError:
                 pass
@@ -147,7 +149,9 @@ class GeoMapObjectEngine(QObject):
             try:
                 for item in self.pixelItemsRev[obj]:
                     del self.pixelItems[item]
-                    self.pixelScene.removeItem(item)
+                    #TODO The were errors that the scene differs
+                    if item.scene() is self.pixelScene:
+                        self.pixelScene.removeItem(item)
                     del item
                 del self.pixelItemsRev[obj]
             except KeyError:
@@ -278,7 +282,7 @@ class GeoMapObjectEngine(QObject):
         @type polys: list
         '''
         projStr = "+proj=tmerc +lat_0={0:.12f} +lon_0={1.12f} +k=1.0 +x_0=0 +y_0=0 +ellps=WGS84"
-        projStr = projStr.format(origin.latitude(), origin.longitude())
+        projStr = projStr.format(origin.lat, origin.lng)
         
         localSys = ProjCoordinateSystem(projStr, False)
         wgs84 = ProjCoordinateSystem("+proj=latlon +ellps=WGS84")
@@ -307,22 +311,22 @@ class GeoMapObjectEngine(QObject):
             pi = self.polyCopy(elItem);
             pi.setPolygon(wgs)
             
-            if self.latLonExact.has_key(obj):
+            try:
                 self.latLonExact[obj].append(pi)
-            else:
+            except KeyError:
                 self.latLonExact[obj] = [pi]
-                
+
             polys.append(pi.boundingRect())
             
             westPoly = wgs * west
             pi = self.polyCopy(elItem)
             pi.setPolygon(westPoly)
             
-            if self.latLonExact.has_key(obj):
+            try:
                 self.latLonExact[obj].append(pi)
-            else:
+            except KeyError:
                 self.latLonExact[obj] = [pi]
-            
+
             polys.append(pi.boundingRect())
     
             eastPoly = wgs * east
@@ -330,11 +334,10 @@ class GeoMapObjectEngine(QObject):
             pi = self.polyCopy(elItem)
             pi.setPolygon(eastPoly)
             
-            if self.latLonExact.has_key(obj):
+            try:
                 self.latLonExact[obj].append(pi)
-            else:
+            except KeyError:
                 self.latLonExact[obj] = [pi]
-                
             polys.append(pi.boundingRect())
             
             return True
@@ -351,33 +354,33 @@ class GeoMapObjectEngine(QObject):
             pi = self.polyCopy(polyItem);
             pi.setPolygon(wgs)
             
-            if self.latLonExact.has_key(obj):
+            try:
                 self.latLonExact[obj].append(pi)
-            else:
+            except KeyError:
                 self.latLonExact[obj] = [pi]
-                
+
             polys.append(pi.boundingRect())
             
             westPoly = wgs * west
             pi = self.polyCopy(polyItem)
             pi.setPolygon(westPoly)
             
-            if self.latLonExact.has_key(obj):
+            try:
                 self.latLonExact[obj].append(pi)
-            else:
+            except KeyError:
                 self.latLonExact[obj] = [pi]
-            
+
             polys.append(pi.boundingRect())
             
             eastPoly = wgs * east
             pi = self.polyCopy(polyItem)
             pi.setPolygon(eastPoly)
             
-            if self.latLonExact.has_key(obj):
+            try:
                 self.latLonExact[obj].append(pi)
-            else:
+            except KeyError:
                 self.latLonExact[obj] = [pi]
-            
+
             polys.append(pi.boundingRect())
             
             return True
@@ -396,32 +399,32 @@ class GeoMapObjectEngine(QObject):
             pi = self.pathCopy(pathItem)
             pi.setPath(path)
             
-            if self.latLonExact.has_key(obj):
+            try:
                 self.latLonExact[obj].append(pi)
-            else:
+            except KeyError:
                 self.latLonExact[obj] = [pi]
-            
+
             polys.append(pi.boundingRect())
             
             westPath = path * west;
             pi = self.pathCopy(pathItem);
             pi.setPath(westPath);
             
-            if self.latLonExact.has_key(obj):
+            try:
                 self.latLonExact[obj].append(pi)
-            else:
+            except KeyError:
                 self.latLonExact[obj] = [pi]
-                
+
             polys.append(pi.boundingRect())
             
             eastPath = path * east
             pi = self.pathCopy(pathItem)
             pi.setPath(eastPath)
-            if self.latLonExact.has_key(obj):
-                self.latLonExact[obj].append(pi)
-            else:
-                self.latLonExact[obj] = [pi]
             
+            try:
+                self.latLonExact[obj].append(pi)
+            except KeyError:
+                self.latLonExact[obj] = [pi]
             polys.append(pi.boundingRect())
     
             return True
@@ -449,8 +452,8 @@ class GeoMapObjectEngine(QObject):
             
         toAbs = QTransform()
         if obj.units() == GeoMapObject.RelativeArcSecondUnit:
-            ox = origin.longitude() * 3600.0;
-            oy = origin.latitude() * 3600.0;
+            ox = origin.lng * 3600.0;
+            oy = origin.lat * 3600.0;
             toAbs.translate(ox, oy)
         
         try:
@@ -470,9 +473,10 @@ class GeoMapObjectEngine(QObject):
             
             pi = self.polyCopy(polyItem)
             pi.setPolygon(poly)
-            if self.latLonExact.has_key(obj):
+            
+            try:
                 self.latLonExact[obj].append(pi)
-            else:
+            except KeyError:
                 self.latLonExact[obj] = [pi]
                 
             polys.append(pi.boundingRect())
@@ -480,20 +484,23 @@ class GeoMapObjectEngine(QObject):
             westPoly = poly * west
             pi = self.polyCopy(polyItem)
             pi.setPolygon(westPoly)
-            if self.latLonExact.has_key(obj):
+            
+            try:
                 self.latLonExact[obj].append(pi)
-            else:
+            except KeyError:
                 self.latLonExact[obj] = [pi]
-                
+
             polys.append(pi.boundingRect())
             
             eastPoly = poly * east
             pi = self.polyCopy(polyItem);
             pi.setPolygon(eastPoly);
-            if self.latLonExact.has_key(obj):
+            
+            try:
                 self.latLonExact[obj].append(pi)
-            else:
+            except KeyError:
                 self.latLonExact[obj] = [pi]
+
             polys.append(pi.boundingRect())
             
             return True
@@ -508,31 +515,36 @@ class GeoMapObjectEngine(QObject):
             
             pi = self.pathCopy(pathItem)
             pi.setPath(path)
-            if self.latLonExact.has_key(obj):
+            
+            try:
                 self.latLonExact[obj].append(pi)
-            else:
+            except KeyError:
                 self.latLonExact[obj] = [pi]
+
             originalBounds = pi.boundingRect()
             polys.append(QPolygonF(originalBounds))
             
             westPath = path * west
             pi = self.pathCopy(pathItem);
             pi.setPath(westPath)
-            if self.latLonExact.has_key(obj):
+            
+            try:
                 self.latLonExact[obj].append(pi)
-            else:
+            except KeyError:
                 self.latLonExact[obj] = [pi]
+
             polys.append(QPolygonF(originalBounds) * west)
             
             eastPath = path * east
             pi = self.pathCopy(pathItem)
             pi.setPath(eastPath);
-            if self.latLonExact.has_key(obj):
+            try:
                 self.latLonExact[obj].append(pi)
-            else:
+            except KeyError:
                 self.latLonExact[obj] = [pi]
+
             polys.append(QPolygonF(originalBounds) * east)
-            
+
             return True
         return False
     
@@ -548,7 +560,7 @@ class GeoMapObjectEngine(QObject):
         @type latLon: QTransform
         '''
         projStr = "+proj=tmerc +lat_0={0} +lon_0={1} +k=1.0 +x_0=0 +y_0=0 +ellps=WGS84"
-        projStr = projStr.format(origin.latitude(), origin.longitude())
+        projStr = projStr.format(origin.lat, origin.lng)
         
         localSys = ProjCoordinateSystem(projStr, False)
         wgs84 = ProjCoordinateSystem("+proj=latlon +ellps=WGS84")
@@ -592,7 +604,7 @@ class GeoMapObjectEngine(QObject):
         for pt in local:
             coord = self.md.screenPositionToCoordinate(pt + pixelOrigin)
             
-            lpt = QPointF(coord.longitude() * 3600.0, coord.latitude() * 3600.0)
+            lpt = QPointF(coord.lng * 3600.0, coord.lat * 3600.0)
             wgs.append(lpt)
         
         # QTransform expects the last vertex (closing vertex) to be dropped
@@ -643,11 +655,11 @@ class GeoMapObjectEngine(QObject):
                 raise TypeError("QGeoMapData: bilinear transform to screen from arc-seconds "
                                 "failed: could not compute transformation matrix")
             
-            if self.pixelTrans.has_key(obj):
+            try:
                 self.pixelTrans[obj].append(pixel)
-            else:
+            except KeyError:
                 self.pixelTrans[obj] = [pixel]
-            
+
             polys.append(pixelPoly)
     
     class PathStep(object):
@@ -664,7 +676,7 @@ class GeoMapObjectEngine(QObject):
         @param polys: List of QPolygonF
         @type polys: list
         '''
-#        print "exactPixelMap!!"
+        #print "exactPixelMap!!"
         latLonItems = self.latLonExact[obj]
         
         try:
@@ -689,10 +701,11 @@ class GeoMapObjectEngine(QObject):
                 pi = self.polyCopy(latLonItem)
                 pi.setPolygon(pixelPoly)
                 
-                if self.pixelExact.has_key(obj):
+                try:
                     self.pixelExact[obj].append(pi)
-                else:
+                except KeyError:
                     self.pixelExact[obj] = [pi]
+
                 polys.append(pi.boundingRect())
             
             if isinstance(latLonItem, QGraphicsPathItem):
@@ -776,11 +789,11 @@ class GeoMapObjectEngine(QObject):
                 pi = self.pathCopy(pathItem)
                 pi.setPath(mpath)
                 #self.pixelExact.insertMulti(obj, pi);
-                if self.pixelExact.has_key(obj):
+                try:
                     self.pixelExact[obj].append(pi)
-                else:
+                except KeyError:
                     self.pixelExact[obj] = [pi]
-                
+
                 polys.append(QPolygonF(pi.boundingRect()))
         
     def pixelShiftToScreen(self, origin, obj, polys):
@@ -800,20 +813,20 @@ class GeoMapObjectEngine(QObject):
         
         # compute the transform as an origin shift
         origins = []
-        origins.append(QPointF(origin.longitude(), origin.latitude()))
-        origins.append(QPointF(origin.longitude() + 360.0, origin.latitude()))
-        origins.append(QPointF(origin.longitude() - 360.0, origin.latitude()))
+        origins.append(QPointF(origin.lng, origin.lat))
+        origins.append(QPointF(origin.lng + 360.0, origin.lat))
+        origins.append(QPointF(origin.lng - 360.0, origin.lat))
         
         for o in origins:
             pixel = item.transform()
             pixelOrigin = self.mdp.coordinateToScreenPosition(o.x(), o.y())
             pixel.translate(pixelOrigin.x(), pixelOrigin.y())
             
-            if self.pixelTrans.has_key(obj):
+            try:
                 self.pixelTrans[obj].append(pixel)
-            else:
+            except KeyError:
                 self.pixelTrans[obj] = [pixel]
-            
+
             polys.append(pixel.map(QPolygonF(localRect)))
         
 #        print "PixelShift2Screen"
@@ -1074,34 +1087,37 @@ class GeoMapObjectEngine(QObject):
             if obj.units() == GeoMapObject.MeterUnit:
                 latLon = self.bilinearMetersToSeconds(origin, item, local, latLon);
             elif obj.units() == GeoMapObject.RelativeArcSecondUnit:
-                latLon.translate(origin.longitude() * 3600.0, origin.latitude() * 3600.0)
+                latLon.translate(origin.lng * 3600.0, origin.lat * 3600.0)
             elif obj.units() == GeoMapObject.PixelUnit:
                 latLon = self.bilinearPixelsToSeconds(origin, item, local, latLon)
             
             polys.append(latLon.map(QPolygonF(localRect)))
-            if self.latLonTrans.has_key(obj):
-                self.latLonTrans[obj].append(latLon)
-            else:
-                self.latLonTrans[obj] = [latLon]
             
+            try:
+                self.latLonTrans[obj].append(latLon)
+            except KeyError:
+                self.latLonTrans[obj] = [latLon]
+
             latLonWest = QTransform()
             latLonWest.translate(360.0 * 3600.0, 0.0)
             latLonWest = latLon * latLonWest
             
             polys.append(latLonWest.map(QPolygonF(localRect)))
-            if self.latLonTrans.has_key(obj):
+
+            try:
                 self.latLonTrans[obj].append(latLonWest)
-            else:
+            except KeyError:
                 self.latLonTrans[obj] = [latLonWest]
-            
+
             latLonEast = QTransform()
             latLonEast.translate(-360.0 * 3600.0, 0.0)
             latLonEast = latLon * latLonEast
             
             polys.append(latLonEast.map(QPolygonF(localRect)))
-            if self.latLonTrans.has_key(obj):
+            
+            try:
                 self.latLonTrans[obj].append(latLonEast)
-            else:
+            except KeyError:
                 self.latLonTrans[obj] = [latLonEast]
             
         elif obj.transformType() == GeoMapObject.ExactTransform:
@@ -1137,10 +1153,11 @@ class GeoMapObjectEngine(QObject):
                 #item.setZValue(obj.zValue())
                 item.setVisible(True)
                 self.latLonItems[item] = [obj]
-                if self.latLonItemsRev.has_key(obj):
+                try:
                     self.latLonItemsRev[obj].append(item)
-                else:
+                except KeyError:
                     self.latLonItemsRev[obj] = [item]
+
                 self.latLonScene.addItem(item)
         else:
             i = 0
@@ -1203,10 +1220,11 @@ class GeoMapObjectEngine(QObject):
                 item.setVisible(True)
                 self.pixelItems[item] = obj
                 #self.pixelItemsRev.insertMulti(obj, item);
-                if self.pixelItemsRev.has_key(obj):
+                try:
                     self.pixelItemsRev[obj].append(item)
-                else:
+                except KeyError:
                     self.pixelItemsRev[obj] = [item]
+
                 self.pixelScene.addItem(item)
         else:
             for i in range(len(polys)):
@@ -1229,12 +1247,12 @@ class GeoMapObjectEngine(QObject):
         c = viewport.bottomLeft()
          
         #try:
-        cLatitude = c.latitude()
-        cLongitude = c.longitude()
+        cLatitude = c.lat
+        cLongitude = c.lng
         
         c2 = viewport.bottomRight()
-        c2Latitude = c2.latitude()
-        c2Longitude = c2.longitude()
+        c2Latitude = c2.lat
+        c2Longitude = c2.lng
         
         #print viewport
         #print c
@@ -1246,9 +1264,9 @@ class GeoMapObjectEngine(QObject):
                 offset = 360.0 * 3600.0
             view << QPointF(c2Longitude * 3600.0 + offset, c2Latitude * 3600.0)
             c3 = viewport.topRight();
-            view << QPointF(c3.longitude() * 3600.0 + offset, c3.latitude() * 3600.0)
+            view << QPointF(c3.lng * 3600.0 + offset, c3.lat * 3600.0)
             c4 = viewport.topLeft();
-            view << QPointF(c4.longitude() * 3600.0, c4.latitude() * 3600.0)
+            view << QPointF(c4.lng * 3600.0, c4.lat * 3600.0)
         #except TypeError:
         #   pass 
         
