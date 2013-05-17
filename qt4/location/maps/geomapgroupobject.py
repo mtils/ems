@@ -118,8 +118,12 @@ class GeoMapGroupObject(GeoMapObject):
         @param childObject: The GeoMapObject
         @type childObject: GeoMapObject
         '''
-        if not childObject or (childObject in self.childs):
+        if not childObject:
             return
+        #Happens never
+        #if not childObject or (childObject in self.childs):
+            #print "is schon"
+            #return
         
         childObject.setMapData(self._mapData)
         childObject.serial = (self.serial + 1)
