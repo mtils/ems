@@ -822,7 +822,7 @@ class GeoTiledMapData(GeoMapData):
     def mapObjectsInScreenRect(self, screenRect):
         results = []
         considered = []
-        
+
         self._oe.updateTransforms()
         
         pixelItems = self._oe.pixelScene.items(screenRect,
@@ -961,6 +961,8 @@ class GeoTiledMapData(GeoMapData):
         @param option: The StyleOption
         @type option: QStyleOptionGraphicsItem
         '''
+        #starttime = time.time()
+        #print "paintMap"
         offset = self.windowOffset()
         
         it = GeoTileIterator(self)
@@ -1016,7 +1018,7 @@ class GeoTiledMapData(GeoMapData):
                         #painter.fillRect(target, Qt.lightGray)
                         ##painter.fillRect(target, Qt.red)
                         #pass
-
+        #print "end paintMap",time.time() - starttime
     
     def paintObjects(self, painter, option):
         '''
@@ -1026,7 +1028,7 @@ class GeoTiledMapData(GeoMapData):
         @type option: QStyleOptionGraphicsItem
         '''
         #starttime = time.time()
-        #print "start paintObjects"
+        #print "paintObjects"
         painter.save()
         painter.setRenderHint(QPainter.Antialiasing)
         
@@ -1116,7 +1118,7 @@ class GeoTiledMapData(GeoMapData):
         
         painter.restore()
         #del style
-        #print "end paintObjects after {0}s".format((time.time()-nextStamp2)*1000)
+        #print "end paintObjects after {0}s".format((time.time()-starttime)*1000)
     
     def _cleanupCaches(self):
         boundaryTiles = 3

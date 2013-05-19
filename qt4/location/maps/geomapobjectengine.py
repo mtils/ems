@@ -947,7 +947,7 @@ class GeoMapObjectEngine(QObject):
         '''
         update the transform tables as necessary
         '''
-        #print "updateTransforms"
+        #print "updateTransforms",time.time()
         groupUpdated = False
 
         for obj in self.objectsForLatLonUpdate:
@@ -1018,7 +1018,7 @@ class GeoMapObjectEngine(QObject):
         
     def rebuildScenes(self):
         #return
-        #starttime = time.time()
+        starttime = time.time()
         #print "Start rebuildScenes"
         
         #clear is not working

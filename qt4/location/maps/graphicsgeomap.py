@@ -3,6 +3,7 @@ Created on 13.10.2011
 
 @author: michi
 '''
+import time
 
 from PyQt4.QtCore import pyqtSignal, QSizeF, QPointF, QRectF
 from PyQt4.QtGui import QGraphicsWidget, QPainterPath
@@ -149,6 +150,7 @@ class GraphicsGeoMap(QGraphicsWidget):
         @param target: The target rect
         @type target: QRectF
         '''
+        #starttime = time.time()
         #print "GraphicsGeoMap.updateMapDisplay({0})".format(target)
         #self.update()
         try:
@@ -158,6 +160,8 @@ class GraphicsGeoMap(QGraphicsWidget):
                 self.update()
         except RuntimeError: #Obj deletion Problems
             pass
+        
+        #print "GraphicsGeoMap.updateMapDisplay and {0}".format(time.time() - starttime)
     
     def minimumZoomLevel(self):
         '''This property holds the minimum zoom level supported by the
