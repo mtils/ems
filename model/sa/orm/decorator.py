@@ -39,7 +39,7 @@ class OrmDecorator(object):
             return obj.__getattribute__(self._class.__reprasentive_column__)
         return repr(obj)
     
-    def getFriendlyName(self, obj, view='default'):
+    def getFriendlyName(self, obj=None, view='default'):
         if hasattr(self._class, "__friendlyName__"):
             return self._class.__friendlyName__
         return self._class.__name__

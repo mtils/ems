@@ -66,6 +66,7 @@ class GeoMapObjectEngine(QObject):
         
         self.latLonTrans = {}
         self.latLonScene = QGraphicsScene()
+        self.latLonScene.setItemIndexMethod(QGraphicsScene.BspTreeIndex)
         self.latLonItems = {}
         self.latLonItemsRev = {}
         
@@ -805,6 +806,7 @@ class GeoMapObjectEngine(QObject):
         @param polys: A list to which the polys will be appended
         @type polys: list
         '''
+        #print "pixelShiftToScreen", time.time()
         item = self.graphicsItemFromMapObject(obj)
         if not item:
             return
@@ -849,6 +851,7 @@ class GeoMapObjectEngine(QObject):
         @param group: GeoMapGroupObject
         @type group: GeoMapGroupObject
         '''
+
         for obj in group.childs:
             if isinstance(obj, GeoMapGroupObject):
                 GeoMapObjectEngine._zoomDepsRecurse(eng, obj)
@@ -858,13 +861,15 @@ class GeoMapObjectEngine(QObject):
                     eng.objectsForPixelUpdate.add(obj)
     
     def invalidateZoomDependents(self):
+        #print "invalidateZoomDependents"
         if self.mdp._containerObject:
             GeoMapObjectEngine._zoomDepsRecurse(self, self.mdp._containerObject)
     
     
     def invalidatePixelsForViewport(self, updateNow=True):
+
         #print "GeoMapObjectEngine.invalidatePixelsForViewport"
-        
+
         view = self.latLonViewport()
 
         itemsInView = self.latLonScene.items(view, Qt.IntersectsItemShape,
@@ -879,6 +884,7 @@ class GeoMapObjectEngine(QObject):
             self.mdp.updateMapDisplay.emit(QRectF())
     
     def trimPixelTransforms(self):
+        #print "trimPixelTransforms"
 #        self.mdp.updateMapDisplay.emit(QRectF())
 #        return
         view = self.latLonViewport()
@@ -947,29 +953,39 @@ class GeoMapObjectEngine(QObject):
         '''
         update the transform tables as necessary
         '''
-        #print "updateTransforms",time.time()
+        #starttime = time.time()
+        #print "updateTransforms"
+
         groupUpdated = False
 
         for obj in self.objectsForLatLonUpdate:
+            #print "obj in objectsForLatLonUpdate", time.time()
             if obj.type_() == GeoMapObject.GroupType:
                 self.updateLatLonsForGroup(obj)
                 groupUpdated = True
             else:
                 self.updateLatLonTransform(obj)
-        
+
+        #print "updateLatLonTransform end",time.time()
+
         self.objectsForLatLonUpdate = set()
-        
+
         for obj in self.objectsForPixelUpdate:
+            #print "obj in objectsForPixelUpdate", time.time()
             if obj.type_() == GeoMapObject.GroupType:
                 self.updatePixelsForGroup(obj)
                 groupUpdated = True
             else:
                 self.updatePixelTransform(obj)
-        
+
+        #print "updatePixelTransform end",time.time()
         self.objectsForPixelUpdate = set()
 
         if groupUpdated:
             self.rebuildScenes()
+            #print "rebuildScenes end",time.time()
+
+        #print "updateTransforms end",time.time() - starttime
     
     def updatePixelsForGroup(self, group):
         '''
@@ -1018,7 +1034,7 @@ class GeoMapObjectEngine(QObject):
         
     def rebuildScenes(self):
         #return
-        starttime = time.time()
+        #starttime = time.time()
         #print "Start rebuildScenes"
         
         #clear is not working
@@ -1035,7 +1051,7 @@ class GeoMapObjectEngine(QObject):
         #self.pixelScene.setItemIndexMethod(QGraphicsScene.NoIndex)
     
         self.addGroupToScene(self, self.mdp._containerObject)
-        #print "End rebuildScenes in {0}".format((time.time()-starttime)*1000)
+        #print "End rebuildScenes in {0}".format((time.time()-starttime))
     
     '''
     ****************************************************************************

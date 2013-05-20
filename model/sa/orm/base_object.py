@@ -36,3 +36,9 @@ class OrmBaseObject(object):
             except AttributeError:
                 return False
         return False
+
+    @staticmethod
+    def getClassByEntityId(entityId):
+        for cls in OrmBaseObject.__subclasses__():
+            if cls.entityId == entityId:
+                return cls

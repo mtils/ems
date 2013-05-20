@@ -140,8 +140,10 @@ class GraphicsGeoMap(QGraphicsWidget):
         @type widget: QWidget
         '''
         
-        if self.mapData:
+        try:
             self.mapData.paint(painter, option)
+        except AttributeError:
+            pass
     
     def updateMapDisplay(self, target):
         '''

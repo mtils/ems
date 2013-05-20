@@ -7,9 +7,9 @@ import math
 #import random
 
 from PyQt4.QtCore import qRound, QPointF, QPoint, qAbs, QRectF, Qt, pyqtSlot,\
-    QRect, QTimer, SLOT, QSize
+    QRect, QTimer, SLOT, QSize, pyqtSignal
 from PyQt4.QtGui import QPixmap, QPainter, QImage, QPainterPath, \
-    QStyleOptionGraphicsItem 
+    QStyleOptionGraphicsItem , QApplication
 
 from ems.qt4.location.maps.geomapdata import GeoMapData
 from ems.qt4.location.geocoordinate import GeoCoordinate
@@ -132,6 +132,9 @@ class GeoTiledMapData(GeoMapData):
     QGeoMapData::setBlockPropertyChangeSignals() with true. Changing this in
     QGeoTiledMapData subclasses will cause the signals being emitted at wrong time.
     '''
+    
+    busyStateChanged = pyqtSignal(bool)
+    
     def __init__(self, engine):
         '''
         Constructs a new tiled map data object, which makes use of the functionality provided by \a engine.
@@ -142,9 +145,11 @@ class GeoTiledMapData(GeoMapData):
         
         super(GeoTiledMapData, self).__init__(engine)
         self.tileEngine = engine
-        
+        self._lastItems = set()
         self.setBlockPropertyChangeSignals(True)
         
+        self._busyState = False
+        self.currentlyAddingChildObjects = False
         
         self._worldReferenceViewportCenter = QRect()
         self._worldReferenceSize = (1 << qRound(self.tileEngine.maximumZoomLevel())) * self.tileEngine.tileSize()
@@ -176,6 +181,16 @@ class GeoTiledMapData(GeoMapData):
         
         self.setZoomLevel(8.0)
         #self._tileSize = 0
+    
+    def busyState(self):
+        return self._busyState
+    
+    def _setBusyState(self, state):
+        if self._busyState == state:
+            return
+        print "GeoTiledMapData busyState", state
+        self._busyState = state
+        self.busyStateChanged.emit(self._busyState)
     
     def clearForDeletion(self):
         self.clearMapObjects()
@@ -1028,38 +1043,56 @@ class GeoTiledMapData(GeoMapData):
         @type option: QStyleOptionGraphicsItem
         '''
         #starttime = time.time()
-        #print "paintObjects"
+        #print "paintObjects-------------------------------------"
+        #if self.currentlyAddingChildObjects:
+            #self._setBusyState(True)
         painter.save()
         painter.setRenderHint(QPainter.Antialiasing)
-        
+
         if option:
             target = QRectF(option.rect)
         else:
             target = QRectF(QPointF(0,0), self._windowSize)
-        
+
         offset = self.windowOffset()
-        
+
         target.adjust(offset.x(), offset.y(), -1.0 * offset.x(), -1.0 * offset.y())
-        
+
         painter.setClipRect(target)
-        
-        nextStamp = time.time()
+
+        #nextStamp = time.time()
         self._oe.updateTransforms()
-        #print "after updateTransforms in {0}s".format((nextStamp-starttime*1000))
+        #print "after updateTransforms in {0}s".format((nextStamp-starttime))
         items = self._oe.pixelScene.items(target,
                                           Qt.IntersectsItemShape,
                                           Qt.AscendingOrder)
-        
+
         #nextStamp2 = time.time()
-        #print "after collecting Items in {0}s".format((nextStamp2-nextStamp*1000))
+        #print "after collecting Items in {0}s".format((nextStamp2-nextStamp))
+        
+        #objsUnique = set()
+        #for item in items:
+            #objsUnique.add(item)
+        
+        #print 
+        
+        #diff = objsUnique - self._lastItems
+        #if not len(diff):
+            #painter.restore()
+            #return
+        #self._lastItems = objsUnique
+        #intersection = self._lastItems.intersection(objsUnique)
+        
+        
+        
         objsDone = set()
-        
+
         baseTrans = painter.transform()
-        
+
         style = QStyleOptionGraphicsItem()
-        
-        #stamps = {}
-        
+
+        stamps = {}
+
         i = 0
         for item in items:
             #stamps[i] = time.time()
@@ -1067,14 +1100,14 @@ class GeoTiledMapData(GeoMapData):
             obj = self._oe.pixelItems[item]
 
             if obj.isVisible() and not (obj in objsDone):
-                nextStamp = time.time()
-                #print "if obj.isVisible() and not (obj in objsDone) in {0}s".format((nextStamp - stamps[i])*1000)
+                #nextStamp = time.time()
+                #print "if obj.isVisible() and not (obj in objsDone) in {0}s".format((nextStamp - stamps[i]))
                 try:
-                    nextStampFett = time.time()
+                    #nextStampFett = time.time()
                     for it in self._oe.pixelExact[obj]:
                         painter.setTransform(baseTrans)
                         it.paint(painter, style)
-                    #print "for it in self._oe.pixelExact in {0}s".format((time.time() - nextStampFett)*1000)
+                    #print "for it in self._oe.pixelExact in {0}s".format((time.time() - nextStampFett))
                 except KeyError:
                     #print "Doch was im Cache?"
                     try:
@@ -1111,14 +1144,14 @@ class GeoTiledMapData(GeoMapData):
                                 #child.paint(painter, style)
                     #except AttributeError:
                         #pass
-            
+                i += 1
             objsDone.add(obj)
-            i += 1
+            
         
         
         painter.restore()
         #del style
-        #print "end paintObjects after {0}s".format((time.time()-starttime)*1000)
+        #print "end paintObjects after {0}s for {1} objects".format((time.time()-starttime),i)
     
     def _cleanupCaches(self):
         boundaryTiles = 3

@@ -3,6 +3,7 @@ Created on 20.10.2011
 
 @author: michi
 '''
+import time
 from PyQt4.QtCore import QObject, pyqtSignal, QSizeF, QPointF, QRectF
 
 from graphicsgeomap import GraphicsGeoMap #@UnresolvedImport
@@ -541,6 +542,7 @@ class GeoMapData(QObject):
         @param option: The styleoption
         @type option: QStyleOptionGraphicsItem
         '''
+        #print "GeoMapData.paint", time.time()
         self.paintMap(painter, map)
         
         for i in range(len(self._overlays)):
