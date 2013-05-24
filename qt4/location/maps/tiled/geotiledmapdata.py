@@ -1042,8 +1042,8 @@ class GeoTiledMapData(GeoMapData):
         @param option: The StyleOption
         @type option: QStyleOptionGraphicsItem
         '''
-        #starttime = time.time()
-        #print "paintObjects-------------------------------------"
+        starttime = time.time()
+        print "paintObjects-------------------------------------"
         #if self.currentlyAddingChildObjects:
             #self._setBusyState(True)
         painter.save()
@@ -1060,15 +1060,16 @@ class GeoTiledMapData(GeoMapData):
 
         painter.setClipRect(target)
 
-        #nextStamp = time.time()
+        nextStamp = time.time()
         self._oe.updateTransforms()
-        #print "after updateTransforms in {0}s".format((nextStamp-starttime))
+        print "after updateTransforms in {0}s".format((time.time()-nextStamp))
+        nextStamp2 = time.time()
         items = self._oe.pixelScene.items(target,
                                           Qt.IntersectsItemShape,
                                           Qt.AscendingOrder)
 
-        #nextStamp2 = time.time()
-        #print "after collecting Items in {0}s".format((nextStamp2-nextStamp))
+        nextStamp3 = time.time()
+        print "after collecting Items in {0}s".format((nextStamp3-nextStamp2))
         
         #objsUnique = set()
         #for item in items:
@@ -1151,7 +1152,7 @@ class GeoTiledMapData(GeoMapData):
         
         painter.restore()
         #del style
-        #print "end paintObjects after {0}s for {1} objects".format((time.time()-starttime),i)
+        print "end paintObjects after {0}s for {1} objects".format((time.time()-starttime),i)
     
     def _cleanupCaches(self):
         boundaryTiles = 3
