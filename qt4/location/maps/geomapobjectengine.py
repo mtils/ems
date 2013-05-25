@@ -982,8 +982,9 @@ class GeoMapObjectEngine(QObject):
         self.objectsForPixelUpdate = set()
 
         if groupUpdated:
+            #rebuildScenesTime = time.time()
             self.rebuildScenes()
-            #print "rebuildScenes end",time.time()
+            #print "rebuildScenes end",time.time()-rebuildScenesTime
 
         #print "updateTransforms end",time.time() - starttime
     
