@@ -9,6 +9,14 @@ from sqlalchemy.orm.attributes import InstrumentedAttribute
 from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.ext.hybrid import hybrid_property
 
+def decorator(objOrClassOrProperty):
+    '''OrmDecorator decorator(ems.model.sa.orm.base_object.OrmBaseObject)'''
+    if isinstance(objOrClassOrProperty, InstrumentedAttribute):
+        if hasattr(objOrClassOrProperty.class_,'__ormDecorator__'):
+            return objOrClassOrProperty.class_.__ormDecorator__()
+    elif hasattr(objOrClassOrProperty, '__ormDecorator__'):
+        return objOrClassOrProperty.__ormDecorator__()
+
 def friendly_name(classProperty):
     if isinstance(classProperty, InstrumentedAttribute):
         if hasattr(classProperty.class_,'__ormDecorator__'):
@@ -36,7 +44,9 @@ class OrmDecorator(object):
     
     def getReprasentiveString(self, obj, view='default'):
         if hasattr(self._class,'__reprasentive_column__'):
-            return obj.__getattribute__(self._class.__reprasentive_column__)
+            col = self._class.__reprasentive_column__
+            return self.valueToFormattedString(col,
+                                               obj.__getattribute__(col))
         return repr(obj)
     
     def getFriendlyName(self, obj=None, view='default'):
@@ -80,6 +90,7 @@ class OrmDecorator(object):
             dec = value.__ormDecorator__()
             return dec.getReprasentiveString(value)
         formatOption = self.getValueFormatOption(propertyName)
+
         newString = "%s%s%s" % (unicode(formatOption['prefix']),
                                 unicode(formatOption['textFormat']).format((value)),
                                 unicode(formatOption['suffix'])
@@ -90,14 +101,17 @@ class OrmDecorator(object):
         prefix = u''
         suffix = u''
         textFormat = u'{0}'
-        
+
         try:
             colInfo = self.getColInfo(propertyName)
             if colInfo.has_key('unit'):
                 suffix = " " + unicode(colInfo['unit'])
+            if colInfo.has_key('textFormat'):
+                textFormat = u"{0:" + colInfo['textFormat'] + '}'
         except AttributeError:
             pass
-        
+        except KeyError:
+            pass
         
         return {
                 'prefix':prefix,
