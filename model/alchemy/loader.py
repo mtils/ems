@@ -38,6 +38,7 @@ class AlchemyLoader(object):
         self.__configurators = {}
         self.__sessionMakers = {}
         self.logQueries = False
+        self.appPath = None
 
     def getEngines(self):
         return self.__engines
@@ -116,12 +117,16 @@ class AlchemyLoader(object):
             if os.path.isabs(cfg['databasefile']):
                 url.database = cfg['databasefile']
             else:
-                if self.__loader is None:
-                    raise TypeError("Loader not set to retrieve appPath")
-                if self.__loader.appPath is None:
-                    raise TypeError("appPath of loader not set")
-                url.database = os.path.join(self.__loader.appPath,
+                if self.appPath is not None:
+                    url.database = os.path.join(self.appPath,
                                             cfg['databasefile'])
+                else:
+                    if self.__loader is None:
+                        raise TypeError("Loader not set to retrieve appPath")
+                    if self.__loader.appPath is None:
+                        raise TypeError("appPath of loader not set")
+                    url.database = os.path.join(self.__loader.appPath,
+                                                cfg['databasefile'])
         if cfg.has_key('options'):
             url.query = cfg['options']
         return url

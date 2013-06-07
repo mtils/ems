@@ -118,6 +118,13 @@ class Config(object):
         names = self.__getProfileAndVarName(key)
         return self.__profiles[names[0]][names[1]]
     
+    def has_key(self, key):
+        if self.__autoload:
+            if not self.__configLoaded and self.__fileName is not None:
+                self.load()
+        names = self.__getProfileAndVarName(key)
+        return self.__profiles[names[0]].has_key(key)
+    
     def __setitem__(self,key,val):
         names = self.__getProfileAndVarName(key)
 #        print self.__profiles
