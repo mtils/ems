@@ -38,15 +38,13 @@ class CssHighlighter(QSyntaxHighlighter):
     )
 
     def highlightBlock(self, text):
-        print unicode('highlightBlock "{0}"').format(text)
+
         lastIndex = 0
         lastWasSlash = False
         state = self.previousBlockState()
-        print "previousBlockState", state
         saveState = 0
-        #text = unicode(text)
 
-        if state == -1:
+        if state == -1 or state > 8:
             #As long as the text is empty, leave the state undetermined
             if text.isEmpty():
                 self.setCurrentBlockState(-1)
@@ -61,13 +59,13 @@ class CssHighlighter(QSyntaxHighlighter):
         else:
             #state = state>>16
             #saveState = state
-            print "before", state
+            #print "before", state
 
             saveState = state>>16
             #state = 255
             #state = 0x00ff
             #state = saveState + 0
-            print saveState, state
+            #print saveState, state
 
         if state == CssHighlighter.MaybeCommentEnd:
             state = CssHighlighter.Comment
@@ -108,17 +106,22 @@ class CssHighlighter(QSyntaxHighlighter):
                 newState = CssHighlighter.transitions[state][token]
             except IndexError:
                 #TODO: Dirty Fix
-                try:
-                    newState = CssHighlighter.transitions[(state>>16)][token]
-                except IndexError:
-                    print "newState is", state, token, (state>>16)
-                    newState = -1
+                #try:
+                    #newState = CssHighlighter.transitions[(state>>16)][token]
+                #except IndexError:
+                    #print "newState is", state, token, (state>>16)
+                    #newState = -1
+                newState = -1
 
             if newState != state:
-                includeToken = newState == CssHighlighter.MaybeCommentEnd \
-                    or state == CssHighlighter.MaybeCommentEnd and newState != CssHighlighter.Comment \
-                        or state == CssHighlighter.Quote
-                self.highlight(text, lastIndex, i-lastIndex+int(includeToken), state)
+                if newState == CssHighlighter.MaybeCommentEnd \
+                    or (state == CssHighlighter.MaybeCommentEnd and newState != CssHighlighter.Comment) \
+                    or state == CssHighlighter.Quote:
+                    includeToken = 1
+                else:
+                    includeToken = 0
+
+                self.highlight(text, lastIndex, i-lastIndex+includeToken, state)
 
                 if newState == CssHighlighter.Comment:
                     lastIndex = i-1 #include the slash and star
@@ -138,8 +141,10 @@ class CssHighlighter(QSyntaxHighlighter):
 
         self.highlight(text, lastIndex, text.length() - lastIndex, state)
         nextState = state + (saveState<<16)
-        print "nextState", nextState, state
-        #newState = CssHighlighter.transitions[(state>>16)][token]
+        #try:
+            #print "nextState", nextState, state, CssHighlighter.translateState(state)
+        #except IndexError:
+            #print "no state found for state", state
         self.setCurrentBlockState(nextState)
 
     def highlight(self, text, start, length, state):
@@ -163,3 +168,19 @@ class CssHighlighter(QSyntaxHighlighter):
         elif state in (CssHighlighter.Comment, CssHighlighter.MaybeCommentEnd):
             format.setForeground(Qt.darkGreen)
             self.setFormat(start, length, format)
+    
+    @staticmethod
+    def translateState(state):
+        states = (
+        'Selector',
+        'Property',
+        'Value',
+        'Pseudo',
+        'Pseudo1',
+        'Pseudo2',
+        'Quote',
+        'MaybeComment',
+        'Comment',
+        'MaybeCommentEnd'
+        )
+        return states[state]
