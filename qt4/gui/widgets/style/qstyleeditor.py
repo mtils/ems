@@ -113,6 +113,8 @@ class QStyleEditor(QWidget):
         fileName = QFileDialog.getOpenFileName(self, QApplication.instance().tr('Open'),
                                                dirName,
                                                self.tr('Css Files (*.css)'))
+        if not fileName:
+            return
 
         file = QFile(fileName)
         file.open(QFile.ReadOnly)
