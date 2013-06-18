@@ -9,6 +9,7 @@ from PyQt4 import QtCore, QtGui
 from PyQt4.QtGui import QWidget, QHBoxLayout, QSpacerItem, QSizePolicy
 
 from ems.qt4.gui.widgets.dialogable import DialogableWidget
+from ems.qt4.gui.widgets.completiontextedit import CompletionTextEdit
 
 class BaseEditor(DialogableWidget):
     def __init__(self, text=None, parent=None):
@@ -24,7 +25,7 @@ class BaseEditor(DialogableWidget):
         
         self.toolBarContainers = []
         
-        self.textEdit = QtGui.QTextEdit(self)
+        self.textEdit = CompletionTextEdit(self)
         self.layout().addWidget(self.textEdit)
         
         self.setupEditActions()
