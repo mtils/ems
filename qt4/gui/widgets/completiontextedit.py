@@ -62,7 +62,7 @@ class CompletionTextEdit(QTextEdit):
 
         #tc.select(QTextCursor.WordUnderCursor) doesnt respect the END_OF_WORD
         for i in range(currentPos, max(-1, currentPos - 128), -1):
-            char = unicode(self.document().characterAt(i))
+            char = self.document().characterAt(i)
             if self.END_OF_WORD.contains(char):
                 startPos = i+1
                 break;
