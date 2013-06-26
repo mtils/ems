@@ -40,7 +40,7 @@ class ValueOf(Tag):
             
             if xmlDict['attributes']['type'] == 'bool':
                 try:
-                    return bool(untypedValue)
+                    return bool(int(untypedValue)) # bool('0') == True
                 except ValueError:
                     return False
             elif xmlDict['attributes']['type'] == 'int':
@@ -50,6 +50,8 @@ class ValueOf(Tag):
                     return 0
             elif xmlDict['attributes']['type'] in ('float','double'):
                 try:
+                    if isinstance(untypedValue, basestring):
+                        untypedValue = untypedValue.replace(',','.')
                     return float(untypedValue)
                 except ValueError:
                     return 0.0
