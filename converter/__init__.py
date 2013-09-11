@@ -4,7 +4,7 @@ import mimetypes
 from ems.converter.inputreader import InputReader
 from ems.converter.outputwriter import OutputWriter
 from ems.converter.tag import Tag
-from ems.converter.modifier import Modifier
+from ems.converter.modifier import Modifier, ModifierException
 from ems.converter.plugin import Plugin
 from ems.converter.preprocessor import PreProcessor
 from ems.xml.xml2dict import xml2obj
@@ -21,6 +21,7 @@ class Converter(object):
     update = 2
     sync = 3
     
+    breakOnErrors = False
     
     def __init__(self):
         self.plugins = {}
@@ -238,7 +239,14 @@ class Converter(object):
         except LookupError,e:
             if not self.plugins[self.tag].has_key(xmlDict['tag']):
                 raise SyntaxError("Tag \"%s\"is not supported or loaded" % xmlDict['tag'])
-            #raise e
-    
+            if self.breakOnErrors:
+                raise e
+        except ModifierException,e:
+            if self.breakOnErrors:
+                raise e
+        except ValueError, e:
+            if self.breakOnErrors:
+                raise e
+
     def getDictionaryOfMapping(self,mappingString):
         return xml2obj(mappingString)
