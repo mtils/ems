@@ -11,8 +11,6 @@ from ems.core.mimetype import MimeTypeDB
 from lib.ems.core.mimetype import MimeType
 from ems.thirdparty import xlrd #@UnresolvedImport
 
-#from dbfpy.dbf import *
-
 class Excel(InputReader):
     '''
     classdocs

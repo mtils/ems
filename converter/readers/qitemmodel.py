@@ -10,7 +10,6 @@ from PyQt4.QtCore import QAbstractItemModel,Qt
 from ems.converter.inputreader import InputReader,DataCorruptException,\
     DataNotFoundException, XPathNotImplementedError
 from ems.core.mimetype import MimeType
-from dbfpy.dbf import *
 from ems.qt4.util import variant_to_pyobject
 from ems.model.sa.orm.base_object import OrmBaseObject
 

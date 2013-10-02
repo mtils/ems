@@ -8,7 +8,7 @@ import re
 from ems.converter.inputreader import InputReader,DataCorruptException,\
     DataNotFoundException, XPathNotImplementedError
 from ems.core.mimetype import MimeTypeDB
-from dbfpy.dbf import *
+from ems.thirdparty.dbfpy.dbf import *
 from lib.ems.core.mimetype import MimeType
 
 class DBase(InputReader):
