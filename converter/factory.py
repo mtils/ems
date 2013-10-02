@@ -8,7 +8,10 @@ from ems.converter.readers.dbase import DBase
 from ems.converter.readers.dbdump import DBDump
 from ems.converter.readers.excel import Excel
 from ems.converter.readers.csv import CSVReader #@UnresolvedImport
-from ems.converter.writers.alchemycore import AlchemyCore
+try:
+    from ems.converter.writers.alchemycore import AlchemyCore
+except ImportError:
+    pass
 from ems.converter.writers.csv import CSV
 from ems.converter.writers.dummy import Dummy
 from ems.converter.writers.excel import Excel as ExcelWriter #@UnresolvedImport
@@ -34,7 +37,10 @@ def getPreConfigured(plugins=()):
     converter.addPlugin(converter.reader,DBDump())
     converter.addPlugin(Converter.reader,Excel())
     converter.addPlugin(Converter.reader,CSVReader())
-    converter.addPlugin(Converter.writer,AlchemyCore())
+    try:
+        converter.addPlugin(Converter.writer,AlchemyCore())
+    except NameError:
+        pass
     converter.addPlugin(Converter.writer,CSV())
     converter.addPlugin(Converter.writer,Dummy())
     converter.addPlugin(Converter.writer,ExcelWriter())
