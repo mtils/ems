@@ -8,7 +8,7 @@ import os.path
 from PyQt4.QtCore import QTimer
 from PyQt4.QtGui import QApplication, QAction
 
-from ems.util import platformName
+from lib.ems.util import platformName
 
 class MainApplication(QApplication):
     '''
