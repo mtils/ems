@@ -24,11 +24,11 @@ from ems.qt4.gui.validation.visualizer.base import ValidationVisualizer,\
     ButtonGroupVisualizer
 from ems.qt4.validators.base import IsInValidator
 from ems.qt4.gui.validation.connection import ButtonGroupConnection
-from lib.ems.qt4.validators.base import DateTimeValidator, DateValidator,\
+from ems.qt4.validators.base import DateTimeValidator, DateValidator,\
     TimeValidator, BoolValidator
-from lib.ems.qt4.gui.validation.connection import DateTimeEditConnection,\
+from ems.qt4.gui.validation.connection import DateTimeEditConnection,\
     DateEditConnection, TimeEditConnection, CheckBoxConnection
-from lib.ems.qt4.gui.inputlistener.standard import LineEditListener,\
+from ems.qt4.gui.inputlistener.standard import LineEditListener,\
     SpinBoxListener, ComboBoxListener, ButtonGroupListener, DateTimeListener,\
     CheckBoxListener
 

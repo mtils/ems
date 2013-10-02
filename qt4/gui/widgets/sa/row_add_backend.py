@@ -22,7 +22,7 @@ from ems.model.sa.orm.querybuilder import SAQueryBuilder, PathClause, AndList, O
 from ems.qt4.gui.widgets.treecombo import TreeComboBox #@UnresolvedImport
 from ems.qt4.gui.widgets.bigcombo import BigComboBox #@UnresolvedImport
 from ems.qt4.util import variant_to_pyobject #@UnresolvedImport
-from lib.ems.model.sa.orm import base_object
+from ems.model.sa.orm import base_object
 
 class SABuilderBackend(RowBuilderBackend):
     

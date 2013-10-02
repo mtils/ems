@@ -27,7 +27,7 @@ testData = [{'vorname':'Leo','nachname':'Tils','alter':1,'gewicht':8.9,'einkomme
             {'vorname':'Sonja','nachname':'Bentz','alter':28,'gewicht':65.9,'einkommen':450.0,'verheiratet':True},
             {'vorname':'Patrick','nachname':'Arnold','alter':29,'gewicht':79.6,'einkommen':3850.0,'verheiratet':False}]
 
-import lib.ems.unittests.qt4.mapper.baseconfig
+import ems.unittests.qt4.mapper.baseconfig
 
 class Importer(QObject):
     def __init__(self, model, parent):

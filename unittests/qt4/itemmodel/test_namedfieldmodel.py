@@ -23,7 +23,7 @@ import pprint
 
 testData = {'vorname':'Leo','nachname':'Tils','alter':1,'gewicht':8.9,'einkommen':850.0,'verheiratet':False}
 
-import lib.ems.unittests.qt4.mapper.baseconfig
+import ems.unittests.qt4.mapper.baseconfig
 
 class Importer(QObject):
     def __init__(self, model, parent):

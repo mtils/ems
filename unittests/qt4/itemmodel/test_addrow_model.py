@@ -17,7 +17,7 @@ from ems.qt4.itemmodel.addrow_proxymodel import AddRowProxyModel #@UnresolvedImp
 from ems.xtype.base import DictType, SequenceType #@UnresolvedImport
 from ems.qt4.gui.mapper.base import BaseMapper #@UnresolvedImport
 
-import lib.ems.unittests.qt4.mapper.baseconfig
+import ems.unittests.qt4.mapper.baseconfig
 
 
 testData = [{'vorname':'Leo','nachname':'Tils','alter':1,'gewicht':8.9,'einkommen':850.0,'verheiratet':False},

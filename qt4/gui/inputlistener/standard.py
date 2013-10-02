@@ -8,7 +8,7 @@ from PyQt4.QtCore import QObject, pyqtSignal, pyqtSlot, SIGNAL, SLOT, QString,\
 from PyQt4.QtGui import QValidator, QDoubleSpinBox, QAbstractButton, \
     QAbstractSpinBox, QLineEdit, QDateTimeEdit, QDateEdit, QTimeEdit, QSpinBox,\
     QComboBox, QButtonGroup, QCheckBox
-from lib.ems.qt4.util import variant_to_pyobject
+from ems.qt4.util import variant_to_pyobject
 
 
 class InputListener(QObject):

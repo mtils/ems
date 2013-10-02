@@ -7,8 +7,8 @@ from PyQt4.QtCore import QObject, pyqtSignal, pyqtSlot, SIGNAL, SLOT, QString,\
     Qt, QDate, QTime, QDateTime, QVariant
 from PyQt4.QtGui import QValidator, QDoubleSpinBox, QAbstractButton
 
-from lib.ems.qt4.util import variant_to_pyobject
-from lib.ems.qt4.gui.inputlistener.standard import *
+from ems.qt4.util import variant_to_pyobject
+from ems.qt4.gui.inputlistener.standard import *
 
 class ValidatorConnection(QObject):
     

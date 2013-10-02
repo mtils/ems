@@ -7,7 +7,7 @@ from xml.etree import ElementTree as et
 
 from ems.converter.inputreader import InputReader
 from ems.core.mimetype import MimeTypeDB
-from lib.ems.core.mimetype import MimeType
+from ems.core.mimetype import MimeType
 
 
 
