@@ -3,7 +3,7 @@ Created on 04.02.2011
 
 @author: michi
 '''
-from ems.thirdparty.singletonmixin import Singleton
+from thirdparty.singletonmixin import Singleton
 
 class Registry(Singleton):
     '''
