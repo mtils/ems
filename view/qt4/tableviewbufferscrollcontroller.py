@@ -20,7 +20,7 @@ class TableViewBufferScrollController(QObject):
         self.connect(self.vScrollBar, SIGNAL("valueChanged(int)"), self.on_scroll)
     
     def on_scroll(self, value):
-        print "Scrolled to: %s" % value
+        pass
         
     def eventFilter(self, object, event):
         if isinstance(event, QResizeEvent):
@@ -31,16 +31,6 @@ class TableViewBufferScrollController(QObject):
             self.vScrollBar.setMaximum(self.getScrollBarMaximum())
             self.vScrollBar.setValue(self.getFirstVisibleIndex())
             self.vScrollBar.setPageStep(10)
-#            self.vScrollBar.resize(15)
-            
-#            return True
-            print "Rows %s-%s (%s)" % (self.getFirstVisibleIndex(),
-                                       self.getLastVisibleIndex(),
-                                       self.getVisibleRowsCount())
-#            object.verticalScrollBar().setRange(0,1000)
-#            object.verticalScrollBar().setValue(500)
-            print "(%s,%s) Val: %s" % (self.vScrollBar.minimum(),
-                        self.vScrollBar.maximum(),self.vScrollBar.value())
 
         return False
     

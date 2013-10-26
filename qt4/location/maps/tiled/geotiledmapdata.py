@@ -188,7 +188,6 @@ class GeoTiledMapData(GeoMapData):
     def _setBusyState(self, state):
         if self._busyState == state:
             return
-        print "GeoTiledMapData busyState", state
         self._busyState = state
         self.busyStateChanged.emit(self._busyState)
     

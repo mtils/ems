@@ -3,7 +3,7 @@ Created on 03.11.2011
 
 @author: michi
 '''
-import math, time
+import math, time, logging
 
 from PyQt4.QtCore import QObject, QPointF, Qt, QRectF
 from PyQt4.QtGui import QGraphicsScene, QGraphicsPolygonItem, \
@@ -100,10 +100,10 @@ class GeoMapObjectEngine(QObject):
         self.objectsForLatLonUpdate.clear()
         #return
         for i in self.latLonExact:
-            print self.latLonExact[i]
+            logging.getLogger(__name__).warning(unicode(self.latLonExact[i]))
         
         for i in self.pixelExact:
-            print self.pixelExact[i]
+            logging.getLogger(__name__).warning(unicode(self.pixelExact[i]))
     '''
     ****************************************************************************
      Object management

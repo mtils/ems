@@ -103,10 +103,7 @@ class DragDropLists(QWidget, Ui_ListDragSelection):
     
     def onTrgItemsChangedSignal(self):
         return
-#        print "trgItemsChanged emitted"
-        for i in range(self.trgInput.count()):
-            print self.trgInput.item(i).data(Qt.UserRole).toString()
-        
+
     def setupUi(self):
         srcWidget = None
         if self.srcWidgetMode == self.Tree:

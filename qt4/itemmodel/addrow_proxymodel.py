@@ -107,7 +107,6 @@ class AddRowProxyModel(EditableProxyModel):
             xTypeMap = self.sourceModel().xTypeMap()
             myMap = {0:NumberType(int)}
             for i in xTypeMap:
-                print i
                 myMap[i+1] = xTypeMap[i]
             return myMap
                     

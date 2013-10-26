@@ -3,6 +3,8 @@ Created on 24.07.2011
 
 @author: michi
 '''
+import logging
+
 from PyQt4.QtCore import SIGNAL, SLOT, pyqtSignal, pyqtSlot, QString, Qt
 from PyQt4.QtGui import QWidget, QDialog, QDialogButtonBox, QVBoxLayout, \
     QAbstractButton, QHBoxLayout, QFormLayout, QGridLayout, QApplication
@@ -27,7 +29,7 @@ class DialogableWidget(QWidget):
         if isinstance(self.acceptButton, QAbstractButton):
             self.acceptButton.setText(text)
         else:
-            print type(self.acceptButton)
+            logging.getLogger(__name__).debug(type(self.acceptButton))
     
     @pyqtSlot(QString)
     def setRejectButtonText(self, text):

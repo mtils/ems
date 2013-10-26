@@ -19,7 +19,6 @@ class IconNavigationView(QListView):
         #self.setTextElideMode(Qt.ElideNone)
 
         self.setSizePolicy(QSizePolicy(QSizePolicy.Fixed,QSizePolicy.Fixed))
-        print self.setIconSize(QSize(48,48))
 
     def setModel(self, model):
         if isinstance(self.model(), QAbstractItemModel):

@@ -198,8 +198,6 @@ class ImageEditor(DialogableWidget):
                 lastPart = part
             path += ('qt4','gui','widgets','icons.rcc')
             rccPath = os.path.join(*path)
-            print rccPath
-            print QResource.registerResource(rccPath)
 
         self.openAction = QAction(self.trUtf8('Bild laden'), self)
         self.openAction.setIcon(QApplication.instance().style().standardIcon(QStyle.SP_DialogOpenButton))

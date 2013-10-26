@@ -180,7 +180,6 @@ class StarDelegate(QtGui.QStyledItemDelegate):
         starRating = index.data()
         
         if isinstance(starRating, StarRating):
-            print "Yes it is"
             if option.state & QtGui.QStyle.State_Selected:
                 painter.fillRect(option.rect, option.palette.highlight())
 

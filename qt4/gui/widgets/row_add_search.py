@@ -73,8 +73,7 @@ class SearchRow(QObject):
     
     @pyqtSlot(QString)
     def onFieldInputCurrentTextChanged(self, text):
-        print "onTextChanged: %s" % text
-        
+        pass
     
     @pyqtSlot(int)
     def onFieldInputCurrentIndexChanged(self, index):
@@ -103,7 +102,7 @@ class SearchRow(QObject):
         self.matchesInput.setText(self.tr("Trifft zu"))
     
     def __del__(self):
-        print "Destructor called"
+        pass
     
     def delete(self):
         pass
@@ -312,7 +311,6 @@ class RowAddSearch(QWidget):
             return widget.text()
     
     def setValueOfWidget(self, widget, value):
-        print "setValueOfWidget"
         if value is None:
             return
         if isinstance(widget, QCheckBox) and isinstance(value, bool):

@@ -3,7 +3,7 @@ Created on 14.06.2011
 
 @author: michi
 '''
-import datetime
+import datetime, logging
 
 from PyQt4.QtCore import QAbstractTableModel, QModelIndex, Qt, QVariant,\
      QString, QDateTime, pyqtSlot, pyqtSignal
@@ -62,8 +62,8 @@ class SAOrmSearchModel(QAbstractTableModel):
         try:
             self._queryBuilder.propertyNames
         except KeyError, e:
-            print e
-            print "Mein Objekt: %s" % self._queriedObject
+            logging.getLogger(__name__).warning(unicode(e))
+            logging.getLogger(__name__).warning("Mein Objekt: {0}".format(self._queriedObject))
             raise e    
         
         self._query = None

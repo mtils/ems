@@ -283,15 +283,11 @@ class TimeEditConnection(ValidatorConnection):
             self.emptyTime = emptyTime
         elif isinstance(emptyTime, int):
             self.emptyTime = self.validator.minTime.addSecs(emptyTime)
-        
-        #self.validator.minDate = self.emptyDateTime
-        #print self.emptyDateTime
-#        print self.emptyDateTime
+
         self.widget.setMinimumTime(self.emptyTime)
         self.widget.setMaximumTime(self.validator.maxTime)
         self.widget.timeChanged.connect(self.onTimeChanged)
-        print self.widget.maximumTime()
-    
+
     def _loadInputListener(self):
         return DateTimeListener(self.widget)
     

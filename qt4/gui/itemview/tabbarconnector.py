@@ -3,6 +3,8 @@ Created on 29.08.2012
 
 @author: michi
 '''
+import logging
+
 from PyQt4.QtCore import QObject, QAbstractItemModel, QAbstractListModel, \
     pyqtSignal, QVariant, Qt, QString
 from PyQt4.QtGui import QTabBar, QIcon
@@ -140,9 +142,9 @@ class TabBarConnector(QObject):
     
     def onRowsMoved(self, sourceParent, sourceStart, sourceEnd, destinationParent,
                   destinationRow):
-        print "onRowsMoved"
+        logging.getLogger(__name__).debug("onRowsMoved")
     
     def onRowsRemoved(self, parent, start, end):
-        print "onRowsRemoved"
+        logging.getLogger(__name__).debug("onRowsRemoved")
         
         

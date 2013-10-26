@@ -147,7 +147,6 @@ class QStyleEditor(QWidget):
         success = writer.write(self.editor.document())
         if success:
             self.editor.document().setModified(False)
-        print success
 
         self.setCurrentFileName(fileName)
 

@@ -65,9 +65,8 @@ class BaseValidator(QValidator):
                 if self.notEmpty:
                     res = (QValidator.Intermediate, pos)
                     self._setValidationState(res[0])
-                    print "Directly setted %s to isEmpty" % qObject
                     return res
-                    
+
         res = self._validate(input, pos)
         #print res, QValidator.Acceptable
         self._setValidationState(res[0])
@@ -84,7 +83,6 @@ class StringValidator(BaseValidator):
             return (QValidator.Acceptable, pos)
         res = BaseValidator._validate(self, input, pos)
         if res[0] == QValidator.Invalid:
-            print "invalid per BaseValidator"
             return res 
         if res[0] == QValidator.Acceptable:
             inputStr = unicode(input)
@@ -116,7 +114,6 @@ class RegExpValidator(StringValidator):
             return (QValidator.Acceptable, pos)
         res = StringValidator._validate(self, input, pos)
         if res[0] == QValidator.Invalid:
-            print "Invalid per QStringValidator"
             return res
         res, pos = self.qRegExpValidator.validate(input, pos)
 

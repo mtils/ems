@@ -67,7 +67,6 @@ class IconViewDelegate(QStyledItemDelegate):
     
     def sizeHint__(self, option, index):
         sizeHint = QStyledItemDelegate.sizeHint(self, option, index)
-        print "Item.sizeHint called"
         return sizeHint
     
     def sizeHint_(self, option, index, manualText=None):

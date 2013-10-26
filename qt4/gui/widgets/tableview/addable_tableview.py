@@ -101,27 +101,23 @@ class AddableViewport(QWidget):
     
     def resizeEvent(self, event):
         res = super(AddableViewport, self).resizeEvent(event)
-        print "resizeEvent"
         return res
     
     def height(self):
         height = super(AddableViewport, self).height()
-        print "Ich werde endlich nach meiner Height gefragt %s" % height
         return height + 32
     
     def size(self):
         size = super(AddableViewport, self).size()
-        print size
         return size
     
     def geometry(self, *args, **kwargs):
         size = QWidget.geometry(self, *args, **kwargs)
-        print size
         return size
     
     def _getattribute__(self, name):
         att = super(AddableViewport, self).__getattribute__(name)
-        print att
+
         return att
 #    def minimumSizeHint(self):
 #        size = super(AddableViewport, self).minimumSizeHint()
@@ -134,7 +130,6 @@ class CustomScrollbar(QScrollBar):
     def maximum(self, *args, **kwargs):
         
         max = QScrollBar.maximum(self, *args, **kwargs)
-        print "max: %s" % max
         return max
         
 class AddableTableView(QTableView):
@@ -158,18 +153,8 @@ class AddableTableView(QTableView):
 #        return size
 
     def resizeEvent_(self, event):
-        print "viewport: %s self: %s" % (self.viewport().height(), self.height())
-        print event
-        #self.verticalScrollBar().setRange(0, event.size().height())
-        
-        
-        #self.viewport().update()
         res = QTableView.resizeEvent(self, event)
-        print self.verticalScrollBar().minimum()
-        print self.verticalScrollBar().maximum()
-        
         self.verticalScrollBar().setMaximum(self.verticalScrollBar().maximum())
-        
         return res
     
     def onAddRowButtonClicked(self):
@@ -178,10 +163,8 @@ class AddableTableView(QTableView):
         for i in range(self.model().columnCount()):
             l.append(QStandardItem("%s:%s" % (r,i+1)))
         self.model().appendRow(l)
-        print "addButton"
     
     def onRemoveRowButtonClicked(self, row):
-        print "removeButton %s" % row
         self.model().takeRow(row)
     
     

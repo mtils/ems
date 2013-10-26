@@ -41,7 +41,7 @@ class CustomTreeWidgetViewPort(QWidget):
         super(CustomTreeWidgetViewPort, self).__init__(parent)
     
     def mousePressEvent(self, event):
-        print "Ich bin dat"
+        pass
 
 
 class CustomTreeWidget(QTreeWidget):

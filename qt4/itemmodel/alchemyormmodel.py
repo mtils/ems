@@ -22,7 +22,6 @@ class AlchemyOrmModel(QAbstractTableModel):
         self._flagsCache = {}
         if not len(self._columns):
             self._columns = self._buildDefaultColumns()
-            print self._columns
         self._columnName2Index = self._buildReversedColumnLookup(columns)
         self._dirty = True
     
@@ -112,9 +111,7 @@ class AlchemyOrmModel(QAbstractTableModel):
     
     def isPrimaryKey(self, index):
         self._flagsCache
-        
-        print 
-    
+
     def flags(self, index):
         
         propertyName = self.getPropertyNameByIndex(index.column())
@@ -146,19 +143,15 @@ class AlchemyOrmModel(QAbstractTableModel):
             pyValue = float(value.toDouble())
         elif value.type() == QVariant.Int:
             pyValue = int(value.toInt()[0])
-        #print pyValue
-        for obj in self._session.dirty:
-            print obj
-        
+
         self._resultCache[index.row()].__setattr__(columnName, pyValue)
-        
+
         return True
     
     def isDataChanged(self):
         return self._session.dirty
     
     def submit(self):
-        print "Ich wurde jetriggert"
         self._dirty = True
         return True
     
