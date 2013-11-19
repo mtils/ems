@@ -48,6 +48,9 @@ class AlchemyCore(OutputWriter):
     def dryRun(self,isDryRun=True):
         pass
     
+    def setConnection(self, connection):
+        self._con = connection
+    
     def getConnection(self):
         if self._con is None:
             self._con = self.target.connect()
