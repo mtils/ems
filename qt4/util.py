@@ -3,9 +3,10 @@ Created on 20.06.2011
 
 @author: michi
 '''
+from __future__ import print_function
 import datetime
 
-from PyQt4.QtCore import QVariant, pyqtSignal
+from PyQt4.QtCore import QVariant, pyqtSignal, QObject
 from PyQt4.QtGui import QColor
 
 class VariantContainer(tuple):
@@ -105,3 +106,11 @@ def hassig(obj, signalName):
 #                else:
 #                    print "no.... parentClass", parentCls, "has:", hasSignal
     return False
+
+class SignalPrinter(QObject):
+    def printSignal(self, *args):
+        if len(args) > 1:
+            for arg in args:
+                print(arg)
+        elif len(args) == 1:
+            print(args[0])

@@ -3,7 +3,7 @@ Created on 25.10.2010
 
 @author: michi
 '''
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 import csv as csv_o
 import codecs,cStringIO
 from random import randint
@@ -48,9 +48,9 @@ class CSV(OutputWriter):
     
     def notify(self,eventType):
         if eventType == self.init:
-            self.verbosity = 0
+            self.printEveryNLines = 0
         if eventType == self.startProcess:
-            
+            self.processedRows = 0
             self.__writerOptions = {}
             self.__writeHeader = True
             if not self.options.has_key('encoding'):
@@ -78,7 +78,6 @@ class CSV(OutputWriter):
             self.__writer = None
             self.__headerWritten = False
             self.__headerCols = []
-            self.verbosity = 0
             self.currentDepth = 0
             self.__currentRow = []
 
@@ -119,6 +118,10 @@ class CSV(OutputWriter):
                 self._getWriter().writerow(self.__headerCols)
                 self.__headerWritten = True
             self._getWriter().writerow(self.__currentRow)
+            self.processedRows += 1
+            if self.printEveryNLines:
+                if (self.processedRows % self.printEveryNLines) == 0:
+                    print('Processed {0} lines'.format(self.processedRows))
     
     def getCurrentPosition(self):
         return 0
