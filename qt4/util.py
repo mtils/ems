@@ -110,7 +110,16 @@ def hassig(obj, signalName):
 class SignalPrinter(QObject):
     def printSignal(self, *args):
         if len(args) > 1:
+            resJoin = []
             for arg in args:
-                print(arg)
+                resJoin.append(self._formatResult(arg))
+            output = u", ".join(resJoin)
         elif len(args) == 1:
-            print(args[0])
+            output = self._formatResult(args[0])
+
+        print('SignalPrinter({0}): {1}'.format(self.sender().__class__.__name__,output))
+
+    def _formatResult(self, result):
+        if isinstance(result, QVariant):
+            return str(variant_to_pyobject(result))
+        return str(result)
