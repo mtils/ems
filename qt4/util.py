@@ -5,6 +5,7 @@ Created on 20.06.2011
 '''
 from __future__ import print_function
 import datetime
+from pprint import pformat
 
 from PyQt4.QtCore import QVariant, pyqtSignal, QObject
 from PyQt4.QtGui import QColor
@@ -108,6 +109,9 @@ def hassig(obj, signalName):
     return False
 
 class SignalPrinter(QObject):
+    def __init__(self, parent=None):
+        QObject.__init__(self, parent)
+        self.usePprint = False
     def printSignal(self, *args):
         if len(args) > 1:
             resJoin = []
@@ -121,5 +125,10 @@ class SignalPrinter(QObject):
 
     def _formatResult(self, result):
         if isinstance(result, QVariant):
-            return str(variant_to_pyobject(result))
-        return str(result)
+            value = variant_to_pyobject(result)
+        else:
+            value = result
+        if self.usePprint:
+            return u"\n{0}".format(pformat(value))
+        else:
+            return str(value)
