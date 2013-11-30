@@ -12,7 +12,14 @@ class SummaryModel(QAbstractItemModel):
         QAbstractItemModel.__init__(self, parent)
         self._sourceModel = None
         self._resultCache = {}
-    
+
+    def headerData(self, section, orientation, role=Qt.DisplayRole):
+        if orientation == Qt.Horizontal:
+            return self._sourceModel.headerData(section, orientation, role)
+        if role == Qt.DisplayRole:
+            return QVariant('Sum')
+        return QVariant()
+
     def onSourceModelDataChanged(self, topLeft, bottomRight):
         cols = []
         for col in range(topLeft.column(), bottomRight.column()+1):
