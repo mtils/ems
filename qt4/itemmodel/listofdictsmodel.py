@@ -37,8 +37,7 @@ class ListOfDictsModel(MultipleRowDictModel):
         nextIndex = len(self._modelData)
         if nextIndex < 0:
             nextIndex = 0
-        
-        self.beginInsertRows(QModelIndex(), nextIndex, nextIndex+1)
+        self.beginInsertRows(QModelIndex(), nextIndex, nextIndex)
         self._appendToModelData(rowTpl)
         
         self.endInsertRows()

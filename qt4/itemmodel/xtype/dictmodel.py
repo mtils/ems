@@ -26,7 +26,7 @@ class DictModel(SingleRowDictModel):
             if rowTpl.has_key(key):
                 rowTpl[key] = data[key]
         
-        self.beginInsertRows(QModelIndex(), 0, 1)
+        self.beginInsertRows(QModelIndex(), 0, 0)
         self._modelData.append(rowTpl)
         self.endInsertRows()
     

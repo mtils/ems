@@ -27,7 +27,7 @@ class ObjectInstanceModel(SingleRowObjectModel):
             else:
                 rowTpl.__setattr__(key, data.__getattribute(key))
         
-        self.beginInsertRows(QModelIndex(), 0, 1)
+        self.beginInsertRows(QModelIndex(), 0, 0)
         self._modelData.append(rowTpl)
         self.endInsertRows()
     
