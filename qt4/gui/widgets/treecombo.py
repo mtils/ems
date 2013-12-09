@@ -157,7 +157,7 @@ class TreeComboBox(QComboBox):
         self.itemTreeView = CustomTreeWidget(self)
         self.itemTreeView.setColumnCount(1)
         self.itemTreeView.setHeaderHidden(True)
-        self.itemTreeView.setWindowFlags(Qt.Popup)
+        self.itemTreeView.setWindowFlags(self.itemTreeView.windowFlags() | Qt.Popup)
         #self.setView(self.itemTreeView)
         #self.setModel(self.view())
         self.flatModel = FlatTreeModel(self)

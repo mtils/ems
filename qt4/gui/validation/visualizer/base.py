@@ -44,7 +44,7 @@ class ValidationVisualizer(QObject):
         self._helpBubble.setFrameShape(QLabel.Box)
         self._helpBubble.setFocusPolicy(Qt.NoFocus)
         self._helpBubble.setStyleSheet('background-color: #fff')
-        self._helpBubble.setWindowFlags(Qt.ToolTip)
+        self._helpBubble.setWindowFlags(self._helpBubble.windowFlags() | Qt.ToolTip)
         self._helpBubble.hide()
     
     def eventFilter(self, object, event):
@@ -140,7 +140,7 @@ class ButtonGroupVisualizer(ValidationVisualizer):
         self._helpBubble.setFrameShape(QLabel.Box)
         self._helpBubble.setFocusPolicy(Qt.NoFocus)
         self._helpBubble.setStyleSheet('background-color: #fff')
-        self._helpBubble.setWindowFlags(Qt.ToolTip)
+        self._helpBubble.setWindowFlags(self._helpBubble.windowFlags() | Qt.ToolTip)
         self._helpBubble.hide()
     
     def eventFilter(self, object, event):

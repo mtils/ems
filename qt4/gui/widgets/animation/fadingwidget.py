@@ -29,7 +29,7 @@ class FadingWidget(QWidget):
 #        self.timeLine = QTimeLine(1500, self)
         self.timeLine.setFrameRange(1000, 0)
         self.timeLine.frameChanged.connect(self.update)
-        self.setAttribute(Qt.WA_DeleteOnClose)
+        self.setAttribute(Qt.WA_DeleteOnClose, True)
         self.resize(parent.size())
         self.widgetPixmap = QPixmap.grabWidget(parent)
     

@@ -108,7 +108,7 @@ class BigComboBox(QComboBox):
         self.setEditable(True)
         
         self.itemView = PopupListView(self)
-        self.itemView.setWindowFlags(Qt.Popup)
+        self.itemView.setWindowFlags(self.itemView.windowFlags() | Qt.Popup)
         if isinstance(model, RepresentativeModel):
             model.returnHtml = True
         self.itemView.setModel(model)

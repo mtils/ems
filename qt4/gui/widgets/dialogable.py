@@ -62,7 +62,7 @@ class DialogableWidget(QWidget):
         dlg._isDialog = True
         dlg.__init__(*args, **kwargs)
         
-        dlg.setWindowFlags(Qt.Dialog)
+        dlg.setWindowFlags(dlg.windowFlags() | Qt.Dialog)
 
         dlg.buttonBox = DialogableWidget._addButtonBox2Dialog(dlg)
         
