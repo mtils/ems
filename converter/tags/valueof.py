@@ -63,6 +63,17 @@ class ValueOf(Tag):
             raise AttributeException(
                     "The tag value-of needs a select attribute")
     
+    def isFieldExpression(self, path):
+        if path.startswith('$'):
+            return False
+        if path.startswith("'"):
+            return False
+        if path.startswith("writer:"):
+            return False
+        if path.startswith("{"):
+            return False
+        return True
+    
     def __str__(self):
         return "value-of"
     

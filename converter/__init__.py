@@ -250,3 +250,26 @@ class Converter(object):
 
     def getDictionaryOfMapping(self,mappingString):
         return xml2obj(mappingString)
+
+    def getUsedPaths(self, mappingFile):
+        mappingDict = self.getDictionaryOfMapping(open(mappingFile).read())
+        results = []
+        Converter._searchValueOfs(mappingDict, results)
+        return results
+    
+    def getUsedFieldNames(self, mappingFile):
+        valueOfs = self.getUsedPaths(mappingFile)
+        result = []
+        for valueOf in valueOfs:
+            select = valueOf['attributes']['select']
+            if self.plugins[self.tag]['value-of'].isFieldExpression(select):
+                result.append(select)
+        return result
+    
+    @staticmethod
+    def _searchValueOfs(mappingDict, result):
+        if mappingDict['tag'] == 'value-of':
+            result.append(mappingDict)
+        if mappingDict['children']:
+            for child in mappingDict['children']:
+                Converter._searchValueOfs(child, result)

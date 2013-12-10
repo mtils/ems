@@ -25,7 +25,6 @@ class Excel(InputReader):
 
             if not hasattr(self,'fieldNames') or not self.fieldNames:
                 self.fieldNames = self.getFieldNames()
-            print self.fieldNames
             self.fieldIndexes = {}
             i = 0
             for name in self.fieldNames:
