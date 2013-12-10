@@ -25,10 +25,22 @@ class CSVReader(InputReader):
     fieldNames = None
     offset = 0
     readerClass = None
-    
+
     remapping = {}
-    
-    
+
+    def guessFormat(self, testChars=1024):
+        dialect = None
+        with open(self.source,"r") as csvfile:
+            dialect = csv_o.Sniffer().sniff(csvfile.read(testChars))
+            csvfile.seek(0)
+            csvfile.close()
+        if dialect:
+            return dialect
+
+    def hasHeader(self, testChars=1024):
+        with open(self.source,"r") as csvfile:
+            return csv_o.Sniffer().has_header(csvfile.read(testChars))
+
     def select(self,xpath):
         if xpath == '//':
             return self
@@ -63,12 +75,10 @@ class CSVReader(InputReader):
                                                     delimiter=self.delimiter,
                                                     quoting=csv_o.QUOTE_NONE,
                                                     fieldnames=self.fieldNames)
-            
-            #self.readerClass = Dbf(self.source,readOnly=True)
+
             self.currentIndex = -1
-            #self.set_charset('iso-8859-15')
         return self.readerClass
-    
+
     def getType(self):
         return self.file
     

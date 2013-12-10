@@ -15,13 +15,17 @@ class Excel(InputReader):
     '''
     classdocs
     '''
-    
+    offset = 0
+
     def notify(self,eventType):
         if eventType == self.startProcess:
             self.currentIndex = 0
             self.currentRow = None
             self.readerClass = None
-            self.fieldNames = self.getFieldNames()
+
+            if not hasattr(self,'fieldNames') or not self.fieldNames:
+                self.fieldNames = self.getFieldNames()
+            print self.fieldNames
             self.fieldIndexes = {}
             i = 0
             for name in self.fieldNames:
@@ -47,9 +51,14 @@ class Excel(InputReader):
         try:
             if self._plugin is not None:
                 self._plugin.notifyProgress()
+
+            if self.currentIndex == 0:
+                if self.offset > 0:
+                    for i in range(self.offset):
+                        self.currentIndex +=1
             self.currentIndex += 1
             self.currentRow = readerClass.row(self.currentIndex)
-            
+
             if self.currentRow:
                 return self.currentRow
             raise StopIteration
@@ -87,11 +96,13 @@ class Excel(InputReader):
         return self.supportedMimeTypes
     
     def getFieldNames(self):
-        cells = self.getReaderClass().row(0)
-        fieldNames = []
-        for cell in cells:
-            fieldNames.append(cell.value) 
-        return fieldNames
+        if not hasattr(self,'fieldNames') or not self.fieldNames:
+            cells = self.getReaderClass().row(0)
+            fieldNames = []
+            for cell in cells:
+                fieldNames.append(cell.value) 
+            return fieldNames
+        return self.fieldNames
     
     def __len__(self):
         return self.getReaderClass().nrows - 1
