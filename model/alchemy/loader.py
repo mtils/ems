@@ -39,6 +39,9 @@ class AlchemyLoader(object):
         self.__sessionMakers = {}
         self.logQueries = False
         self.appPath = None
+        self.autoflush = False
+        self.autocommit = False
+        self.expireOnCommit = False
 
     def getEngines(self):
         return self.__engines
@@ -183,7 +186,10 @@ class AlchemyLoader(object):
     def getSessionMaker(self, handle='default'):
         if not self.__sessionMakers.has_key(handle):
             self.__sessionMakers[handle] = \
-                sessionmaker(bind=self.getEngine(handle), autoflush=False)
+                sessionmaker(bind=self.getEngine(handle),
+                             autoflush=self.autoflush,
+                             autocommit=self.autocommit,
+                             expire_on_commit=False)
             self._applyConfigurators(handle, "sessionMakerAboutToLoad")
             self._applyConfigurators(handle, "sessionMakerLoaded")
         return self.__sessionMakers[handle]
