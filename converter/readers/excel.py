@@ -35,7 +35,7 @@ class Excel(InputReader):
         super(Excel, self).notify(eventType)
     
     def getReaderClass(self):
-        if self.readerClass == None:
+        if self.readerClass is None:
             book = xlrd.open_workbook(self.source)
             self.readerClass = book.sheet_by_index(0)
             self.currentIndex = 0

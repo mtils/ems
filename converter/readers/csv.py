@@ -127,7 +127,9 @@ class CSVReader(InputReader):
     
     def getFieldNames(self):
         #print self.getReaderClass().fieldnames
-        return self.getReaderClass().fieldnames
+        if self.fieldNames is None:
+            return self.getReaderClass().fieldnames
+        return self.fieldNames
     
     def __len__(self):
         fp = open(self.source,"r")
