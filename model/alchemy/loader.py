@@ -95,7 +95,7 @@ class AlchemyLoader(object):
             raise DriverNotConfiguredError("EngineConfig %s misses driver"
                                            % loaderHint)
 #        print self.getCfgForHandle(handle)
-        url = self.__buildUrl(engineConfig)
+        url = self.buildUrl(engineConfig)
         self.__engines[handle] = self._createEngine(url, handle)
         self._applyConfigurators(handle,'engineAboutToLoad')
         self._applyConfigurators(handle, "engineLoaded")
@@ -104,7 +104,7 @@ class AlchemyLoader(object):
     def _createEngine(self, url, handle):
         return create_engine(url,echo=self.logQueries)
     
-    def __buildUrl(self, cfg):
+    def buildUrl(self, cfg):
         url = URL(cfg['driver'])
         if cfg.has_key('username'):
             url.username = cfg['username']
