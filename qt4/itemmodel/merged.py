@@ -154,7 +154,7 @@ class MergedProxyModel(QAbstractProxyModel, ReflectableMixin):
         self.dataChanged.emit(self.mapFromSource(topLeft), self.mapFromSource(bottomRight))
     
     def onModelReset(self, modelId):
-        self.modelResetWithId.emit(self.modelId)
+        self.modelReset.emit()
     
     def onRowsInserted(self, modelId, index, start, end):
         self.rowsInserted.emit(index, start, end)
@@ -215,15 +215,14 @@ class MergedProxyModel(QAbstractProxyModel, ReflectableMixin):
         return self.index(sourceIndex.row(), proxyModelColumn)
     
     def mapToSource(self, proxyIndex):
-#        print "mapToSource"
         if not proxyIndex.isValid():
             return QModelIndex()
+
         modelId = self.getModelIdOfProxyColumn(proxyIndex.column())
         sourceModelColumn = self.getSourceModelColumn(modelId, proxyIndex.column())
-#        print "mapToSource:", proxyIndex.column(), 'is', sourceModelColumn
-        
+
         return self._sourceModels[modelId].index(proxyIndex.row(), sourceModelColumn)
-    
+
     def rowCount(self, parentIndex=QModelIndex()):
         rows = 1000000
         for modelId in self._sourceModelKeys:
@@ -266,3 +265,69 @@ class MergedProxyModel(QAbstractProxyModel, ReflectableMixin):
         modelId = self.getModelIdOfProxyColumn(index.column())
         srcColumn = self.getSourceModelColumn(modelId, index.column())
         return self._sourceModels[modelId].childModel(srcColumn)    
+
+class MergedRowsProxyModel(MergedProxyModel):
+
+    def rowCount(self, parentIndex=QModelIndex()):
+        rows = 0
+        for modelId in self._sourceModelKeys:
+            rows += self._sourceModels[modelId].rowCount()
+        return rows
+
+    def columnCount(self, parentIndex=QModelIndex()):
+        cols = 1000000
+        for modelId in self._sourceModelKeys:
+            cols = min(self._sourceModels[modelId].columnCount(), cols)
+        return cols
+
+    def getProxyModelRow(self, modelId, sourceRow):
+        row = 0 
+        for modelIdKey in self._sourceModelKeys:
+            for sCol in range(self._sourceModels[modelIdKey].rowCount()):
+                if (modelIdKey == modelId) and (sCol == sourceRow):
+                    return row
+                row += 1
+
+        return -1
+
+    def getModelIdOfProxyRow(self, proxyRow):
+        row = 0
+        for modelIdKey in self._sourceModelKeys:
+            for sRow in range(self._sourceModels[modelIdKey].rowCount()):
+                if row == proxyRow:
+                    return modelIdKey
+                row += 1
+
+        return -1
+
+    def getSourceModelRow(self, modelId, proxyRow):
+        row = 0 
+        for modelIdKey in self._sourceModelKeys:
+            for sRow in range(self._sourceModels[modelIdKey].rowCount()):
+                if (modelIdKey == modelId) and (row == proxyRow):
+                    return sRow
+                row += 1
+
+        return -1
+
+    def mapToSource(self, proxyIndex):
+        if not proxyIndex.isValid():
+            return QModelIndex()
+
+        modelId = self.getModelIdOfProxyRow(proxyIndex.row())
+        sourceModelRow = self.getSourceModelRow(modelId, proxyIndex.row())
+
+        return self._sourceModels[modelId].index(sourceModelRow, proxyIndex.column())
+
+    def mapFromSource(self, sourceIndex):
+        if not sourceIndex.isValid() or sourceIndex.column() > self.columnCount():
+            return QModelIndex()
+        modelId = hash(sourceIndex.model())
+        proxyModelRow = self.getProxyModelRow(modelId, sourceIndex.column())
+        return self.index(proxyModelRow, sourceIndex.column())
+    
+    def flags(self, index):
+        modelId = self.getModelIdOfProxyRow(index.row())
+        #sourceIndex = self.mapToSource(index)
+        #print "flags", modelId, sourceIndex.row(), sourceIndex.column()
+        return self._sourceModels[modelId].flags(self.mapToSource(index))
