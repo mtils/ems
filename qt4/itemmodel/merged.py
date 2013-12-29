@@ -238,6 +238,7 @@ class MergedProxyModel(QAbstractProxyModel, ReflectableMixin):
     def data(self, index, role=Qt.DisplayRole):
         #data = QAbstractProxyModel.data(self, index, role)
         #index = self.mapToSource(index)
+        #print "data role:",role
         #print "data:", variant_to_pyobject(index.data())
         return self.mapToSource(index).data(role)
     

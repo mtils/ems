@@ -1,7 +1,33 @@
 ColumnNameRole = 64
 ForeignKeysRole = 128
 RowObjectRole = 256
+
+# XType General Infos
 XTypeRole = 512
+XTypeGroupRole = 513
+XTypeDefaultValueRole = 514
+XTypeCanBeNoneRole = 528
+
+# XType Number/Unit Infos
+XTypePrefixRole = 515
+XTypeSuffixRole = 516
+XTypeDecimalsSeparatorRole = 517
+XTypeThousandsSeparatorRole = 518
+XTypeDecimalsCountRole = 519
+XTypeMinValueRole = 520
+XTypeMaxValueRole = 521
+
+# XType String Type Infos
+XTypeMinLengthRole = 523
+XTypeMaxLengthRole = 524
+
+# XType Unit Infos
+XTypeValueToUnitSpaceRole = 525
+XTypeUnitStrPositionRole = 526
+
+# XType OneOfAList Infos
+XTypePossibleValuesRole = 527
+XTypeXTypeOfItemsRole = 527
 
 UnknownState = 0
 StartState = 1

@@ -5,7 +5,7 @@ Created on 28.04.2012
 '''
 from copy import copy
 
-from PyQt4.QtCore import Qt, QModelIndex, QVariant, QAbstractItemModel
+from PyQt4.QtCore import Qt, QModelIndex, QVariant, QAbstractItemModel, QString
 
 from ems.xtype.base import XType, ComplexType, SequenceType, NamedFieldType #@UnresolvedImport
 from ems import qt4
@@ -115,12 +115,13 @@ class AbstractXtypeItemModel(QAbstractItemModel, ReflectableMixin):
         return QVariant(int(section + 1))
     
     def data(self, index, role=Qt.DisplayRole):
+
         if not index.isValid() or \
            not (0 <= index.row() < self.rowCount()):
             return QVariant()
-        
+
         keyName = self.nameOfColumn(index.column())
-        
+
         if role in (Qt.DisplayRole, Qt.EditRole):
             try:
                 value = self._pyData(index.row(), keyName, role)
@@ -132,16 +133,117 @@ class AbstractXtypeItemModel(QAbstractItemModel, ReflectableMixin):
                 return QVariant()
             except AttributeError:
                 return QVariant()
-        
+
         if role == qt4.ColumnNameRole:
             return QVariant(unicode(self.nameOfColumn(index.column())))
+
         if role == qt4.RowObjectRole:
             return QVariant(self._pyData(index.row(), keyName, role))
-        
+
+        if role >= qt4.XTypeRole:
+            xType = self.columnType(index.column())
+            if role == qt4.XTypeRole:
+                return QVariant(xType)
+            if role == qt4.XTypeGroupRole:
+                return QVariant(xType.group)
+            if role == qt4.XTypeDefaultValueRole:
+                return QVariant(xType.defaultValue)
+            if role == qt4.XTypeCanBeNoneRole:
+                return QVariant(xType.canBeNone)
+            if role == qt4.XTypePrefixRole:
+                try:
+                    prefix = xType.strPrefix
+                    if prefix:
+                        return QVariant(QString.fromUtf8(prefix))
+                    return QVariant("")
+                except AttributeError:
+                    return QVariant("")
+            if role == qt4.XTypeSuffixRole:
+                try:
+                    suffix = xType.strSuffix
+                    if suffix:
+                        return QVariant(QString.fromUtf8(suffix))
+                    return QVariant("")
+                except AttributeError:
+                    return QVariant("")
+
+            if role == qt4.XTypeDecimalsSeparatorRole:
+                try:
+                    sep = xType.decimalsSeparator
+                    if sep:
+                        return QVariant(QString.fromUtf8(sep))
+                    return QVariant("")
+                except AttributeError:
+                    return QVariant("")
+
+            if role == qt4.XTypeThousandsSeparatorRole:
+                try:
+                    sep = xType.thousandsSeparator
+                    if sep:
+                        return QVariant(QString.fromUtf8(sep))
+                    return QVariant("")
+                except AttributeError:
+                    return QVariant("")
+
+            if role == qt4.XTypeDecimalsCountRole:
+                try:
+                    decCount = xType.decimalsCount
+                    if decCount is None:
+                        return QVariant()
+                    return QVariant(decCount)
+                except AttributeError:
+                    return QVariant()
+
+            if role == qt4.XTypeMinValueRole:
+                try:
+                    minValue = xType.minValue
+                    if minValue is None:
+                        return QVariant()
+                    return QVariant(minValue)
+                except AttributeError:
+                    return QVariant()
+
+            if role == qt4.XTypeMaxValueRole:
+                try:
+                    maxValue = xType.maxValue
+                    if maxValue is None:
+                        return QVariant()
+                    return QVariant(maxValue)
+                except AttributeError:
+                    return QVariant()
+
+            if role == qt4.XTypeMinLengthRole:
+                try:
+                    minLength = xType.minLength
+                    if minLength is None:
+                        return QVariant()
+                    return QVariant(minLength)
+                except AttributeError:
+                    return QVariant()
+
+            if role == qt4.XTypeMaxLengthRole:
+                try:
+                    maxLength = xType.maxLength
+                    if maxLength is None:
+                        return QVariant()
+                    return QVariant(maxLength)
+                except AttributeError:
+                    return QVariant()
+
+            if role == qt4.XTypeValueToUnitSpaceRole:
+                try:
+                    return QVariant(xType.value2UnitSpace)
+                except AttributeError:
+                    return QVariant()
+
+            if role == qt4.XTypeUnitStrPositionRole:
+                try:
+                    return QVariant(xType.unitStrPosition)
+                except AttributeError:
+                    return QVariant()
+
         return QVariant()
-    
-    
-    
+
     def setData(self, index, value, role=Qt.EditRole):
         if not index.isValid() or \
            not (0 <= index.row() < self.rowCount()):

@@ -106,5 +106,5 @@ class HeaderModel(QAbstractItemModel):
             if col == 0:
                 return self._sourceModel.headerData(index.row(), Qt.Horizontal, role)
             if col == 1:
-                return self._sourceModel.data(self._sourceModel.createIndex(0,index.row()), role)
+                return self._sourceModel.data(self._sourceModel.index(0,index.row()), role)
         return QVariant()
