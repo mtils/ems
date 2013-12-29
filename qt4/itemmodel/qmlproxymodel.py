@@ -53,8 +53,10 @@ class QmlProxyModel(EditableProxyModel):
                     del self._column2RoleName[key]
                     break
 
-    def mapRoleToRoleName(self, role, roleName):
+    def mapRoleToRoleName(self, role, roleName, srcColumn=None):
         self._role2RoleName[role] = roleName
+        if srcColumn is not None:
+            self.setRoleSourceColumn(role, srcColumn)
         self._updateRoleMappings()
 
     def unMapRoleToRoleName(self, roleOrRoleName):
