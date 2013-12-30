@@ -4,7 +4,7 @@ Created on 01.08.2011
 @author: michi
 '''
 
-from PyQt4.QtCore import QModelIndex, Qt, pyqtSignal, QObject
+from PyQt4.QtCore import QModelIndex, Qt, pyqtSignal, QObject, QVariant
 from PyQt4.QtGui import QAbstractProxyModel
 
 from ems.qt4.itemmodel.reflectable_mixin import ReflectableMixin #@UnresolvedImport
@@ -257,7 +257,7 @@ class MergedProxyModel(QAbstractProxyModel, ReflectableMixin):
     
     def columnOfName(self, name):
         for modelId in self._sourceModels:
-            col = self._sourceModels.columnOfName(name)
+            col = self._sourceModels[modelId].columnOfName(name)
             if col:
                 return col
         return -1
@@ -268,6 +268,19 @@ class MergedProxyModel(QAbstractProxyModel, ReflectableMixin):
         return self._sourceModels[modelId].childModel(srcColumn)    
 
 class MergedRowsProxyModel(MergedProxyModel):
+
+    def headerData(self, section, orientation, role=Qt.DisplayRole):
+        if orientation == Qt.Vertical and role == Qt.DisplayRole:
+            modelId = self.getModelIdOfProxyRow(section)
+            sourceSection = self.getSourceModelRow(modelId, section)
+            original = self._sourceModels[modelId].headerData(sourceSection,
+                                                              orientation,
+                                                              role)
+            rowNum = variant_to_pyobject(original)
+            if isinstance(rowNum, int):
+                return QVariant(rowNum+self._getRowOffsetOfModel(modelId))
+            return original
+        return QAbstractProxyModel.headerData(self, section, orientation, role)
 
     def rowCount(self, parentIndex=QModelIndex()):
         rows = 0
@@ -332,3 +345,28 @@ class MergedRowsProxyModel(MergedProxyModel):
         #sourceIndex = self.mapToSource(index)
         #print "flags", modelId, sourceIndex.row(), sourceIndex.column()
         return self._sourceModels[modelId].flags(self.mapToSource(index))
+
+    def _getRowOffsetOfModel(self, modelId):
+        rows = 0
+        for modelIdKey in self._sourceModelKeys:
+            if modelIdKey == modelId:
+                return rows
+            rows += self._sourceModels[modelIdKey].rowCount()
+        return rows
+
+    def rowOfName(self, name):
+        rows = self.rowsOfName(name)
+        if not len(rows):
+            return -1
+        return rows[0]
+    
+    def rowsOfName(self, name):
+        rows = []
+        for modelId in self._sourceModelKeys:
+            try:
+                row = self._sourceModels[modelId].rowOfName(name)
+                if row != -1:
+                    rows.append(row + self._getRowOffsetOfModel(modelId))
+            except Exception:
+                continue
+        return rows

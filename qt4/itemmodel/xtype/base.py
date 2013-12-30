@@ -135,7 +135,7 @@ class AbstractXtypeItemModel(QAbstractItemModel, ReflectableMixin):
                 return QVariant()
 
         if role == qt4.ColumnNameRole:
-            return QVariant(unicode(self.nameOfColumn(index.column())))
+            return QVariant(unicode(keyName))
 
         if role == qt4.RowObjectRole:
             return QVariant(self._pyData(index.row(), keyName, role))

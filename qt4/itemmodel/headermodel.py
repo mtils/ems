@@ -1,7 +1,8 @@
 
 from PyQt4.QtCore import QAbstractItemModel, QModelIndex, Qt, QVariant
+from reflectable_mixin import ReflectableMixin
 
-class HeaderModel(QAbstractItemModel):
+class HeaderModel(QAbstractItemModel, ReflectableMixin):
     """
     @brief This is a model which turn headerData into a name: value Model
            So its rowCount is the columnCount of its sourceModel.
@@ -13,6 +14,9 @@ class HeaderModel(QAbstractItemModel):
     def __init__(self, parent=None):
         QAbstractItemModel.__init__(self, parent)
         self._sourceModel = None
+
+    def direction(self):
+        return ReflectableMixin.Vertical
         
     def sourceModel(self):
         """
@@ -108,3 +112,8 @@ class HeaderModel(QAbstractItemModel):
             if col == 1:
                 return self._sourceModel.data(self._sourceModel.index(0,index.row()), role)
         return QVariant()
+
+    def rowOfName(self, name):
+        if isinstance(self._sourceModel, ReflectableMixin):
+            return self._sourceModel.columnOfName(name)
+        return -1
