@@ -25,6 +25,8 @@ class AddRowProxyModel(EditableProxyModel):
     ADD = 1
     REMOVE = 2
     
+    ACTION_COLUMN_NAME = 'actionAddOrRemove'
+    
     def __init__(self, parent, connectModificationSignals=True):
         super(AddRowProxyModel, self).__init__(parent)
         self.pseudoAddType = NumberType(int)
@@ -149,4 +151,14 @@ class AddRowProxyModel(EditableProxyModel):
         if column == 0:
             return self.pseudoAddType
         return EditableProxyModel.columnType(self, column)
+    
+    def columnOfName(self, name):
+        if name == AddRowProxyModel.ACTION_COLUMN_NAME:
+            return 0
+        return EditableProxyModel.columnOfName(self, name)
+    
+    def nameOfColumn(self, column):
+        if column == 0:
+            return AddRowProxyModel.ACTION_COLUMN_NAME
+        return EditableProxyModel.nameOfColumn(self, column)
     

@@ -249,19 +249,37 @@ class MergedProxyModel(QAbstractProxyModel, ReflectableMixin):
         modelId = self.getModelIdOfProxyColumn(column)
         srcColumn = self.getSourceModelColumn(modelId, column)
         return self._sourceModels[modelId].columnType(srcColumn)
-    
+
+    def _getColumnOffsetOfModel(self, modelId):
+        columns = 0
+        for modelIdKey in self._sourceModelKeys:
+            if modelIdKey == modelId:
+                return columns
+            columns += self._sourceModels[modelIdKey].columnCount()
+        return columns
+
     def nameOfColumn(self, column):
         modelId = self.getModelIdOfProxyColumn(column)
         srcColumn = self.getSourceModelColumn(modelId, column)
         return self._sourceModels[modelId].nameOfColumn(srcColumn)
     
+    def columnsOfName(self, name):
+        columns = []
+        for modelId in self._sourceModelKeys:
+            try:
+                cols = self._sourceModels[modelId].columnOfName(name)
+                if cols != -1:
+                    columns.append(cols + self._getColumnOffsetOfModel(modelId))
+            except Exception:
+                continue
+        return columns
+
     def columnOfName(self, name):
-        for modelId in self._sourceModels:
-            col = self._sourceModels[modelId].columnOfName(name)
-            if col:
-                return col
+        columns = self.columnsOfName(name)
+        if len(columns):
+            return columns[0]
         return -1
-    
+
     def childModel(self, index):
         modelId = self.getModelIdOfProxyColumn(index.column())
         srcColumn = self.getSourceModelColumn(modelId, index.column())
