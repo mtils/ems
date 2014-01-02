@@ -40,7 +40,12 @@ class DictStore(QObject):
                 self.valueChanged.emit(key,QVariant(value))
                 self._setDirty(True)
         else:
-            if self._srcDict[key] != value:
+            try:
+                if self._srcDict[key] != value:
+                    self._srcDict[key] = value
+                    self.valueChanged.emit(key,QVariant(value))
+                    self._setDirty(True)
+            except KeyError:
                 self._srcDict[key] = value
                 self.valueChanged.emit(key,QVariant(value))
                 self._setDirty(True)

@@ -13,18 +13,24 @@ class GenericDelegate(QStyledItemDelegate):
     def __init__(self, parent=None):
         super(GenericDelegate, self).__init__(parent)
         self.delegates = {}
-    
+        self.rowDelegates = {}
+        self.indexDelegates = {}
+
     def _getDelegate(self, index):
-        return self.delegates.get(index.column())
-    
+        indexId = "{0}|{1}".format(index.row(), index.column())
+        try:
+            return self.indexDelegates[indexId]
+        except KeyError:
+            return self.delegates[index.column()]
+
+        raise KeyError()
+
     def sizeHint(self, option, index):
-        delegate = self._getDelegate(index)
-        
-        if delegate is not None:
-            return delegate.sizeHint(option, index)
-        else:
+        try:
+            return self._getDelegate(index).sizeHint(option, index)
+        except KeyError:
             return QStyledItemDelegate.sizeHint(self, option, index)
-    
+
     def insertColumnDelegate(self, column, delegate):
         delegate.setParent(self)
         self.delegates[column] = delegate
@@ -33,20 +39,30 @@ class GenericDelegate(QStyledItemDelegate):
         if column in self.delegates:
             del self.delegates[column]
 
+    def insertIndexDelegate(self, index, delegate):
+        indexId = "{0}|{1}".format(index.row(), index.column())
+        self.indexDelegates[indexId] = delegate
+        delegate.setParent(self)
+
+    def removeIndexDelegate(self, index):
+        del self.indexDelegates["{0}|{1}".format(index.row(), index.column())]
+
     def paint(self, painter, option, index):
-        delegate = self._getDelegate(index)
-        
-        if delegate is not None:
-            return delegate.paint(painter, option, index)
-        else:
+        try:
+            return self._getDelegate(index).paint(painter, option, index)
+        except KeyError:
             return QStyledItemDelegate.paint(self, painter, option, index)
 
+    def updateEditorGeometry(self, editor, option, index):
+        try:
+            return self._getDelegate(index).updateEditorGeometry(editor, option, index)
+        except KeyError:
+            return QStyledItemDelegate.updateEditorGeometry(self, editor, option, index)
 
     def createEditor(self, parent, option, index):
-        delegate = self._getDelegate(index)
-        if delegate is not None:
-            return delegate.createEditor(parent, option, index)
-        else:
+        try:
+            return self._getDelegate(index).createEditor(parent, option, index)
+        except KeyError:
             return QStyledItemDelegate.createEditor(self, parent, option,
                                               index)
 
@@ -54,18 +70,16 @@ class GenericDelegate(QStyledItemDelegate):
     def setEditorData(self, editor, index):
         if not index.isValid():
             return
-        delegate = self._getDelegate(index)
-        if delegate is not None:
-            return delegate.setEditorData(editor, index)
-        else:
+        try:
+            return self._getDelegate(index).setEditorData(editor, index)
+        except KeyError:
             return QStyledItemDelegate.setEditorData(self, editor, index)
 
 
     def setModelData(self, editor, model, index):
         if not index.isValid():
             return
-        delegate = self._getDelegate(index)
-        if delegate is not None:
-            return delegate.setModelData(editor, model, index)
-        else:
+        try:
+            return self._getDelegate(index).setModelData(editor, model, index)
+        except KeyError:
             return QStyledItemDelegate.setModelData(self, editor, model, index)
