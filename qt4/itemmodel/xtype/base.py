@@ -25,6 +25,8 @@ class AbstractXtypeItemModel(QAbstractItemModel, ReflectableMixin):
             raise TypeError('XTypeBaseInterface is only for ComplexType types')
         self._xType = xType
         self._keyLabels = {}
+        self._fieldTitlesLong = {}
+        self._fieldDescriptions = {}
         self.isEditable = True
         self._childModels = {}
         self._enabledFlagColumn = None
@@ -32,31 +34,45 @@ class AbstractXtypeItemModel(QAbstractItemModel, ReflectableMixin):
     @property
     def xType(self):
         return self._xType
-    
+
     def _rowType(self):
         return self._xType
-    
+
     def columnType(self, column):
         return self._rowType().keyType(column)
-    
+
     def nameOfColumn(self, column):
         return self._rowType().keyName(column)
-    
+
     def columnOfName(self, name):
         return self._rowType().keys().index(name)
-    
+
     def columnCount(self, index=QModelIndex()):
         return len(self._rowType())
-    
+
     def setEnabledFlagColumn(self, enabledFlagColumn):
         self._enabledFlagColumn = enabledFlagColumn
-    
+
     def enabledFlagColumn(self):
         return self._enabledFlagColumn
-        
+
     def rowCount(self, index=QModelIndex()):
         return len(self._modelData)
-    
+
+    def fieldTitleLong(self, fieldName):
+        try:
+            return self._fieldTitlesLong[fieldName]
+        except KeyError:
+            return self.getKeyLabel(fieldName)
+
+    def setFieldTitleLong(self, fieldName, longTitle):
+        self._fieldTitlesLong[fieldName] = longTitle
+        try:
+            i = self._rowType().keys().index(fieldName)
+            self.headerDataChanged.emit(Qt.Horizontal, i, i)
+        except ValueError:
+            pass
+
     def setKeyLabel(self, key, label):
         self._keyLabels[key] = label
         try:
@@ -75,9 +91,10 @@ class AbstractXtypeItemModel(QAbstractItemModel, ReflectableMixin):
         return result
     
     def getKeyLabel(self, key):
-        if self._keyLabels.has_key(key):
-            return self._keyLabels[key]
-        return key
+        try:
+             return self._keyLabels[key]
+        except KeyError:
+            return key
     
     def _getChildModelHash(self, index):
         return "{0}|{1}".format(index.row(), index.column())
@@ -93,27 +110,25 @@ class AbstractXtypeItemModel(QAbstractItemModel, ReflectableMixin):
                 if key.startswith(keyPrefix):
                     self._childModels[childHash].setKeyLabel(key[len(keyPrefix):],
                                                               self._keyLabels[key])
-            
-            
         return self._childModels[childHash]
-    
+
     def index(self, row, column, parent=QModelIndex()):
         return self.createIndex(row, column, object=0)
-    
+
     def headerData(self, section, orientation, role=Qt.DisplayRole):
-        
-        if role != Qt.DisplayRole:
-            return QVariant()
-            
+
         if orientation == Qt.Horizontal:
             keyName = self.nameOfColumn(section)
-            if self._keyLabels.has_key(keyName):
-                return QVariant(self._keyLabels[keyName])
-            return QVariant(keyName)
-#        else:
-#            print "headerData: {0}".format(variant_to_pyobject(QVariant(int(section + 1))))
-        return QVariant(int(section + 1))
-    
+            if role in (Qt.DisplayRole, qt4.FieldTitleRole):
+                return QVariant(self.getKeyLabel(keyName))
+            elif role == qt4.FieldTitleLongRole:
+                return QVariant(self.fieldTitleLong(keyName))
+
+        if orientation == Qt.Vertical and role == Qt.DisplayRole:
+            return QVariant(int(section + 1))
+
+        return QVariant()
+
     def data(self, index, role=Qt.DisplayRole):
 
         if not index.isValid() or \

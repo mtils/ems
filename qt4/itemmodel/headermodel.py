@@ -14,10 +14,17 @@ class HeaderModel(QAbstractItemModel, ReflectableMixin):
     def __init__(self, parent=None):
         QAbstractItemModel.__init__(self, parent)
         self._sourceModel = None
+        self._headerDataRole = Qt.DisplayRole
 
     def direction(self):
         return ReflectableMixin.Vertical
-        
+
+    def headerDataRole(self):
+        return self._headerDataRole
+
+    def setHeaderDataRole(self, role):
+        self._headerDataRole = role
+
     def sourceModel(self):
         """
         @brief The source
@@ -108,7 +115,7 @@ class HeaderModel(QAbstractItemModel, ReflectableMixin):
         if self._sourceModel:
             col = index.column()
             if col == 0:
-                return self._sourceModel.headerData(index.row(), Qt.Horizontal, role)
+                return self._sourceModel.headerData(index.row(), Qt.Horizontal, self._headerDataRole)
             if col == 1:
                 return self._sourceModel.data(self._sourceModel.index(0,index.row()), role)
         return QVariant()

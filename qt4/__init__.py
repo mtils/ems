@@ -1,4 +1,8 @@
 ColumnNameRole = 64
+FieldTitleRole = 65
+FieldTitleLongRole = 66
+FieldDescriptionRole = 67
+
 ForeignKeysRole = 128
 RowObjectRole = 256
 
