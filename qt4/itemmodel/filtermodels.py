@@ -1,6 +1,34 @@
 
-from PyQt4.QtCore import QModelIndex, QVariant
+from PyQt4.QtCore import QModelIndex, QVariant, Qt
 from PyQt4.QtGui import QSortFilterProxyModel
+from ems.qt4.util import variant_to_pyobject
+
+class SortFilterProxyModel(QSortFilterProxyModel):
+
+    def pyData(self, index, role=Qt.DisplayRole):
+        return variant_to_pyobject(self.data(index, role))
+
+    def columnType(self, column):
+        srcColumn = self.mapToSource(self.index(0, column)).column()
+        return self.sourceModel().columnType(srcColumn)
+
+    def nameOfColumn(self, column):
+        srcColumn = self.mapToSource(self.index(0, column)).column()
+        return self.sourceModel().nameOfColumn(srcColumn)
+
+    def columnOfName(self, name):
+        col = self.sourceModel().columnOfName(name)
+        #Take my first Index, it could be row 0 is sorted out
+        sourceIndex = self.mapToSource(self.index(0,0))
+        return self.mapFromSource(self.sourceModel().index(sourceIndex.row(), col)).column()
+
+    def childModel(self, index):
+        srcIndex = self.mapToSource(index)
+        return self.sourceModel().childModel(srcIndex)
+
+    def getRowAsDict(self, row):
+        sourceIndex = self.mapFromSource(self.createIndex(row,0))
+        return self.sourceModel().getRowAsDict(sourceIndex.row())
 
 class HideRowColumnModel(QSortFilterProxyModel):
 

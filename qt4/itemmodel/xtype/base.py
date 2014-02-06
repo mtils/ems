@@ -301,6 +301,9 @@ class AbstractXtypeItemModel(QAbstractItemModel, ReflectableMixin):
     def parent(self, index):
         return QModelIndex()
     
+    def pyData(self, index, role=Qt.DisplayRole):
+        return variant_to_pyobject(self.data(index, role))
+    
     def _pyData(self, row, keyName, role=Qt.EditRole):
         raise NotImplementedError('Please implement _pyData()')
     
