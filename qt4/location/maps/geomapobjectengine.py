@@ -662,12 +662,10 @@ class GeoMapObjectEngine(QObject):
                 self.pixelTrans[obj] = [pixel]
 
             polys.append(pixelPoly)
-    
+
     class PathStep(object):
-        tooClose = False
-        pixel = QPointF()
-        e = QPainterPath()
-    
+        __slots__ = ['tooClose','pixel','e']
+
     def exactPixelMap(self, origin, obj, polys):
         '''
         @param origin: GeoCoordinate
