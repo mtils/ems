@@ -13,7 +13,6 @@ from ems.qt4.util import VariantContainer, variant_to_pyobject
 from ems.qt4.itemmodel.reflectable_mixin import ReflectableMixin #@UnresolvedImport
 from ems.qt4.itemmodel.xtype.factory import getModelForXType #@UnresolvedImport
 
-
 class AbstractXtypeItemModel(QAbstractItemModel, ReflectableMixin):
     def __init__(self, xType, parent=None):
         ReflectableMixin.__init__(self)
@@ -512,6 +511,12 @@ class ObjectGetSetInterface(object):
             else:
                 template.__setattr__(key, None)
         return template
+    
+    def getRowObject(self, row):
+        try:
+            return self._modelData[row]
+        except KeyError:
+            pass
 
 class SingleRowDictModel(DictGetSetInterface, SingleRowModel):
     pass

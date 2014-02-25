@@ -7,7 +7,7 @@ from __future__ import print_function
 import datetime
 from pprint import pformat
 
-from PyQt4.QtCore import QVariant, pyqtSignal, QObject
+from PyQt4.QtCore import QVariant, pyqtSignal, QObject, Qt
 from PyQt4.QtGui import QColor
 
 class VariantContainer(tuple):
@@ -132,3 +132,26 @@ class SignalPrinter(QObject):
             return u"\n{0}".format(pformat(value))
         else:
             return str(value)
+
+def findIndexesOfValue(model, value, inRow=None, inColumn=None,
+                       role=Qt.DisplayRole, returnFirstHit=False):
+    if inRow is None:
+        rows = range(model.rowCount())
+    else:
+        rows = (inRow,)
+    if inColumn is None:
+        columns = range(model.columnCount())
+    else:
+        columns = (inColumn,)
+
+    indexes = []
+
+    for row in rows:
+        for col in columns:
+            index = model.index(row,col)
+            if variant_to_pyobject(index.data(role)) == value:
+                if returnFirstHit:
+                    return index
+                indexes.append(index)
+
+    return indexes
