@@ -21,6 +21,7 @@ class ItemViewEditor(QWidget):
     rowInsertionRequested = pyqtSignal(int,int)
     rowEditingRequested = pyqtSignal(list)
     rowDeletionRequested = pyqtSignal(list)
+    firstSelectedRowChanged = pyqtSignal(int)
     
     def __init__(self, itemView, connectOwnMethods=True, parent=None):
         QWidget.__init__(self, parent)
@@ -68,6 +69,8 @@ class ItemViewEditor(QWidget):
             lastSelectedRow = idx.row()
         if hasSelection:
             self._setIsRowSelected(True)
+            if self.lastSelectedRow != lastSelectedRow:
+                self.firstSelectedRowChanged.emit(lastSelectedRow)
             self.lastSelectedRow = lastSelectedRow
         else:
             self._setIsRowSelected(False)
