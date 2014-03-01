@@ -20,7 +20,7 @@ from sqlalchemy.exc import SQLAlchemyError, InvalidRequestError
 
 class SAOrmSearchModel(QAbstractTableModel):
     
-    error = pyqtSignal(SQLAlchemyError)
+    error = pyqtSignal(Exception)
     
     def __init__(self,session, queriedObject, querybuilder=None, filter=None,
                  columns = [],
@@ -47,7 +47,8 @@ class SAOrmSearchModel(QAbstractTableModel):
         self._ormProperties = None
         self.editable = editable
         self._unsubmittedRows = []
-        
+        self._lastCreatedHash = None
+
         if not len(self._columns):
             self._columns = self.possibleColumns
             
@@ -73,6 +74,10 @@ class SAOrmSearchModel(QAbstractTableModel):
         self._columnName2Index = self._buildReversedColumnLookup(columns)
         self._dirty = True
         self.unsubmittetColor = QColor('#ffff00')
+    
+    @property
+    def lastCreatedHash(self):
+        return self._lastCreatedHash
     
     @property
     def queriedObject(self):
@@ -469,6 +474,7 @@ class SAOrmSearchModel(QAbstractTableModel):
             self._unsubmittedRows = []
             return True
         except SQLAlchemyError as e:
+
             self._session.rollback()
             for row in self._unsubmittedRows:
                 self._session.add(self._objectCache[row])
@@ -487,24 +493,30 @@ class SAOrmSearchModel(QAbstractTableModel):
         super(SAOrmSearchModel, self).revert()
         self.forceReset()
     
+    def _createNewOrmObject(self):
+        srcClass = self._queriedObject.__class__
+
+        newObj = srcClass.__new__(srcClass)
+        newObj.__init__()
+
+        return newObj
+
     def insertRows(self, row, count, parent=QModelIndex()):
         if count > 1:
             raise NotImplementedError("Currently only one row can be inserted")
         rowCount = self.rowCount(parent)
         if row != rowCount:
             raise NotImplementedError("Currently the row can be inserted at the end")
-        
-        cls = self._queriedObject.__class__
-        
-        newObj = cls.__new__(cls)
-        newObj.__init__()
+
+        newObj = self._createNewOrmObject()
         self.beginInsertRows(parent, row, row)
         self._currentlyEditedRow = row
         self._session.add(newObj)
         self._objectCache[row] = newObj
         self._unsubmittedRows.append(row)
+        self._lastCreatedHash = hash(newObj)
         self.endInsertRows()
-        return False
+        return True
     
     def removeRows(self, row, count, parentIndex=QModelIndex()):
         if count > 1:
@@ -538,8 +550,20 @@ class SAOrmSearchModel(QAbstractTableModel):
         self.perform()
         if self._objectCache.has_key(row):
             return self._objectCache[row]
-        
-    
+
+    def getObjectByHash(self, objectHash):
+        self.perform()
+        for row in self._objectCache:
+            if hash(self._objectCache[row]) == objectHash:
+                return self._objectCache[row]
+
+    def getRowByHash(self, objectHash):
+        self.perform()
+        for row in self._objectCache:
+            if hash(self._objectCache[row]) == objectHash:
+                return row
+
+
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if role == Qt.TextAlignmentRole:
             if orientation == Qt.Horizontal:

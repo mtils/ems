@@ -14,11 +14,18 @@ class StringSummaryProxyModel(QAbstractProxyModel):
         QAbstractItemModel.__init__(self, parent)
         self._resultCache = {}
         self._columnName = QVariant('Title')
+        self._extractFunction = None
         self._formatStrings = {
             Qt.DisplayRole:u"{0}",
             Qt.EditRole:u"{0}",
             Qt.ToolTipRole:u"{0}",
             Qt.StatusTipRole:u"{0}"
+        }
+        self._srcColumns = {
+            Qt.DisplayRole: (0,),
+            Qt.EditRole: (0,),
+            Qt.ToolTipRole: (0,),
+            Qt.StatusTipRole: (0,)
         }
 
     def onSourceModelDataChanged(self, topLeft, bottomRight):
@@ -33,16 +40,43 @@ class StringSummaryProxyModel(QAbstractProxyModel):
         return self._formatStrings[role]
 
     def setFormatString(self, formatString, role=None):
+
+        columns = []
+        for key in formatString.split('{'):
+            end = key.find('}')
+            if end != -1:
+                columns.append(int(key[0:end]))
+
         if role is None:
             for key in self._formatStrings.keys():
                 self._formatStrings[key] = unicode(formatString)
+                self._srcColumns[key] = columns
         else:
             self._formatStrings[role] = unicode(formatString)
+            self._srcColumns[role] = columns
 
         self._resultCache.clear()
 
     def flags(self, index):
-        return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+
+        #if self._extractFunction is None:
+            #return Qt.ItemIsSelectable | Qt.ItemIsEnabled
+
+        lowestFlags = Qt.ItemIsSelectable | Qt.ItemIsEditable | \
+                      Qt.ItemIsDragEnabled | Qt.ItemIsDropEnabled | \
+                      Qt.ItemIsUserCheckable | Qt.ItemIsEnabled | \
+                      Qt.ItemIsTristate
+
+        for col in self._srcColumns[Qt.DisplayRole]:
+            srcIndex = self.sourceModel().index(index.row(), col)
+            flags = srcIndex.flags()
+            if int(flags) < int(lowestFlags):
+                lowestFlags = flags
+
+        if self._extractFunction is None:
+            return lowestFlags ^ Qt.ItemIsEditable
+
+        return lowestFlags
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Horizontal:
@@ -73,10 +107,32 @@ class StringSummaryProxyModel(QAbstractProxyModel):
 
         return QVariant()
 
+    def setData(self, index, value, role=Qt.EditRole):
+        if not self._extractFunction:
+            return False
+        res = self._extractFunction(variant_to_pyobject(value))
+        if len(res) != len(self._srcColumns[Qt.EditRole]):
+            raise TypeError("Result of extractFunction has to have self len() as defined cols")
+        i = 0
+        for val in res:
+            srcCol = self._srcColumns[Qt.EditRole][i]
+            srcIndex = self.sourceModel().index(index.row(), srcCol)
+            self.sourceModel().setData(srcIndex, QVariant(val))
+            i += 1
+        return False
+
+    def extractFunction(self):
+        return self._extractFunction
+
+    def setExtractFunction(self, function):
+        self._extractFunction = function
+
     def _buildStringOfRow(self, row, role):
         rowData = []
         for col in range(self.sourceModel().columnCount()):
-            sourceVal = unicode(variant_to_pyobject(self.sourceModel().index(row, col).data()))
+            sourceVal = variant_to_pyobject(self.sourceModel().index(row, col).data())
+            if sourceVal is None:
+                sourceVal = ''
             rowData.append(sourceVal)
         return QString.fromUtf8(self._formatStrings[role].format(*rowData))
 
@@ -93,9 +149,14 @@ class StringSummaryProxyModel(QAbstractProxyModel):
         return self.createIndex(row, col, parentIndex)
 
     def mapToSource(self, proxyIndex):
+        return QModelIndex()
         return self.sourceModel().createIndex(proxyIndex.row(), proxyIndex.column())
 
     def mapFromSource(self, sourceIndex):
+        for col in self._srcColumns[Qt.DisplayRole]:
+            if col == sourceIndex.column():
+                return self.index(sourceIndex.row(),0)
+        return QModelIndex()
         return self.createIndex(sourceIndex.row(), sourceIndex.column())
 
     def reset(self):

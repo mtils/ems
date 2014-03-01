@@ -4,7 +4,7 @@ Created on 19.06.2011
 @author: michi
 '''
 
-from PyQt4.QtCore import QObject
+from PyQt4.QtCore import QObject, pyqtSignal
 from PyQt4.QtGui import QDataWidgetMapper
 
 from sqlalchemy.types import AbstractType, String, Integer, Float, Boolean
@@ -44,6 +44,9 @@ class SAMapperDefaults(Singleton, SAInterfaceMixin):
         SAInterfaceMixin._init(self)
 
 class SAMapper(QObject, SAInterfaceMixin):
+
+    currentIndexChanged = pyqtSignal(int)
+
     def __init__(self, ormObjInstance, model=None, session=None, parent=None):
         QObject.__init__(self, parent)
         SAInterfaceMixin._init(self)
@@ -58,7 +61,14 @@ class SAMapper(QObject, SAInterfaceMixin):
         self._hashToType = {}
         self._model = model
         self.session = session
-    
+        self._currentIndex = -1
+
+    def currentIndex(self):
+        return self.dataWidgetMapper.currentIndex()
+
+    def setCurrentIndex(self, idx):
+        self.dataWidgetMapper.setCurrentIndex(idx)
+
     @property
     def ormObject(self):
         return self._ormObj
@@ -82,6 +92,7 @@ class SAMapper(QObject, SAInterfaceMixin):
                                                   self,
                                                   self._dataWidgetMapper)
             self._dataWidgetMapper.setItemDelegate(itemDelegate)
+            self._dataWidgetMapper.currentIndexChanged.connect(self.currentIndexChanged)
         return self._dataWidgetMapper
     
     
