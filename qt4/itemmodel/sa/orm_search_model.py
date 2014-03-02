@@ -15,7 +15,7 @@ from sqlalchemy.orm.collections import InstrumentedList
 from ems import qt4
 from ems.thirdparty.odict import OrderedDict
 from ems.model.sa.orm.querybuilder import SAQueryBuilder, OrderByClause
-from ems.qt4.util import variant_to_pyobject
+from ems.qt4.util import variant_to_pyobject, VariantContainer
 from sqlalchemy.exc import SQLAlchemyError, InvalidRequestError
 
 class SAOrmSearchModel(QAbstractTableModel):
@@ -361,7 +361,9 @@ class SAOrmSearchModel(QAbstractTableModel):
 #            return QVariant(value.__class__.__ormDecorator__().getReprasentiveString(value))
         elif isinstance(value, datetime.datetime):
             return QVariant(QDateTime(value.year, value.month, value.day,
-                                      value.hour, value.minute, value.second)) 
+                                      value.hour, value.minute, value.second))
+        elif isinstance(value, (dict, list)):
+            return QVariant(VariantContainer((value,)))
         return QVariant(value)
     
     def data(self, index, role=Qt.DisplayRole):
@@ -399,6 +401,7 @@ class SAOrmSearchModel(QAbstractTableModel):
         return QVariant()
     
     def setData(self, index, value, role=Qt.EditRole):
+        self.perform()
         columnName = self.getPropertyNameByIndex(index.column())
         val = variant_to_pyobject(value)
         #print "setData {0} {1} {2}".format(columnName, val, type(val))
@@ -630,14 +633,15 @@ class SAOrmSearchModel(QAbstractTableModel):
         
         if not self._dirty:
             return
+
         self.__didPerform = True
         #self.beginResetModel()
         #print "%s : I actually perform" % self._queriedObject
         #print self._session.get_bind(self._queriedObject)
         i = 0
-        
+
         self.beginResetModel()
-        
+
         self._resultCache.clear()
         self._objectCache.clear()
         self._headerCache.clear()
