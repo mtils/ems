@@ -93,8 +93,15 @@ class Many2OneComboStrategy(BaseStrategy):
     def _getObjModel(self, mapper, propertyName, rProperty, matchModel=False):
         #objMapper = object_mapper(prototype)
         remoteClass = self.getRemoteClass(mapper, rProperty)
+
+        session = None
+
+        if mapper.session:
+            session = mapper.session
+        elif mapper.model.session:
+            session = mapper.model.session
         
-        if mapper.session is None:
+        if session is None:
             raise TypeError("Please Assign a session to the mapper")
         
         clauses = self.buildSelectClauses(rProperty)
@@ -107,9 +114,9 @@ class Many2OneComboStrategy(BaseStrategy):
                 for clause in clauses:
                     conj.append(clause)
                     
-            query = mapper.session.query(remoteClass).filter(conj)
+            query = session.query(remoteClass).filter(conj)
         else:
-            query = mapper.session.query(remoteClass)
+            query = session.query(remoteClass)
             
         
         orderByCol = remoteClass.__ormDecorator__().getDefaultOrderByProperty(remoteClass)
@@ -122,10 +129,10 @@ class Many2OneComboStrategy(BaseStrategy):
         fk = self.getForeignKey(rProperty)
         
         if itemCount > self.maxEntriesForNormalCombo:
-            return RepresentativeModelMatch(mapper.session, remoteClass, fk,
+            return RepresentativeModelMatch(session, remoteClass, fk,
                                             query, nullEntry="")
         else:
-            return RepresentativeModel(mapper.session, remoteClass, fk,
+            return RepresentativeModel(session, remoteClass, fk,
                                        query, nullEntry="Auswahl...")
         
     

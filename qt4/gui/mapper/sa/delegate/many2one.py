@@ -15,7 +15,7 @@ from base import MapperDelegate #@UnresolvedImport
 class Many2OneDelegate(QStyledItemDelegate):
     def __init__(self, parent=None):
         QStyledItemDelegate.__init__(self, parent)
-    
+
     def setEditorData(self, editor, index):
         if isinstance(editor, QComboBox):
             for i in range(editor.count()):

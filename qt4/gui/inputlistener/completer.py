@@ -10,10 +10,10 @@ from PyQt4.QtGui import QCompleter, QAbstractProxyModel, QLineEdit, QComboBox
 from ems.qt4.util import hassig
 
 class CompleterListener(QObject):
-    
+
     activated = pyqtSignal(QModelIndex)
     highlighted = pyqtSignal(QModelIndex)
-    
+
     def __init__(self, completer=None):
         self._completer = None
         self.lastIndex = None

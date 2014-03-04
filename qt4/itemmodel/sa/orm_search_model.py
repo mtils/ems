@@ -572,8 +572,13 @@ class SAOrmSearchModel(QAbstractTableModel):
             if orientation == Qt.Horizontal:
                 return QVariant(int(Qt.AlignLeft|Qt.AlignVCenter))
             return QVariant(int(Qt.AlignRight|Qt.AlignVCenter))
+
+        if role == qt4.ColumnNameRole and orientation == Qt.Horizontal:
+            return QVariant(self.getPropertyNameByIndex(section))
+
         if role != Qt.DisplayRole:
             return QVariant()
+
         if orientation == Qt.Horizontal:
             if self.sectionFriendlyNames.has_key(section):
                 return self.sectionFriendlyNames[section]

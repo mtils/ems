@@ -32,7 +32,7 @@ class MainApplication(QApplication):
 
     def getStandardAction(self, name):
         action = QAction(self)
-        if self._standardActions.has_key(name):
+        if name in self._standardActions:
             action.setCheckable(self._standardActions[name].isCheckable())
             action.setAutoRepeat(self._standardActions[name].autoRepeat())
             action.setData(self._standardActions[name].data())
