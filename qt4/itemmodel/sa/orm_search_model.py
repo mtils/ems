@@ -324,10 +324,9 @@ class SAOrmSearchModel(QAbstractTableModel):
 #                            print colName,type(value)
 #        else:
 #            print "%s has no %s" % (obj, pathStack[0])
-    
+
     def _extractMultiValue(self, obj, pathStack):
-        
-        
+
         if(hasattr(obj, pathStack[0])):
 #            print pathStack
             if len(pathStack) < 2:
@@ -345,29 +344,26 @@ class SAOrmSearchModel(QAbstractTableModel):
 #                        print "next2Obj %s" % pathStack
             return self._extractMultiValue(nextObj, pathStack)
         elif isinstance(obj, InstrumentedList):
-#            print "{0} is multiple".format(pathStack)
             return obj
-    
+
     def _castToVariant(self, value):
         if isinstance(value, basestring):
             return QVariant(unicode(value)) 
-#        elif hasattr(value.__class__,'__ormDecorator__'):
-#            return QVariant(value.__class__.__ormDecorator__().getReprasentiveString(value))
         elif isinstance(value, datetime.datetime):
             return QVariant(QDateTime(value.year, value.month, value.day,
                                       value.hour, value.minute, value.second))
         elif isinstance(value, (dict, list)):
             return QVariant(VariantContainer((value,)))
         return QVariant(value)
-    
+
     def data(self, index, role=Qt.DisplayRole):
-        
+
         self.perform()
-        
+
         if not index.isValid() or \
            not (0 <= index.row() < self.rowCount()):
             return QVariant()
-        
+
         if role in (Qt.DisplayRole, Qt.EditRole):
 
             # Object found
@@ -471,14 +467,12 @@ class SAOrmSearchModel(QAbstractTableModel):
     def submit(self):
 
         for row in self._unsubmittedRows:
-            #self._session.add(self.getObject(row))
-            print "would insert", row
+            self._session.add(self.getObject(row))
+            #print "would insert", row
 
         for obj in self._deletedObjects:
-            #self._session.delete(obj)
-            print "would delete", obj
-
-        return True
+            self._session.delete(obj)
+            #print "would delete", obj
 
         try:
             self._session.commit()
@@ -490,32 +484,24 @@ class SAOrmSearchModel(QAbstractTableModel):
             #for row in self._unsubmittedRows:
                 #self._session.add(self._objectCache[row])
             #for obj in self._deletedObjects:
-                
+
             #self._deletedObjects = []
-            
+
             self.error.emit(e)
             return False
-    
+
     @pyqtSlot()
     def revert(self):
-        #print "reject called"
-        for row in self._unsubmittedRows:
-            #self._session.add(self.getObject(row))
-            print "would reject creation of", row
-
-        for obj in self._deletedObjects:
-            #self._session.delete(obj)
-            print "would reject deletion of", obj
-
         self._session.rollback()
-
+        self._unsubmittedRows = []
+        self._deletedObjects = []
         # Das muss wieder raus
         self.forceReset()
         return
 
         super(SAOrmSearchModel, self).revert()
         self.forceReset()
-    
+
     def _createNewOrmObject(self):
         srcClass = self._queriedObject.__class__
 
@@ -539,8 +525,9 @@ class SAOrmSearchModel(QAbstractTableModel):
         self._resultCache.clear()
         self.endInsertRows()
         return True
-    
+
     def removeRows(self, row, count, parentIndex=QModelIndex()):
+
         if count > 1:
             raise NotImplementedError("Currently only one row can be removed")
 
@@ -551,12 +538,12 @@ class SAOrmSearchModel(QAbstractTableModel):
         except IndexError:
             return False
 
-        self._deletedObjects.append(obj)
-
         del self._objectCache[row]
 
         if row in self._unsubmittedRows:
             self._unsubmittedRows.remove(row)
+        else:
+            self._deletedObjects.append(obj)
 
         self._resultCache.clear()
 
