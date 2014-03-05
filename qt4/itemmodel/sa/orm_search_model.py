@@ -37,16 +37,15 @@ class SAOrmSearchModel(QAbstractTableModel):
         
         self.__didPerform = False
         self._queriedObject = queriedObject
-        self._currentlyEditedRow = None
         self._resultCache = {}
-        self._objectCache = {}
-        self._headerCache = {}
+        self._objectCache = []
         self.sectionFriendlyNames = {}
         self._defaultColumns = [] 
         self._columns = columns
         self._ormProperties = None
         self.editable = editable
         self._unsubmittedRows = []
+        self._deletedObjects = []
         self._lastCreatedHash = None
 
         if not len(self._columns):
@@ -264,14 +263,9 @@ class SAOrmSearchModel(QAbstractTableModel):
                     multicols.append(col)
                 else:
                     nonMultiCols.append(col)
-#        print nonMultiCols
-#        print '-----------'
-#        print multicols
-#        
-        #return
-        
+
         for obj in res:
-#            print "Next Object %s----------------" % i
+
             multipleRowsObjects = []
             
 
@@ -294,7 +288,7 @@ class SAOrmSearchModel(QAbstractTableModel):
 #                            for ormObj in value:
 #                                print ormObj.name,self._extractMultiValue(ormObj,stack)
 #                                i2 += 1
-            self._objectCache[i] = obj
+            self._objectCache.append(obj)
             #Create ResultCache Structure
             
             
@@ -306,7 +300,7 @@ class SAOrmSearchModel(QAbstractTableModel):
                     for child in childs:
                         if childCount > 0:
                             i += 1
-                            self._objectCache[i] = obj
+                            self._objectCache.append(obj)
                             self._resultCache[i] = {}
                             
                         for childCol in multicols:
@@ -375,40 +369,43 @@ class SAOrmSearchModel(QAbstractTableModel):
             return QVariant()
         
         if role in (Qt.DisplayRole, Qt.EditRole):
-            if self._objectCache.has_key(index.row()):
-                #Not currently inserted
-                if self._resultCache.has_key(index.row()):
-                    if self._resultCache[index.row()].has_key(index.column()):
-                        return self._resultCache[index.row()][index.column()]
-                    
-                    columnName = self.getPropertyNameByIndex(index.column())
-                    value = self.extractValue(self._objectCache[index.row()], index,
-                                              columnName)
-                    
-                    self._resultCache[index.row()][index.column()] = self._castToVariant(value)
+
+            # Object found
+            try:
+                obj = self._objectCache[index.row()]
+
+                # Cache Entry found
+                try:
                     return self._resultCache[index.row()][index.column()]
-                #currently inserted
-                else:
+
+                # No Cache Entry found
+                except KeyError:
                     columnName = self.getPropertyNameByIndex(index.column())
-                    return self.extractValue(self._objectCache[index.row()],
-                                         index, columnName)
-        
+                    value = self.extractValue(obj, index, columnName)
+                    try:
+                        self._resultCache[index.row()][index.column()] = self._castToVariant(value)
+                    except KeyError:
+                        self._resultCache[index.row()] = {index.column():self._castToVariant(value)}
+                    return self._resultCache[index.row()][index.column()]
+
+            # No Object found
+            except IndexError:
+                return QVariant()
+
         if role == qt4.ColumnNameRole:
             return QVariant(unicode(self.getPropertyNameByIndex(index.column())))
         if role == qt4.RowObjectRole:
             return QVariant(self.getObject(index.row()))
-        
+
         return QVariant()
-    
+
     def setData(self, index, value, role=Qt.EditRole):
         self.perform()
         columnName = self.getPropertyNameByIndex(index.column())
         val = variant_to_pyobject(value)
-        #print "setData {0} {1} {2}".format(columnName, val, type(val))
-        
-        #oldValue = self._objectCache[index.row()].__getattribute__(columnName)
+
         currentObj = self._objectCache[index.row()]
-        
+
         targetObj = self.extractObject(currentObj, index, columnName)
         targetProperty = columnName.split('.')[-1:][0]
         
@@ -469,18 +466,32 @@ class SAOrmSearchModel(QAbstractTableModel):
 #                print self._session.dirty
                 return True
             return False
-    
+
     @pyqtSlot()
     def submit(self):
+
+        for row in self._unsubmittedRows:
+            #self._session.add(self.getObject(row))
+            print "would insert", row
+
+        for obj in self._deletedObjects:
+            #self._session.delete(obj)
+            print "would delete", obj
+
+        return True
+
         try:
             self._session.commit()
             self._unsubmittedRows = []
+            self._deletedObjects = []
             return True
         except SQLAlchemyError as e:
-
             self._session.rollback()
-            for row in self._unsubmittedRows:
-                self._session.add(self._objectCache[row])
+            #for row in self._unsubmittedRows:
+                #self._session.add(self._objectCache[row])
+            #for obj in self._deletedObjects:
+                
+            #self._deletedObjects = []
             
             self.error.emit(e)
             return False
@@ -488,11 +499,20 @@ class SAOrmSearchModel(QAbstractTableModel):
     @pyqtSlot()
     def revert(self):
         #print "reject called"
+        for row in self._unsubmittedRows:
+            #self._session.add(self.getObject(row))
+            print "would reject creation of", row
+
+        for obj in self._deletedObjects:
+            #self._session.delete(obj)
+            print "would reject deletion of", obj
+
         self._session.rollback()
-        if len(self._unsubmittedRows):
-            self._unsubmittedRows.reverse()
-            for row in self._unsubmittedRows:
-                self.removeRow(row)
+
+        # Das muss wieder raus
+        self.forceReset()
+        return
+
         super(SAOrmSearchModel, self).revert()
         self.forceReset()
     
@@ -513,57 +533,57 @@ class SAOrmSearchModel(QAbstractTableModel):
 
         newObj = self._createNewOrmObject()
         self.beginInsertRows(parent, row, row)
-        self._currentlyEditedRow = row
-        self._session.add(newObj)
-        self._objectCache[row] = newObj
+        self._objectCache.insert(row, newObj)
         self._unsubmittedRows.append(row)
         self._lastCreatedHash = hash(newObj)
+        self._resultCache.clear()
         self.endInsertRows()
         return True
     
     def removeRows(self, row, count, parentIndex=QModelIndex()):
         if count > 1:
             raise NotImplementedError("Currently only one row can be removed")
+
         self.beginRemoveRows(parentIndex, row, row)
-        #self._session.delete()
-        obj = self._objectCache[row]
+
         try:
-            self._session.delete(obj)
-        except InvalidRequestError:
-            pass
+            obj = self._objectCache[row]
+        except IndexError:
+            return False
+
+        self._deletedObjects.append(obj)
+
         del self._objectCache[row]
-        
+
         if row in self._unsubmittedRows:
             self._unsubmittedRows.remove(row)
-            
-        try:
-            del self._resultCache[row]
-        except KeyError:
-            pass
-        #print obj.benutzer
+
+        self._resultCache.clear()
+
         self.endRemoveRows()
-        self.submit()
-        
+
         return True
-    
+
     def didPerform(self):
         return self.__didPerform
     
     def getObject(self, row):
         self.perform()
-        if self._objectCache.has_key(row):
+        try:
             return self._objectCache[row]
+        except:
+            return
 
     def getObjectByHash(self, objectHash):
         self.perform()
-        for row in self._objectCache:
-            if hash(self._objectCache[row]) == objectHash:
-                return self._objectCache[row]
+        for obj in self._objectCache:
+            if hash(obj) == objectHash:
+                return obj
 
     def getRowByHash(self, objectHash):
         self.perform()
-        for row in self._objectCache:
-            if hash(self._objectCache[row]) == objectHash:
+        for row, obj in enumerate(self._objectCache):
+            if hash(obj) == objectHash:
                 return row
 
 
@@ -618,7 +638,7 @@ class SAOrmSearchModel(QAbstractTableModel):
         
         
         
-        if not self._flagsCache.has_key(index.column()):
+        if index.column() not in self._flagsCache:
             propertyName = self.getPropertyNameByIndex(index.column())
             if self._queryBuilder.isAutoProperty(propertyName):
                 flags = Qt.ItemIsSelectable | Qt.ItemIsEnabled
@@ -626,10 +646,11 @@ class SAOrmSearchModel(QAbstractTableModel):
                 flags = Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsEditable
             self._flagsCache[index.column()] = flags
         return self._flagsCache[index.column()]
-        
+
     def isDataChanged(self):
-        return self._session.dirty
-    
+        return self._session.dirty or len(self._unsubmittedRows) \
+            or self._deletedObjects
+
     def forceReset(self):
         self._dirty = True
         self.perform()
@@ -648,9 +669,10 @@ class SAOrmSearchModel(QAbstractTableModel):
         self.beginResetModel()
 
         self._resultCache.clear()
-        self._objectCache.clear()
-        self._headerCache.clear()
+        self._objectCache = []
         self._flagsCache.clear()
+        self._unsubmittedRows = []
+        self._deletedObjects = []
 
         query = self._queryBuilder.getQuery(self._session,
                                             propertySelection=self._columns,
@@ -668,7 +690,7 @@ class SAOrmSearchModel(QAbstractTableModel):
     #            if isinstance(obj, NamedTuple):
     #                self._objectCache[i] = obj[0]
     #            else:
-                self._objectCache[i] = obj
+                self._objectCache.append(obj)
                 #Create ResultCache Structure
                 self._resultCache[i] = {}
                 i += 1
