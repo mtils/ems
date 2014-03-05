@@ -4,7 +4,7 @@ from PyQt4.QtCore import Qt
 from filtermodels import SortFilterProxyModel
 from ems import qt4
 from ems.qt4.util import variant_to_pyobject
-from sqliter.query import test, c, and_, or_, GenClause
+from sqliter.query import test, c, and_, or_, GenClause, PathNotFoundError
 
 class SqlIterFilterModel(SortFilterProxyModel):
 
@@ -53,8 +53,6 @@ class SqlIterFilterModel(SortFilterProxyModel):
                                                              sourceParent)
 
         self._filterRowCount += 1
-        #print "SqlIterFilterModel.filterAcceptsRow",self._filterRowCount, self.sourceModel()
-        #return True
 
         columnMap = self.name2ColumnMap()
 
@@ -89,7 +87,10 @@ class SqlIterFilterModel(SortFilterProxyModel):
         if self._hasGroupBy:
             test = []
             for field in self._query.group_by():
-                test.append(unicode(GenClause.extractValue(row, field)[0]))
+                try:
+                    test.append(unicode(GenClause.extractValue(row, field)[0]))
+                except PathNotFoundError:
+                    test.append('')
             rowHash = u"|-|".join(test)
             if rowHash in self._groupByResults:
                 return False
