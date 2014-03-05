@@ -16,40 +16,77 @@ class SqlIterFilterModel(SortFilterProxyModel):
         self._query = None
         self._visibleColumnCache = None
         self._groupByResults = None
+        self._name2ColumnMap = {}
+
+        self._queryColumns = set()
+        self._whereColumns = set()
+        self._groupByColumns = set()
+
+        self._hasGroupBy = False
+        self._hasWhere = False
+        self._hasColumnFilter = False
+        self._visibleColumns = []
+
+    def name2ColumnMap(self):
+
+        if not self._name2ColumnMap:
+
+            sourceModel = self.sourceModel()
+
+            self._name2ColumnMap = {}
+
+            for col in range(sourceModel.columnCount()):
+                    colVariant = sourceModel\
+                                   .headerData(col, Qt.Horizontal,
+                                               qt4.ColumnNameRole)
+                    colName = variant_to_pyobject(colVariant)
+                    if not colName:
+                        colName = "col-{0}".format(col)
+                    self._name2ColumnMap[colName] = col
+
+        return self._name2ColumnMap
 
     def filterAcceptsRow(self, sourceRow, sourceParent):
-        #self._filterRowCount += 1
-        #print "SqlIterFilterModel.filterAcceptsRow",self._filterRowCount
 
-        testRow = {}
+        if not self.usesRowQueryFilter():
+            super(SqlIterFilterModel, self).filterAcceptsRow(sourceRow,
+                                                             sourceParent)
 
-        name2Column = {}
+        self._filterRowCount += 1
+        #print "SqlIterFilterModel.filterAcceptsRow",self._filterRowCount, self.sourceModel()
+        #return True
 
-        for col in range(self.sourceModel().columnCount()):
-            colName = variant_to_pyobject(self.sourceModel()\
-                                          .index(sourceRow, col)\
-                                          .data(qt4.ColumnNameRole))
-            if not colName:
-                colName = "col-{0}".format(col)
+        columnMap = self.name2ColumnMap()
 
-            name2Column[colName] = col
+        whereResult = True
+        groupByResult = True
 
-            testRow[colName] = variant_to_pyobject(self.sourceModel()\
-                                                    .index(sourceRow, col)\
-                                                    .data(self.filterRole()))
+        if self._hasWhere:
+            # Only use columns which are needed to filter the model
+            whereRow = {}
 
-        if self._query and self._query.has_where():
-            if self._groupByCheck(testRow):
-                return self._query.match(testRow)
-            return self._query.match(testRow)
+            for fieldName in self._whereColumns:
+                col = columnMap[fieldName]
+                whereRow[fieldName] = variant_to_pyobject(self.sourceModel()\
+                                                        .index(sourceRow, col)\
+                                                        .data(self.filterRole()))
+                whereResult = self._query.match(whereRow)
 
-        if not self._groupByCheck(testRow):
-            return False
 
-        return SortFilterProxyModel.filterAcceptsRow(self, sourceRow, sourceParent)
+        if self._hasGroupBy:
+            # Only use columns which are needed to filter the model
+            groupByRow = {}
+            for fieldName in self._groupByColumns:
+                col = columnMap[fieldName]
+                groupByRow[fieldName] = variant_to_pyobject(self.sourceModel()\
+                                                           .index(sourceRow, col)\
+                                                           .data(self.filterRole()))
+            groupByResult = self._groupByCheck(groupByRow)
+
+        return whereResult and groupByResult
 
     def _groupByCheck(self, row):
-        if self._groupByResults is not None:
+        if self._hasGroupBy:
             test = []
             for field in self._query.group_by():
                 test.append(unicode(GenClause.extractValue(row, field)[0]))
@@ -59,47 +96,34 @@ class SqlIterFilterModel(SortFilterProxyModel):
             self._groupByResults.add(rowHash)
         return True
 
-    def _parseGroupBy(self):
-        if self._query and self._query.has_group_by():
-            self._groupByResults = set()
-        else:
-            self._groupByResults = None
-
     def invalidate(self):
-        self._visibleColumnCache = None
+        self.resetCaches()
         return SortFilterProxyModel.invalidate(self)
 
     def invalidateFilter(self):
-        self._visibleColumnCache = None
+        self.resetCaches()
         return SortFilterProxyModel.invalidateFilter(self)
-    
+
     def resetCaches(self):
-        self._visibleColumnCache = None
-        self._groupByResults = None
-        self._parseGroupBy()
+        self._groupByResults = set()
+        self._name2ColumnMap.clear()
 
     def filterAcceptsColumn(self, sourceColumn, sourceParent):
-        cols = self.visibleColumns()
-        if cols:
-            return (sourceColumn in cols)
+        if self._hasColumnFilter:
+            cols = self.visibleColumns()
+            if cols:
+                return (sourceColumn in cols)
         return SortFilterProxyModel.filterAcceptsColumn(self, sourceColumn, sourceParent)
 
     def visibleColumns(self):
         # TODO Fields with dots
-        if self._visibleColumnCache is None:
-            if self._query and self._query.has_fields():
-                self._visibleColumnCache = []
-                fields = self._query.fields()
-                for col in range(self.sourceModel().columnCount()):
-                    colVariant = self.sourceModel()\
-                                   .headerData(col, Qt.Horizontal,
-                                               qt4.ColumnNameRole)
-                    colName = variant_to_pyobject(colVariant)
-                    if colName in fields:
-                        self._visibleColumnCache.append(col)
-
-            else:
-                self._visibleColumnCache = ()
+        if self._hasColumnFilter and not self._visibleColumnCache:
+            self._visibleColumnCache = []
+            fields = self._query.fields()
+            columnMap = self.name2ColumnMap()
+            for colName in columnMap:
+                if colName in fields:
+                    self._visibleColumnCache.append(columnMap[colName])
 
         return self._visibleColumnCache
 
@@ -108,7 +132,33 @@ class SqlIterFilterModel(SortFilterProxyModel):
 
     def setQuery(self, query):
         self._query = query
-        self._parseGroupBy()
+        self.resetCaches()
+        if self._query:
+            self._hasGroupBy = self._query.has_group_by()
+            self._hasWhere = self._query.has_where()
+            self._queryColumns = self._getFirstSegments(self._query.collect_fieldnames())
+            self._groupByColumns = self._getFirstSegments(self._query.group_by_fieldnames())
+            self._whereColumns = self._getFirstSegments(self._query.where_fieldnames())
+            self._hasColumnFilter = self._query.has_fields()
+            self._visibleColumnCache = None
+        else:
+            self._hasGroupBy = False
+            self._hasWhere = False
+            self._queryColumns = set()
+            self._groupByColumns = set()
+            self._whereColumns = set()
+            self._hasColumnFilter = False
+            self._visibleColumnCache = None
+
         self.layoutAboutToBeChanged.emit()
         self.invalidateFilter()
         self.layoutChanged.emit()
+
+    def _getFirstSegments(self, fields):
+        firstSegments = set()
+        for field in fields:
+            firstSegments.add(field.split('.')[0])
+        return firstSegments
+
+    def usesRowQueryFilter(self):
+        return self._hasGroupBy or self._hasWhere
