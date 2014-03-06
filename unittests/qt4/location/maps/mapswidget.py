@@ -74,7 +74,7 @@ class GeoMap(GraphicsGeoMap):
                 self._markerPressed = True
                 self.panActive = False
             elif isinstance(objects[0], GeoMapRouteObject):
-                print objects[0]
+                pass
             
         self.setFocus()
         event.accept()
@@ -93,7 +93,6 @@ class GeoMap(GraphicsGeoMap):
             #print "screenPos: {0}".format(event.pos())
             coord = self.screenPositionToCoordinate(QPointF(event.pos()))
             coordStr = str(coord)
-            print coord.latitude(), coord.longitude()
             #print "Coordinate: {0}".format(coordStr)
             #print "Back to ScreenPos: {0}".format(self.coordinateToScreenPosition(coord))
             #print coordStr

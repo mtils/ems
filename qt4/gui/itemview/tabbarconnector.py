@@ -138,7 +138,7 @@ class TabBarConnector(QObject):
                 self._tabBar.setTabData(row, tabData)
     
     def onRowsInserted(self, parent, start, end):
-        print "onRowsInserted"
+        pass
     
     def onRowsMoved(self, sourceParent, sourceStart, sourceEnd, destinationParent,
                   destinationRow):

@@ -653,7 +653,6 @@ class GeoTiledMapData(GeoMapData):
             reply = tiledEngine.getTileImage(req)
             
             if not reply:
-                print "no reply"
                 continue
             
             if reply.error() != GeoTiledMapReply.NoError:

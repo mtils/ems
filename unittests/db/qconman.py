@@ -45,9 +45,7 @@ class TestQ(BaseClass):
         sr = SignalReceiver()
         sr.connect(cm, SIGNAL("loaded(QString)"),sr.recSignal)
         sr.connect(cm, SIGNAL("removed(QString)"),sr.recSignal)
-        
-        print sr.signalQueue
-        
+
         self.assertTrue(isinstance(cm.get(),Connection))
         self.assertEqual(sr.curEntry()[0],'default')
         con2 = cm.get('alternate','2')

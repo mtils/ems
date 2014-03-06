@@ -87,7 +87,6 @@ class MainWindow(QMainWindow):
     @pyqtSlot()
     def _goToMyLocation(self):
         coord = self._markerManager.myLocation()
-        print coord
         self._mapsWidget.animatedPanTo(coord)
         self._mapsWidget.map_().setFocus()
         self.tracking = True
