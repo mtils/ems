@@ -320,9 +320,7 @@ class AbstractXtypeItemModel(QAbstractItemModel, ReflectableMixin):
     
     def _appendToModelData(self, row):
         self._modelData.append(row)
-        
-    
-    
+
 class SingleRowModel(AbstractXtypeItemModel):
     def __init__(self, xType, parent=None):
         if not isinstance(xType, NamedFieldType):
@@ -338,29 +336,28 @@ class SingleRowModel(AbstractXtypeItemModel):
             return False
         
         self.beginInsertRows(parent, row, row)
-        self._modelData[0] = self.getRowTemplate()
+        self._modelData.append(self.getRowTemplate())
         self.endInsertRows()
         return True
     
     def removeRows(self, row, count, parentIndex=QModelIndex()):
         if count > 1:
             raise NotImplementedError("Currently only one row can be removed")
-        
+
         rowCount = self.rowCount(parentIndex)
-        
+
         if rowCount < 1:
             return False
-        
+
         if not self._xType.canBeNone:
             return False
-        
+
         self.beginRemoveRows(parentIndex, row, row)
-        del self._modelData[0]
-        self._modelData[0] = None
+        self._modelData.pop()
         self.endRemoveRows()
-        
+
         return True
-    
+
     def modelData(self):
         try:
             return self._modelData[0]
@@ -531,4 +528,90 @@ class MultipleRowObjectModel(ObjectGetSetInterface, MultipleRowModel):
     pass
 
 class DictOfDictsModel(DictGetSetInterface, SingleRowModel):
-    pass
+    def __init__(self, xType, parent=None):
+        newXType = self._buildFlatXType(xType)
+
+        #for key in newXType:
+            #print key
+
+        self._originalXType = xType
+        super(DictOfDictsModel, self).__init__(newXType, parent)
+
+    def _buildFlatXType(self, originalXType, newXType=None, nameStack=None):
+
+        if newXType is None:
+            newXType = NamedFieldType()
+
+        if nameStack is None:
+            nameStack = []
+
+        for key in originalXType:
+            nameStack.append(key)
+            name = u".".join(nameStack)
+            newXType[name] = originalXType[key]
+            if isinstance(originalXType[key], ComplexType):
+                if isinstance(originalXType[key], NamedFieldType):
+                    self._buildFlatXType(originalXType[key], newXType, nameStack)
+                else:
+                    raise TypeError("Every xtype in DictOfDictsModel has to be scalar or NamedFieldType/DictType")
+
+            nameStack.pop()
+        return newXType
+
+    @staticmethod
+    def _getNestedDict(pathStack, dct):
+        while pathStack:
+            i = pathStack.pop(0)
+            if not i in dct:
+                dct[i] = {}
+            dct = dct[i]
+        return [dct]
+
+    @staticmethod
+    def _fillNestedDict(pathStack, dct, value):
+        try:
+            name = pathStack.pop(0)
+        except IndexError:
+            return
+        if name in dct:
+            if not dct[name]:
+                dct[name] = value
+            else:
+                DictOfDictsModel._fillNestedDict(pathStack, dct[name], value)
+
+    @staticmethod
+    def _buildFlatDict(dct, newDict=None, nameStack=None):
+        if newDict is None:
+            newDict = {}
+        if nameStack is None:
+            nameStack = []
+
+        for key in dct:
+            nameStack.append(key)
+            name = u".".join(nameStack)
+            if not isinstance(dct[key], dict):
+                newDict[name] = dct[key]
+            else:
+                DictOfDictsModel._buildFlatDict(dct[key], newDict, nameStack)
+            nameStack.pop()
+        return newDict
+
+    def modelData(self):
+
+        if not len(self._modelData):
+            return None
+
+        modelData = {}
+        print "---------------------------------------"
+        for name in sorted(self._modelData[0].keys()):
+            nameStack = name.split('.')
+            node = self._getNestedDict(nameStack, modelData)
+
+        for name in sorted(self._modelData[0].keys()):
+            nameStack = name.split('.')
+            self._fillNestedDict(nameStack, modelData, self._modelData[0][name])
+        return modelData
+    
+    def setModelData(self, modelData):
+        converted = self._buildFlatDict(modelData)
+        return super(DictOfDictsModel, self).setModelData(converted)

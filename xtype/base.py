@@ -258,30 +258,44 @@ class NamedFieldType(ComplexType):
         self.defaultValue = {}
         self.__xTypeMap = {}
         self.__keys = []
-        
-    
+
     def addKey(self, name, xType):
         self.__keys.append(name)
         self.__xTypeMap[self.__keys.index(name)] = xType
-    
+
     def keyType(self, key):
         if isinstance(key, basestring):
             return self.__xTypeMap[self.__keys.index(key)]
         elif isinstance(key, int):
             return self.__xTypeMap[key]
-    
+
     def keys(self):
         return self.__keys
-    
+
     def keyName(self, index):
         return self.__keys[index]
-    
+
     @property
     def xTypeMap(self):
         return self.__xTypeMap
-    
+
+    def __getitem__(self, key):
+        return self.__xTypeMap[self.__keys.index(key)]
+
+    def __setitem__(self, name, xType):
+        self.__keys.append(name)
+        self.__xTypeMap[self.__keys.index(name)] = xType
+
+    def __contains__(self, item):
+        if isinstance(item, XType):
+            return item in self.__xTypeMap
+        return item in self.__keys
+
     def __len__(self):
         return len(self.__keys)
+
+    def __iter__(self):
+        return self.__keys.__iter__()
 
 class SequenceType(ComplexType):
     def __init__(self, itemType, canBeNone=None, defaultValue=None):
