@@ -486,18 +486,18 @@ class DictGetSetInterface(object):
             else:
                 template[key] = None
         return template
-    
+
 class ObjectGetSetInterface(object):
     def _pyData(self, row, keyName, role=Qt.EditRole):
         if role in (Qt.EditRole, Qt.DisplayRole):
             return self._modelData[row].__getattribute__(keyName)
         elif role == qt4.RowObjectRole:
             return QVariant(self._modelData[row])
-    
+
     def _setPyData(self, row, keyName, value, role=Qt.EditRole):
         self._modelData[row].__setattr__(keyName, value)
         return True
-    
+
     def getRowTemplate(self, values=None):
         if isinstance(values, self._rowType().cls):
             return values
@@ -528,4 +528,7 @@ class SingleRowObjectModel(ObjectGetSetInterface, SingleRowModel):
     pass
 
 class MultipleRowObjectModel(ObjectGetSetInterface, MultipleRowModel):
+    pass
+
+class DictOfDictsModel(DictGetSetInterface, SingleRowModel):
     pass
