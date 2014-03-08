@@ -37,16 +37,32 @@ class XType:
     
 
 class BoolType(XType):
-    
+
     def __init__(self, boolNames=None):
         XType.__init__(self)
         self.defaultValue = False
-        
-    
+
     @property
     def group(self):
         return XType.BOOL
-    
+
+    @staticmethod
+    def castToBool(value):
+        if isinstance(value, (float, int)):
+            return bool(value)
+        if isinstance(value, basestring):
+            if value.lower() in ('true','yes'):
+                return True
+            if value.lower() in ('false','no'):
+                return False
+            try:
+                numeric = float(value)
+                return bool(numeric)
+            except ValueError:
+                pass
+        if value:
+            return True
+        return False
     
 class NumberType(XType):
     
@@ -95,7 +111,13 @@ class NumberType(XType):
             x, r = divmod(x, 1000)
             result = "%s%03d%s" % (sep, r, result)
         return "%d%s" % (x, result)
-    
+
+    def calc2Model(self, viewValue):
+        return viewValue
+
+    def calc2View(self, modelValue):
+        return modelValue
+
     @staticmethod
     def formatNumber(x, decimalsCount=None, decimalsSeparator=None,
                      thousandsSeparator=None, zeroFill=None, decimalsZeroFill=None):
@@ -246,10 +268,17 @@ class OneOfAListType(XType):
         XType.__init__(self, canBeNone=canBeNone, defaultValue=defaultValue)
         self.possibleValues = ()
         self.xTypeOfItems = None
-        
+
     @property
     def group(self):
         return XType.MIXED
+
+    @property
+    def itemType(self):
+        if self.xTypeOfItems:
+            return self.xTypeOfItems
+        return native2XType(self.possibleValues[0])
+
 
 class NamedFieldType(ComplexType):
     def __init__(self, canBeNone=None, defaultValue=None):

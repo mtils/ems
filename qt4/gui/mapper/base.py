@@ -4,7 +4,7 @@ Created on 20.03.2012
 @author: michi
 '''
 
-from PyQt4.QtCore import QObject, QAbstractItemModel
+from PyQt4.QtCore import QObject, QAbstractItemModel, pyqtSignal
 from PyQt4.QtGui import QDataWidgetMapper
 
 from ems.thirdparty.singletonmixin import Singleton
@@ -59,6 +59,9 @@ class MapperDefaults(Singleton, MapperInterfaceMixin):
         MapperInterfaceMixin._init(self)
 
 class BaseMapper(QObject, MapperInterfaceMixin):
+
+    currentIndexChanged = pyqtSignal(int)
+
     def __init__(self, model=None, parent=None):
         QObject.__init__(self, parent)
         MapperInterfaceMixin._init(self)
@@ -68,13 +71,20 @@ class BaseMapper(QObject, MapperInterfaceMixin):
         self._mappings = {}
         self._hashToType = {}
         self._model = model
-    
+
+    def currentIndex(self):
+        return self.dataWidgetMapper.currentIndex()
+
+    def setCurrentIndex(self, idx):
+        return self.dataWidgetMapper.setCurrentIndex(idx)
+
     @property
     def dataWidgetMapper(self):
         if not isinstance(self._dataWidgetMapper, QDataWidgetMapper):
             self._dataWidgetMapper = QDataWidgetMapper(self)
             self._dataWidgetMapper.setModel(self.model)
             itemDelegate = MapperItemViewDelegate(self, self._dataWidgetMapper)
+            itemDelegate.setObjectName("MapperDelegate")
             self._dataWidgetMapper.setItemDelegate(itemDelegate)
         return self._dataWidgetMapper
     

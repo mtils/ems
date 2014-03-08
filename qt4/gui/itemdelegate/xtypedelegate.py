@@ -16,15 +16,15 @@ class XTypeDelegate(QStyledItemDelegate):
         self.xType = xType
         self._lastValue = ''
         self.textAlignment = Qt.AlignLeft | Qt.AlignVCenter
-        
+
     def getString(self, value):
         if value is None:
             return ""
         return self.xType.value2String(value)
-    
+
     def configureEditor(self, widget, xType):
         widget.setAlignment(self.textAlignment)
-    
+
     def paint(self, painter, option, index):
         value = variant_to_pyobject(index.data())
         self._lastValue = value

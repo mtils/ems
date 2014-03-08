@@ -18,7 +18,7 @@ class MapperItemViewDelegate(GenericDelegate):
         #self.model.modelReset.connect(self.resetDelegates)
     
     def columnDelegate(self, column):
-        if self._columnDelegates.has_key(column):
+        if column in self._columnDelegates:
             return self._columnDelegates[column]
     
     def columnDelegates(self):
@@ -34,11 +34,10 @@ class MapperItemViewDelegate(GenericDelegate):
     
     def _getDelegate(self, index):
         col = index.column()
-        if not self._columnDelegates.has_key(col):
+        if col not in self._columnDelegates:
             model = index.model()
             if isinstance(model, ReflectableMixin):
                 type_ = model.columnType(index.column())
-                #print "_getDelegate({0})".format(type_)
             self._columnDelegates[col] = self._mapper.getDelegateForItem(type_)
         return self._columnDelegates[col]
     

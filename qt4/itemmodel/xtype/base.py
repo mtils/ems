@@ -122,6 +122,8 @@ class AbstractXtypeItemModel(QAbstractItemModel, ReflectableMixin):
                 return QVariant(self.getKeyLabel(keyName))
             elif role == qt4.FieldTitleLongRole:
                 return QVariant(self.fieldTitleLong(keyName))
+            elif role == qt4.ColumnNameRole:
+                return QVariant(keyName)
 
         if orientation == Qt.Vertical and role == Qt.DisplayRole:
             return QVariant(int(section + 1))

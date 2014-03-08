@@ -76,7 +76,7 @@ class BoolButtonGroupDelegate(QStyledItemDelegate):
                 hit = True
         if not hit:
             return
-        
+
         index = self.getModelIndex()
         newValue = variant_to_pyobject(index.data())
         buttonValue = self.getButtonGroupValue()
@@ -128,19 +128,19 @@ class BoolStrategy(BaseStrategy):
         return delegate
     
     def addMapping(self, mapper, widget, columnName, type_):
-        if isinstance(widget, QComboBox):
-            widget.boolDelegate = self.getDelegateForItem(mapper, type_, None)
-            widget.boolDelegate.configureEditor(widget, type_)
-            widget.boolDelegate.valueNames = self.valueNames
-            
-        if isinstance(widget, QButtonGroup):
-            
-            columnIndex = mapper.model.columnOfName(columnName)
-            widget.connection = BoolButtonGroupDelegate(widget, mapper.model, columnIndex, mapper.dataWidgetMapper)
-            
-            return
-        
+
         columnIndex = mapper.model.columnOfName(columnName)
+
+        if isinstance(widget, QComboBox):
+            index = mapper.model.createIndex(0, columnIndex)
+            delegate = mapper.dataWidgetMapper.itemDelegate()._getDelegate(index)
+            delegate.configureEditor(widget, type_)
+            delegate.valueNames = self.valueNames
+
+        if isinstance(widget, QButtonGroup):
+            widget.connection = BoolButtonGroupDelegate(widget, mapper.model, columnIndex, mapper.dataWidgetMapper)
+            return
+
         mapper.dataWidgetMapper.addMapping(widget, columnIndex)
     
     def boolToOneOfAList(self, xType):

@@ -6,6 +6,7 @@ Created on 21.03.2012
 from ems.qt4.gui.mapper.base import BaseStrategy #@UnresolvedImport
 from ems.xtype.base import NumberType #@UnresolvedImport
 from ems.qt4.gui.itemdelegate.xtypes.numbertype import NumberTypeDelegate #@UnresolvedImport
+from ems.qt4.gui.itemdelegate.xtypes.unittype import UnitTypeDelegate
 
 class NumberStrategy(BaseStrategy):
     
@@ -15,7 +16,7 @@ class NumberStrategy(BaseStrategy):
         return False
     
     def getDelegateForItem(self, mapper, type_, parent=None):
-        return NumberTypeDelegate(type_, parent)
+        return UnitTypeDelegate(type_, parent)
     
     def addMapping(self, mapper, widget, columnName, type_):
         columnIndex = mapper.model.columnOfName(columnName)
