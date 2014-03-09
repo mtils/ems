@@ -19,7 +19,7 @@ class UnitTypeDelegate(XTypeDelegate):
     def getString(self, value):
         if value is None:
             return ""
-        return self.xType.value2String(self.xType.calc2View(value))
+        return self.xType.value2String(self.xType.modelToView(value))
 
     def createEditor(self, parent, option, index):
         if self.xType.pyType == float:
@@ -47,13 +47,13 @@ class UnitTypeDelegate(XTypeDelegate):
     def setEditorData(self, editor, index):
 
         val = py(index.data(Qt.EditRole))
-        viewVal = self.xType.calc2View(val)
+        viewVal = self.xType.modelToView(val)
 
         if viewVal == val:
             return super(UnitTypeDelegate, self).setEditorData(editor, index)
 
         if isinstance(editor, QLineEdit):
-            viewVal = self.xType.calc2View(val)
+            viewVal = self.xType.modelToView(val)
             editor.setText(QString.fromUtf8(unicode(viewVal)))
         elif isinstance(editor, QSpinBox):
             editor.setValue(int(round(viewVal)))
@@ -61,20 +61,23 @@ class UnitTypeDelegate(XTypeDelegate):
             editor.setValue(float(viewVal))
 
     def setModelData(self, editor, model, index):
-        value = 0.0
+        value = None
 
         if isinstance(editor, QLineEdit):
             textValue = unicode(editor.text())
             if self.xType.pyType is int:
                 value = QVariant(int(round(float(textValue))))
             elif self.xType.pyType is float:
-                value = QVariant(round(float(textValue)))
+                value = QVariant(float(textValue))
+            if value is None:
+                raise ValueError("Couldnt cast value {0} to model".format(textValue))
 
-        elif isinstance(editor, QAbstractButton):
-            if isinstance(self.xType.itemType, BoolType):
-                model.setData(index, QVariant(editor.isChecked()), Qt.EditRole)
-                return None
-            else:
-                model.setData(index, self.getRadioButtonData(editor))
-                return
+        elif isinstance(editor, (QSpinBox, QDoubleSpinBox)):
+            value = editor.value()
+
+        else:
+            raise NotImplementedError("Couldnt retrieve value from unknown widget {0}".format(editor))
+
+        model.setData(index, QVariant(self.xType.viewToModel(value) ), Qt.EditRole)
+        return
         return XTypeDelegate.setModelData(self, editor, model, index)

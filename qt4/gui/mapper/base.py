@@ -78,6 +78,18 @@ class BaseMapper(QObject, MapperInterfaceMixin):
     def setCurrentIndex(self, idx):
         return self.dataWidgetMapper.setCurrentIndex(idx)
 
+    def toFirst(self):
+        return self.dataWidgetMapper.toFirst()
+
+    def toLast(self):
+        return self.dataWidgetMapper.toLast()
+
+    def toNext(self):
+        return self.dataWidgetMapper.toNext()
+
+    def toPrevious(self):
+        return self.dataWidgetMapper.toPrevious()
+
     @property
     def dataWidgetMapper(self):
         if not isinstance(self._dataWidgetMapper, QDataWidgetMapper):

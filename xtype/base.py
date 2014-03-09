@@ -112,10 +112,10 @@ class NumberType(XType):
             result = "%s%03d%s" % (sep, r, result)
         return "%d%s" % (x, result)
 
-    def calc2Model(self, viewValue):
+    def viewToModel(self, viewValue):
         return viewValue
 
-    def calc2View(self, modelValue):
+    def modelToView(self, modelValue):
         return modelValue
 
     @staticmethod
