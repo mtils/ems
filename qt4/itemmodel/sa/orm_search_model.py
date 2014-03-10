@@ -496,11 +496,9 @@ class SAOrmSearchModel(QAbstractTableModel):
         self._unsubmittedRows = []
         self._deletedObjects = []
         # Das muss wieder raus
-        self.forceReset()
-        return
-
-        super(SAOrmSearchModel, self).revert()
-        self.forceReset()
+        #self.forceReset()
+        return super(SAOrmSearchModel, self).revert()
+        #self.forceReset()
 
     def _createNewOrmObject(self):
         srcClass = self._queriedObject.__class__
@@ -620,11 +618,7 @@ class SAOrmSearchModel(QAbstractTableModel):
     def flags(self, index):
         if not self.editable:
             return Qt.ItemIsSelectable | Qt.ItemIsEnabled
-        
-#            return Qt.ItemIsSelectable | Qt.ItemIsEnabled  | Qt.ItemIsEditable
-        
-        
-        
+
         if index.column() not in self._flagsCache:
             propertyName = self.getPropertyNameByIndex(index.column())
             if self._queryBuilder.isAutoProperty(propertyName):

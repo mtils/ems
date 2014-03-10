@@ -151,9 +151,11 @@ class SqlIterFilterModel(SortFilterProxyModel):
             self._hasColumnFilter = False
             self._visibleColumnCache = None
 
-        self.layoutAboutToBeChanged.emit()
+        #self.layoutAboutToBeChanged.emit()
+        self.modelAboutToBeReset.emit()
         self.invalidateFilter()
-        self.layoutChanged.emit()
+        #self.layoutChanged.emit()
+        self.modelReset.emit()
 
     def _getFirstSegments(self, fields):
         firstSegments = set()

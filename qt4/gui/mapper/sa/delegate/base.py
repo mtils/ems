@@ -3,6 +3,8 @@ Created on 19.09.2011
 
 @author: michi
 '''
+import locale
+from datetime import datetime
 from PyQt4.QtCore import QString, QSize, Qt
 from PyQt4.QtGui import QStyledItemDelegate, QWidget, QStyleOptionViewItemV4, \
     QApplication, QStyle, QFontMetrics
@@ -11,6 +13,7 @@ from ems import qt4
 from ems.qt4.util import variant_to_pyobject
 
 class MapperDelegate(QStyledItemDelegate):
+
     def __init__(self, mapper, propertyName, parent=None):
         super(MapperDelegate, self).__init__(parent)
         self.mapper = mapper
@@ -28,7 +31,7 @@ class MapperDelegate(QStyledItemDelegate):
         if hasattr(value.__class__,'__ormDecorator__'):
             newOption = QStyleOptionViewItemV4()
             self.initStyleOption(newOption, index)
-            text = self._getOrmObjectText(value)
+            text = self.getString(value)
             size = QSize(option.fontMetrics.width(text), option.fontMetrics.height())
             return size
 
@@ -55,10 +58,13 @@ class MapperDelegate(QStyledItemDelegate):
         style = QApplication.style() if options.widget is None \
             else options.widget.style()
 
-        options.text = self._getOrmObjectText(value)
+        options.text = self.getString(value)
         style.drawControl(QStyle.CE_ItemViewItem, options, painter)
 
-    def _getOrmObjectText(self, ormObject):
-        string = ormObject.__class__.__ormDecorator__().getReprasentiveString(ormObject)
-        return QString.fromUtf8(unicode(string))
-        
+    def getString(self, ormObject):
+        if hasattr(ormObject.__class__,'__ormDecorator__'):
+            string = ormObject.__class__.__ormDecorator__().getReprasentiveString(ormObject)
+            return QString.fromUtf8(unicode(string))
+        if isinstance(ormObject, datetime):
+            return "{0:%d.%m.%Y %H:%M}".format(ormObject)
+        return unicode(ormObject)
