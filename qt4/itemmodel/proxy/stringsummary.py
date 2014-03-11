@@ -134,7 +134,7 @@ class StringSummaryProxyModel(QAbstractProxyModel):
             if sourceVal is None:
                 sourceVal = ''
             rowData.append(sourceVal)
-        return QString.fromUtf8(self._formatStrings[role].format(*rowData))
+        return QString.fromUtf8(self._formatStrings[role].format(*rowData).strip())
 
     def parent(self, *args, **kwargs):
         return QModelIndex()
