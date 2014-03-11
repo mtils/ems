@@ -22,10 +22,11 @@ class ListOfDictsModel(MultipleRowDictModel):
         return self._standardRow 
     
     def addRow(self, *args, **kwargs):
+
         if self._xType.maxLength is not None:
             if self.rowCount() >= self._xType.maxLength:
                 return False
-        
+
         data = {}
         if kwargs:
             data = kwargs
@@ -41,6 +42,7 @@ class ListOfDictsModel(MultipleRowDictModel):
         self._appendToModelData(rowTpl)
         
         self.endInsertRows()
+        self._setDirty(True)
     
 #    def getRowTemplate(self):
 #        template = {}

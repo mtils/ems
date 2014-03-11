@@ -6,6 +6,7 @@ Created on 28.04.2012
 from copy import copy
 
 from PyQt4.QtCore import Qt, QModelIndex, QVariant, QAbstractItemModel, QString
+from PyQt4.QtCore import pyqtSignal
 
 from ems.xtype.base import XType, ComplexType, SequenceType, NamedFieldType #@UnresolvedImport
 from ems import qt4
@@ -14,10 +15,13 @@ from ems.qt4.itemmodel.reflectable_mixin import ReflectableMixin #@UnresolvedImp
 from ems.qt4.itemmodel.xtype.factory import getModelForXType #@UnresolvedImport
 
 class AbstractXtypeItemModel(QAbstractItemModel, ReflectableMixin):
+
+    dirtyStateChanged = pyqtSignal(bool)
+
     def __init__(self, xType, parent=None):
         ReflectableMixin.__init__(self)
         QAbstractItemModel.__init__(self, parent)
-        
+
         self._modelData = []
         self._headerData = None
         if not isinstance(xType, ComplexType):
@@ -29,7 +33,16 @@ class AbstractXtypeItemModel(QAbstractItemModel, ReflectableMixin):
         self.isEditable = True
         self._childModels = {}
         self._enabledFlagColumn = None
-        
+        self._isDirty = False
+
+    def isDirty(self):
+        return self._isDirty
+
+    def _setDirty(self, dirty):
+        if self._isDirty != dirty:
+            self._isDirty = dirty
+            self.dirtyStateChanged.emit(self._isDirty)
+
     @property
     def xType(self):
         return self._xType
@@ -264,19 +277,20 @@ class AbstractXtypeItemModel(QAbstractItemModel, ReflectableMixin):
         if not index.isValid() or \
            not (0 <= index.row() < self.rowCount()):
             return False
-        
+
         keyName = self.nameOfColumn(index.column())
         pyValue = variant_to_pyobject(value)
-        
+
         if pyValue == self._pyData(index.row(), keyName, role):
             return False
         result = self._setPyData(index.row(), keyName, pyValue, role)
         if not result:
             return False
-        
+
+        self._setDirty(True)
         self.dataChanged.emit(index, index)
         return True
-    
+
     def flags(self, index):
         if not index.isValid():
             return Qt.ItemIsEnabled
@@ -324,24 +338,26 @@ class AbstractXtypeItemModel(QAbstractItemModel, ReflectableMixin):
         self._modelData.append(row)
 
 class SingleRowModel(AbstractXtypeItemModel):
+
     def __init__(self, xType, parent=None):
         if not isinstance(xType, NamedFieldType):
             raise TypeError('SingleRowInterface is only for NamedFieldType types')
         AbstractXtypeItemModel.__init__(self, xType, parent)
-    
-    
+
     def insertRows(self, row, count, parent=QModelIndex()):
         if count > 1:
             raise NotImplementedError("Currently only one row can be inserted")
         rowCount = self.rowCount(parent)
         if rowCount > 0:
             return False
-        
+
         self.beginInsertRows(parent, row, row)
         self._modelData.append(self.getRowTemplate())
         self.endInsertRows()
+
+        self._setDirty(True)
         return True
-    
+
     def removeRows(self, row, count, parentIndex=QModelIndex()):
         if count > 1:
             raise NotImplementedError("Currently only one row can be removed")
@@ -357,7 +373,7 @@ class SingleRowModel(AbstractXtypeItemModel):
         self.beginRemoveRows(parentIndex, row, row)
         self._modelData.pop()
         self.endRemoveRows()
-
+        self._setDirty(True)
         return True
 
     def modelData(self):
@@ -365,15 +381,16 @@ class SingleRowModel(AbstractXtypeItemModel):
             return self._modelData[0]
         except IndexError:
             return None
-    
+
     def setModelData(self, modelData):
         self.beginResetModel()
-        
+
         self._modelData = []
-        
+
         self._appendToModelData(self.getRowTemplate(values=modelData))
-        
+
         self.endResetModel()
+        self._setDirty(False)
     
 class MultipleRowModel(AbstractXtypeItemModel):
     
@@ -401,6 +418,7 @@ class MultipleRowModel(AbstractXtypeItemModel):
         self.beginInsertRows(parent, row, row)
         self._modelData.append(self.getRowTemplate())
         self.endInsertRows()
+        self._setDirty(True)
         return True
     
     def removeRows(self, row, count, parentIndex=QModelIndex()):
@@ -419,7 +437,7 @@ class MultipleRowModel(AbstractXtypeItemModel):
         self.beginRemoveRows(parentIndex, row, row)
         self._modelData.pop(row)
         self.endRemoveRows()
-        
+        self._setDirty(True)
         return True
     
     def modelData(self):
@@ -443,6 +461,7 @@ class MultipleRowModel(AbstractXtypeItemModel):
             
         
         self.endResetModel()
+        self._setDirty(False)
     
     def rowCount(self, index=QModelIndex()):
         
@@ -604,7 +623,7 @@ class DictOfDictsModel(DictGetSetInterface, SingleRowModel):
             return None
 
         modelData = {}
-        print "---------------------------------------"
+
         for name in sorted(self._modelData[0].keys()):
             nameStack = name.split('.')
             node = self._getNestedDict(nameStack, modelData)

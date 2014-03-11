@@ -19,9 +19,11 @@ from ems.qt4.util import variant_to_pyobject, VariantContainer
 from sqlalchemy.exc import SQLAlchemyError, InvalidRequestError
 
 class SAOrmSearchModel(QAbstractTableModel):
-    
+
+    dirtyStateChanged = pyqtSignal(bool)
+
     error = pyqtSignal(Exception)
-    
+
     def __init__(self,session, queriedObject, querybuilder=None, filter=None,
                  columns = [],
                  appendOptions = None,
@@ -47,6 +49,7 @@ class SAOrmSearchModel(QAbstractTableModel):
         self._unsubmittedRows = []
         self._deletedObjects = []
         self._lastCreatedHash = None
+        self._isDirty = False
 
         if not len(self._columns):
             self._columns = self.possibleColumns
@@ -71,8 +74,16 @@ class SAOrmSearchModel(QAbstractTableModel):
         
         
         self._columnName2Index = self._buildReversedColumnLookup(columns)
-        self._dirty = True
+        self._queryDidChange = True
         self.unsubmittetColor = QColor('#ffff00')
+    
+    def isDirty(self):
+        return self._isDirty
+    
+    def _setDirty(self, dirty):
+        if self._isDirty != dirty:
+            self._isDirty = dirty
+            self.dirtyStateChanged.emit(self._isDirty)
     
     @property
     def lastCreatedHash(self):
@@ -96,7 +107,7 @@ class SAOrmSearchModel(QAbstractTableModel):
         #TODO: Dirty Fix wegen eagerload, welches nicht beim Setzen der Columns ausgefuehrt wird
         raise NotImplementedError("This feature has been throwed out")
         self._query = query
-        self._dirty = True
+        self._queryDidChange = True
         self.perform()
     
     query = property(getQuery, setQuery)
@@ -106,7 +117,7 @@ class SAOrmSearchModel(QAbstractTableModel):
     
     def setFilter(self, filter):
         self._filter = filter
-        self._dirty = True
+        self._queryDidChange = True
         #only update if data/rowCount/... was called
         if self.__didPerform:
             self.perform()
@@ -120,7 +131,7 @@ class SAOrmSearchModel(QAbstractTableModel):
         if len(args) < 1:
             raise TypeError("setOrderBy needs 1 parameter as minimum")
         self._orderBy = args
-        self._dirty = True
+        self._queryDidChange = True
         #only update if data/rowCount/... was called
         if self.__didPerform:
             self.perform()
@@ -177,7 +188,7 @@ class SAOrmSearchModel(QAbstractTableModel):
     
     def setColumns(self, cols):
         self._columns = cols
-        self._dirty = True
+        self._queryDidChange = True
         #Only perform is someome has called data()/rowCount()/etc...
         if self.__didPerform:
             self.perform()
@@ -459,7 +470,7 @@ class SAOrmSearchModel(QAbstractTableModel):
                 except KeyError:
                     pass
                 self.dataChanged.emit(index, index)
-#                print self._session.dirty
+                self._setDirty(True)
                 return True
             return False
 
@@ -478,6 +489,7 @@ class SAOrmSearchModel(QAbstractTableModel):
             self._session.commit()
             self._unsubmittedRows = []
             self._deletedObjects = []
+            self._setDirty(True)
             return True
         except SQLAlchemyError as e:
             self._session.rollback()
@@ -497,7 +509,9 @@ class SAOrmSearchModel(QAbstractTableModel):
         self._deletedObjects = []
         # Das muss wieder raus
         #self.forceReset()
-        return super(SAOrmSearchModel, self).revert()
+        result = super(SAOrmSearchModel, self).revert()
+        self._setDirty(False)
+        return result
         #self.forceReset()
 
     def _createNewOrmObject(self):
@@ -522,6 +536,7 @@ class SAOrmSearchModel(QAbstractTableModel):
         self._lastCreatedHash = hash(newObj)
         self._resultCache.clear()
         self.endInsertRows()
+        self._setDirty(True)
         return True
 
     def removeRows(self, row, count, parentIndex=QModelIndex()):
@@ -546,7 +561,7 @@ class SAOrmSearchModel(QAbstractTableModel):
         self._resultCache.clear()
 
         self.endRemoveRows()
-
+        self._setDirty(True)
         return True
 
     def didPerform(self):
@@ -606,15 +621,9 @@ class SAOrmSearchModel(QAbstractTableModel):
             except KeyError:
                 name = fieldName
             self._headerNameCache[propertyPath] = QString.fromUtf8(name)
-            
+
         return self._headerNameCache[propertyPath]
-    
-    def isPrimaryKey(self, index):
-        self._flagsCache
-        
-        print
-    
-    
+
     def flags(self, index):
         if not self.editable:
             return Qt.ItemIsSelectable | Qt.ItemIsEnabled
@@ -633,12 +642,12 @@ class SAOrmSearchModel(QAbstractTableModel):
             or self._deletedObjects
 
     def forceReset(self):
-        self._dirty = True
+        self._queryDidChange = True
         self.perform()
     
     def perform(self):
         
-        if not self._dirty:
+        if not self._queryDidChange:
             return
 
         self.__didPerform = True
@@ -675,9 +684,9 @@ class SAOrmSearchModel(QAbstractTableModel):
                 #Create ResultCache Structure
                 self._resultCache[i] = {}
                 i += 1
-        self._dirty = False
+        self._queryDidChange = False
         self.endResetModel()
         self.layoutChanged.emit()
         self.headerDataChanged.emit(Qt.Vertical, 0, self.rowCount(QModelIndex()))
-        
+        self._setDirty(False)
     
