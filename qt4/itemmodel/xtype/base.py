@@ -43,6 +43,9 @@ class AbstractXtypeItemModel(QAbstractItemModel, ReflectableMixin):
             self._isDirty = dirty
             self.dirtyStateChanged.emit(self._isDirty)
 
+    def resetDirty(self):
+        self._setDirty(False)
+
     @property
     def xType(self):
         return self._xType
