@@ -394,7 +394,16 @@ class SingleRowModel(AbstractXtypeItemModel):
 
         self.endResetModel()
         self._setDirty(False)
-    
+
+    def __getitem__(self, key):
+        return self._pyData(0, key, Qt.EditRole)
+
+    def __setitem__(self, key, value):
+        col = self.columnOfName(key)
+        index = self.index(0, col)
+        self.setData(index, QVariant(value))
+
+
 class MultipleRowModel(AbstractXtypeItemModel):
     
     def __init__(self, xType, parent=None):

@@ -566,7 +566,10 @@ class SAOrmSearchModel(QAbstractTableModel):
 
     def didPerform(self):
         return self.__didPerform
-    
+
+    def __getitem__(self, key):
+        return self.getObject(key)
+
     def getObject(self, row):
         self.perform()
         try:
