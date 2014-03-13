@@ -477,19 +477,36 @@ class SAOrmSearchModel(QAbstractTableModel):
     @pyqtSlot()
     def submit(self):
 
+        changedRows = set()
+
         for row in self._unsubmittedRows:
             self._session.add(self.getObject(row))
+            changedRows.add(row)
             #print "would insert", row
 
         for obj in self._deletedObjects:
             self._session.delete(obj)
             #print "would delete", obj
 
+        for obj in self._session.dirty:
+            changedRows.add(self.getRowByHash(hash(obj)))
+
         try:
             self._session.commit()
             self._unsubmittedRows = []
             self._deletedObjects = []
             self._setDirty(True)
+
+            for row in changedRows:
+                if isinstance(row, int) and row > -1:
+                    try:
+                        del self._resultCache[row]
+                    except KeyError:
+                        pass
+                    leftIndex = self.index(row,0)
+                    rightIndex = self.index(row, self.columnCount()-1)
+                    self.dataChanged.emit(leftIndex, rightIndex)
+
             return True
         except SQLAlchemyError as e:
             self._session.rollback()
