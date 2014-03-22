@@ -16,10 +16,16 @@ class PluginLoader(object):
     _plugins = []
 
     pluginAdded = EventHook()
+    pluginRemoved = EventHook()
 
     def __iadd__(self, plugin):
         self._plugins.append(plugin)
         PluginLoader.pluginAdded.fire(plugin)
+        return self
+
+    def __isub__(self, plugin):
+        self._plugins.remove(plugin)
+        PluginLoader.pluginRemoved.fire(plugin)
         return self
 
     def _find_plugin(self, query):
