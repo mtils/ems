@@ -36,7 +36,10 @@ class XTypeDelegate(QStyledItemDelegate):
         style = QApplication.style() if options.widget is None \
             else options.widget.style()
         
-        string = self.getString(value)
+        try:
+            string = self.getString(value)
+        except TypeError:
+            string = ''
         options.text = QString.fromUtf8(string)
         style.drawControl(QStyle.CE_ItemViewItem, options, painter)
         return None
