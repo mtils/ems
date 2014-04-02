@@ -89,6 +89,7 @@ class QStyleEditor(QWidget):
         self.previewGroup.layout().addWidget(self.previewView)
 
         self.editor = QTextEdit(self)
+        self.editor.setAcceptRichText(False)
 
         self.editorGroup.layout().addWidget(self.editor)
 
