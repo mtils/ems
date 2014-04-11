@@ -522,6 +522,7 @@ class SAOrmSearchModel(QAbstractTableModel):
     @pyqtSlot()
     def revert(self):
         self._session.rollback()
+        self._resultCache.clear()
         self._unsubmittedRows = []
         self._deletedObjects = []
         # Das muss wieder raus
