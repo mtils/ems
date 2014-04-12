@@ -49,7 +49,7 @@ class FuzzyCompleter(QCompleter):
         if self._filtering == self.StartsWith:
             self.highlightedIndex.emit(modelIndex)
         realIndex = self._sortFilterProxyModel.mapToSource(self._sortFilterProxyModel.index(modelIndex.row(), modelIndex.column()))
-        self.activatedIndex.emit(realIndex)
+        self.highlightedIndex.emit(realIndex)
 
     def filtering(self):
         '''int FuzzyCompleter.filtering()'''
