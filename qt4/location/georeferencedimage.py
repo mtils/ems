@@ -4,6 +4,7 @@ Created on 17.12.2011
 @author: michi
 '''
 from __future__ import print_function
+from pprint import pprint as pp
 import struct
 import numpy
 import sys
@@ -47,20 +48,23 @@ class GeoReferencedImage(QImage):
             
             
             geotransform = dataset.GetGeoTransform()
+
             if geotransform is None:
                 raise TypeError("Geotransform could not be received")
             
             self._onePixelSize = QSizeF(geotransform[1], geotransform[5])
             
             
-            topLeftCoord = GeoCoordinate(geotransform[0], geotransform[3],
-                                         projection=projection)
+            topLeftCoord = GeoCoordinate()
+            topLeftCoord.lat =geotransform[0]
+            topLeftCoord.lng = geotransform[3]
+            topLeftCoord.projection=projection
             
             bottomRightCoord = self.calcBottomRightCoordinate(topLeftCoord,
                                                                self._onePixelSize,
                                                                self._sourceSize,
                                                                projection)
-            
+            print("GeoReferencedImage.__init__.topLeftCoord, bottomRightCoord",topLeftCoord, bottomRightCoord)
             self._geoBoundingBox = GeoBoundingBoxUtm(topLeftCoord,
                                                      bottomRightCoord)
             
@@ -105,7 +109,7 @@ class GeoReferencedImage(QImage):
             else:
                 QImage.__init__(self, fileName)
                 
-        
+        print('GeoReferencedImage.__init__.fileName',fileName)
         
         
     def origin(self):
@@ -120,12 +124,15 @@ class GeoReferencedImage(QImage):
         return self._onePixelSize
     
     def geoBoundingBox(self, rect=None):
+        print("GeoReferencedImage.geoBoundingBox.rect", rect)
         if not self._geoBoundingBox.isValid():
             pass
         if rect is None:
             return self._geoBoundingBox
         topLeft = self.pixelPosition2GeoCoordinate(rect.topLeft())
         bottomRight = self.pixelPosition2GeoCoordinate(rect.bottomRight())
+        print("GeoReferencedImage.geoBoundingBox.topLeft", topLeft)
+        print("GeoReferencedImage.geoBoundingBox.bottomRight", bottomRight)
         return GeoBoundingBoxUtm(topLeft, bottomRight)
     
     def geoSize(self):
@@ -134,16 +141,16 @@ class GeoReferencedImage(QImage):
     def coordinate2PixelPosition(self, coordinate):
         if not self._geoBoundingBox.contains(coordinate):
             return QPointF()
-        topLeftLat = self._geoBoundingBox.topLeft().latitude()
-        bottomRightLon = self._geoBoundingBox.bottomRight().longitude()
+        topLeftLat = self._geoBoundingBox.topLeft().lat
+        bottomRightLon = self._geoBoundingBox.bottomRight().lng
         
         
         
 #        print(coordinate.latitude() - topLeftLat)
 #        print(coordinate.longitude() - bottomRightLon)
         
-        x = (coordinate.latitude() - topLeftLat) / self.onePixelSize().width()
-        y = (coordinate.longitude() - bottomRightLon) / self.onePixelSize().height()
+        x = (coordinate.lat - topLeftLat) / self.onePixelSize().width()
+        y = (coordinate.lng - bottomRightLon) / self.onePixelSize().height()
         #print(x,y)
         result = QPointF(x, float(self.size().height()) + y)
         
@@ -154,22 +161,24 @@ class GeoReferencedImage(QImage):
             return GeoCoordinate()
         
         lat = (pixelPos.x() * self.onePixelSize().width()) + \
-               self._geoBoundingBox.topLeft().latitude()
+               self._geoBoundingBox.topLeft().lat
         lon = ((self.size().height() - pixelPos.y()) * abs(self.onePixelSize().height())) + \
-               self._geoBoundingBox.bottomRight().longitude()
+               self._geoBoundingBox.bottomRight().lng
         
-        return GeoCoordinate(lat, lon, projection="utm")
+        coord = GeoCoordinate()
+        coord.lat = lat
+        coord.lng = lon
+        coord.projection="utm"
+        return coord
     
     @staticmethod
     def calcBottomRightCoordinate(topLeftCoordinate, pixelSize, sourceSize,
                                   projection='utm'):
-        
-        return GeoCoordinate(topLeftCoordinate.latitude() + \
-                                 (pixelSize.width()*sourceSize.width()),
-                             topLeftCoordinate.longitude() - \
-                                 (abs(pixelSize.height())*sourceSize.height()),
-                             projection=projection)
-    
+        coord = GeoCoordinate()
+        coord.lat = topLeftCoordinate.lat +  (pixelSize.width()*sourceSize.width())
+        coord.lng = topLeftCoordinate.lng - (abs(pixelSize.height())*sourceSize.height())
+        coord.projection=projection
+        return coord
     
     def rectF(self, geoBoundingBox=None):
         '''
@@ -189,7 +198,7 @@ class GeoReferencedImage(QImage):
         '''
         if geoBoundingBox is None:
             return QRectF(QImage.rect(self))
-        
+        #print('GeoReferencedImage.rectF', geoBoundingBox)
         intersected = self._geoBoundingBox.intersected(geoBoundingBox)
         #intersected = geoBoundingBox.intersected(self._geoBoundingBox)
 #        print("source: {0}".format(geoBoundingBox))
@@ -216,8 +225,8 @@ class GeoReferencedImage(QImage):
 #                                                 int(round(sourceRect.height())))
 #                                           )
         sourceBoundingBox = otherImage.geoBoundingBox(sourceRect)
-#        print("sourceRect: {0}".format(sourceRect))
-#        print("sourceBoundingBox: {0}".format(sourceBoundingBox))
+        print("GeoReferencedImage.paste.sourceRect: {0}".format(sourceRect))
+        print("GeoReferencedImage.paste.sourceBoundingBox: {0}".format(sourceBoundingBox))
         targetRect = self.rectF(sourceBoundingBox)
 #        print("targetRect: {0}".format(targetRect))
         #if self.painter is None:

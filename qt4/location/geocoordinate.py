@@ -83,10 +83,10 @@ class GeoCoordinate(object):
                 else:
                     raise TypeError("If only one argument is used, it has to be a GeoCoordinate")
             
-            if LocationUtils.isValidLat(latitudeOrCoordinate, self.projection) \
-                and LocationUtils.isValidLong(longitude, self.projection):
-                self.lat = latitudeOrCoordinate
-                self.lng = longitude
+            #if LocationUtils.isValidLat(latitudeOrCoordinate, self.projection) \
+                #and LocationUtils.isValidLong(longitude, self.projection):
+            self.lat = latitudeOrCoordinate
+            self.lng = longitude
             
         else:
             if LocationUtils.isValidLat(latitudeOrCoordinate, self.projection) \
