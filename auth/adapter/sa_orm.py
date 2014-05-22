@@ -3,7 +3,7 @@ Created on 23.09.2011
 
 @author: michi
 '''
-from ems.auth import AuthenticationAdapter, AuthenticatedUser,AuthGroup #@UnresolvedImport
+from ems.auth import AuthenticationAdapter, AuthenticatedUser,AuthGroup, Permission
 
 class SAOrmAuthGroup(AuthGroup):
     
@@ -21,6 +21,20 @@ class SAOrmAuthGroup(AuthGroup):
     def _getName(self):
         propName = self._adapter.getPropertyName(SAOrmAuthAdapter.GROUP_NAME)
         return self.__sourceObject.__getattribute__(propName)
+
+    def _getPermissions(self):
+        propName = self._adapter.getPropertyName(SAOrmAuthAdapter.GROUP_PERMISSIONS)
+        codeProp = self._adapter.getPropertyName(SAOrmAuthAdapter.PERMISSION_CODE)
+        accessProp = self._adapter.getPropertyName(SAOrmAuthAdapter.PERMISSION_ACCESS)
+        titleProp = self._adapter.getPropertyName(SAOrmAuthAdapter.PERMISSION_TITLE)
+
+        perms = set()
+        for ormPerm in self.__sourceObject.__getattribute__(propName):
+            code = ormPerm.__getattribute__(codeProp)
+            access = ormPerm.__getattribute__(accessProp)
+            title = ''
+            perms.add(Permission(code, title, access))
+        return perms
 
 class SAOrmAuthenticatedUser(AuthenticatedUser):
     
@@ -58,10 +72,15 @@ class SAOrmAuthAdapter(AuthenticationAdapter):
     USER_NAME = 'user_name'
     USER_PASSWORD = 'user_password'
     USER_GROUP = 'user_group'
-    
+
     GROUP_ID = 'group_id'
     GROUP_NAME = 'group_name'
-    
+
+    GROUP_PERMISSIONS = 'group_permissions'
+    PERMISSION_CODE = 'permission'
+    PERMISSION_ACCESS = 'access'
+    PERMISSION_TITLE = 'title'
+
     def __init__(self, sessionGetter, userClass=None, propertyMap=None,
                   groupClass=None):
         self._sessionGetter = sessionGetter
