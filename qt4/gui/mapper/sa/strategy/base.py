@@ -76,9 +76,10 @@ class BaseStrategy(QObject):
             cols = rProperty.columns
             if len(cols) == 1:
                 col = cols[0]
+                return col.info
         elif isinstance(rProperty, hybrid_property):
             return {}
-        return col.info
+        #return col.info
     
     def setSpinBoxOptions(self, spinbox, rProperty, colType=None):
         if colType is None:
