@@ -14,7 +14,6 @@ class QmlProxyModelImageProvider(QDeclarativeImageProvider):
         self.qmlModel = qmlModel
         QDeclarativeImageProvider.__init__(self, QDeclarativeImageProvider.Pixmap)
         self._prefix = None
-        self._noImageImage = Registry.getInstance().noAngebotImg
 
     def prefix(self):
         return self._prefix
@@ -61,8 +60,11 @@ class QmlProxyModel(EditableProxyModel):
 
     def imageProvider(self):
         if not self._imageProvider:
-            self._imageProvider = QmlProxyModelImageProvider(self)
+            self._imageProvider = self.newImageProvider()
         return self._imageProvider
+
+    def newImageProvider(self):
+        return QmlProxyModelImageProvider(self)
 
     def imageProviderPrefix(self):
         return self._imageProviderPrefix
