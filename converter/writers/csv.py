@@ -47,6 +47,7 @@ class CSV(OutputWriter):
     '''
     
     def notify(self,eventType):
+        
         if eventType == self.init:
             self.printEveryNLines = 0
         if eventType == self.startProcess:
