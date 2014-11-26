@@ -17,14 +17,14 @@ synonyms_de_DE = {
                   #u'Straße':
                   } 
 class StringComparator(object):
-    
+
     valForOnlyCaseDiff = 0.99
     synonymDiffRange = (0.15,0.90)
     synonymCorrection = 0.05
-    
+
     def __init__(self, typicalSynonyms={}):
         self.typicalSynonyms = typicalSynonyms
-    
+
     def compare(self, a, b):
         if not isinstance(a, basestring):
             return 0.0
@@ -34,10 +34,10 @@ class StringComparator(object):
             return 1.0
         if a.lower() == b.lower():
             return self.valForOnlyCaseDiff
-        
-        
+
+
         matcher = SequenceMatcher()
-        matcher.set_seqs(a, b)
+        matcher.set_seqs(a.lower(), b.lower())
         ratio = matcher.ratio()
         if ratio > self.synonymDiffRange[0] and \
             ratio < self.synonymDiffRange[1]:
@@ -48,9 +48,25 @@ class StringComparator(object):
                 translatedB = translatedB.replace(key, self.typicalSynonyms[key])
             matcher = SequenceMatcher()
             matcher.set_seqs(translatedA, translatedB)
-            
+
             ratio = matcher.ratio() - self.synonymCorrection
 
         return ratio
-            
-                
+
+    def find_best_matching(self, reference, pool, min_percent=90):
+
+        pool_by_similarity = {}
+
+        for candidate in pool:
+            percent = self.compare(candidate, reference)*100.0
+
+            if percent >= min_percent:
+                pool_by_similarity[percent] = candidate
+
+        if len(pool_by_similarity):
+            percents = pool_by_similarity.keys()
+            percents.sort()
+            percents.reverse()
+            return ( pool_by_similarity[percents[0]], percents[0] )
+
+        raise LookupError()
