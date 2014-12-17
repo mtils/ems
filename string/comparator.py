@@ -47,7 +47,7 @@ class StringComparator(object):
                 translatedA = translatedA.replace(key, self.typicalSynonyms[key])
                 translatedB = translatedB.replace(key, self.typicalSynonyms[key])
             matcher = SequenceMatcher()
-            matcher.set_seqs(translatedA, translatedB)
+            matcher.set_seqs(translatedA.lower(), translatedB.lower())
 
             ratio = matcher.ratio() - self.synonymCorrection
 
