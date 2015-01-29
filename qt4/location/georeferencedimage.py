@@ -259,78 +259,87 @@ class GeoReferencedImage(QImage):
         
 
 if __name__ == '__main__':
-    #fileName = '/home/michi/Dokumente/IT/Kontakte/SmartGeomatics/Projekte/Datenlieferungen/2011-12-19 Pfalzgrafenweiler Orthofotos UTM32N/34625377.tif'
+
     fileName = '/home/michi/Dokumente/IT/Kontakte/SmartGeomatics/Projekte/Datenlieferungen/2011-11-30 Pfalzgrafenweiler Orthofoto UTM32N/34705383/34705383.tif'
 
-    
-    
-    app = QApplication([])
-    
-    
-    
-#    tileLeftTop = GeoCoordinate(470007.8125, 5382398.4375, projection="utm")
-#    tileBottomRight = GeoCoordinate(470011.710938, 5382394.53906, projection="utm")
-    
-    #Oben bei zoom 10
-    #tileLeftTop = GeoCoordinate(470000.0, 5383000.0, projection="utm")
-    #tileBottomRight = GeoCoordinate(470999.992188, 5382000.00781, projection="utm")
-    
-    #Unten bei Zoom 10
-    tileLeftTop = GeoCoordinate(470000.0, 5382000.0, projection="utm")
-    tileBottomRight = GeoCoordinate(470999.992188, 5381000.00781, projection="utm")
-    
-    tileBounds = GeoBoundingBoxUtm(tileLeftTop, tileBottomRight)
-    
-    sourceImage = GeoReferencedImage(fileName)
-    print("----------SourceImage-------------")
-    print("GeoBoundingBox: {0}".format(sourceImage.geoBoundingBox()))
-    print("SourceSize: {0}".format(sourceImage.size()))
-    print("OnePixelSize: {0}".format(sourceImage.onePixelSize()))
-    print("GeoSize: {0}".format(sourceImage.geoSize()))
-    #print(tileBounds)
-    
-    targetImage = GeoReferencedImage(geoBoundingBox=tileBounds, imageSize=QSize(500, 500))
-    print("----------TargetImage-------------")
-    print("GeoBoundingBox: {0}".format(targetImage.geoBoundingBox()))
-#    print("SourceSize: {0}".format(targetImage.size()))
-#    print("OnePixelSize: {0}".format(targetImage.onePixelSize()))
-#    print("GeoSize: {0}".format(targetImage.geoSize()))
-#    print("GeoCoord: {0} = Pos {1} Null: {2}".format(tileLeftTop,
-#                                           targetImage.coordinate2PixelPosition(tileLeftTop),
-#                                           targetImage.coordinate2PixelPosition(tileLeftTop).isNull()))
-#    
-#    print("GeoCoord: {0} = Pos {1}".format(tileBottomRight,
-#                                           targetImage.coordinate2PixelPosition(tileBottomRight)))
-#    
-#    center = GeoCoordinate(tileLeftTop.latitude() + tileBounds.width()/2,
-#                           tileLeftTop.longitude() - tileBounds.height()/2,
-#                           projection="utm")
-#    
-#    print("GeCoord {0} = Pos {1}".format(center,
-#                                         targetImage.coordinate2PixelPosition(center)))
-#    
-#    print("Pos {0} = Coord {1}".format(QPoint(0,0),
-#                                       targetImage.pixelPosition2GeoCoordinate(QPoint(0,0))))
-#    
-#    print("Pos {0} = Coord {1}".format(QPoint(250,250),
-#                                       targetImage.pixelPosition2GeoCoordinate(QPoint(250,250))))
-#    
-#    
-#    print("Pos {0} = Coord {1}".format(QPoint(499,499),
-#                                       targetImage.pixelPosition2GeoCoordinate(QPoint(499,499))))
-#    
-    
-    print("intersected: {0}".format(targetImage.geoBoundingBox().intersected(sourceImage.geoBoundingBox())))
-    
-    print("rect: {0}".format(sourceImage.rectF(targetImage.geoBoundingBox())))
-    
-    targetImage.paste(sourceImage)
-    #result = sourceImage.save("/tmp/gdal-out-qt.png", "PNG")
-    #print("Result: {0} isNull:{1}".format(result, sourceImage.isNull()))
-    targetImage.save("/tmp/qt-result-2.png")
+    try:
+        fileSpec = sys.argv[1]
+        if os.path.isdir(fileSpec):
+            allFiles = [os.path.join(fileSpec,f) for f in os.listdir(fileSpec)]
+            files = []
+            for single_file in allFiles:
+                if single_file.lower().endswith('.tif') or single_file.lower().endswith('.tiff'):
+                    files.append(single_file)
+
+        elif os.path.isfile(fileSpec):
+            files = [fileSpec]
+    except IndexError:
+        files = [fileName]
+
+    for fileName in files:
+
+        app = QApplication([])
+
+    #    tileLeftTop = GeoCoordinate(470007.8125, 5382398.4375, projection="utm")
+    #    tileBottomRight = GeoCoordinate(470011.710938, 5382394.53906, projection="utm")
+
+        #Oben bei zoom 10
+        #tileLeftTop = GeoCoordinate(470000.0, 5383000.0, projection="utm")
+        #tileBottomRight = GeoCoordinate(470999.992188, 5382000.00781, projection="utm")
+        
+        #Unten bei Zoom 10
+        tileLeftTop = GeoCoordinate(470000.0, 5382000.0, projection="utm")
+        tileBottomRight = GeoCoordinate(470999.992188, 5381000.00781, projection="utm")
+        
+        tileBounds = GeoBoundingBoxUtm(tileLeftTop, tileBottomRight)
+        
+        sourceImage = GeoReferencedImage(fileName)
+        print("----------SourceImage {0} -------------".format(os.path.basename(fileName)))
+        print("GeoBoundingBox: {0}".format(sourceImage.geoBoundingBox()))
+        print("SourceSize: {0}".format(sourceImage.size()))
+        print("OnePixelSize: {0}".format(sourceImage.onePixelSize()))
+        print("GeoSize: {0}".format(sourceImage.geoSize()))
+        #print(tileBounds)
+        
+        targetImage = GeoReferencedImage(geoBoundingBox=tileBounds, imageSize=QSize(500, 500))
+        print("----------TargetImage-------------")
+        print("GeoBoundingBox: {0}".format(targetImage.geoBoundingBox()))
+    #    print("SourceSize: {0}".format(targetImage.size()))
+    #    print("OnePixelSize: {0}".format(targetImage.onePixelSize()))
+    #    print("GeoSize: {0}".format(targetImage.geoSize()))
+    #    print("GeoCoord: {0} = Pos {1} Null: {2}".format(tileLeftTop,
+    #                                           targetImage.coordinate2PixelPosition(tileLeftTop),
+    #                                           targetImage.coordinate2PixelPosition(tileLeftTop).isNull()))
+    #    
+    #    print("GeoCoord: {0} = Pos {1}".format(tileBottomRight,
+    #                                           targetImage.coordinate2PixelPosition(tileBottomRight)))
+    #    
+    #    center = GeoCoordinate(tileLeftTop.latitude() + tileBounds.width()/2,
+    #                           tileLeftTop.longitude() - tileBounds.height()/2,
+    #                           projection="utm")
+    #    
+    #    print("GeCoord {0} = Pos {1}".format(center,
+    #                                         targetImage.coordinate2PixelPosition(center)))
+    #    
+    #    print("Pos {0} = Coord {1}".format(QPoint(0,0),
+    #                                       targetImage.pixelPosition2GeoCoordinate(QPoint(0,0))))
+    #    
+    #    print("Pos {0} = Coord {1}".format(QPoint(250,250),
+    #                                       targetImage.pixelPosition2GeoCoordinate(QPoint(250,250))))
+    #    
+    #    
+    #    print("Pos {0} = Coord {1}".format(QPoint(499,499),
+    #                                       targetImage.pixelPosition2GeoCoordinate(QPoint(499,499))))
+    #    
+        
+        print("intersected: {0}".format(targetImage.geoBoundingBox().intersected(sourceImage.geoBoundingBox())))
+        
+        print("rect: {0}".format(sourceImage.rectF(targetImage.geoBoundingBox())))
+        
+        #targetImage.paste(sourceImage)
+        #result = sourceImage.save("/tmp/gdal-out-qt.png", "PNG")
+        #print("Result: {0} isNull:{1}".format(result, sourceImage.isNull()))
+        #targetImage.save("/tmp/qt-result-2.png")
     print("Fertig")
-    #sys.exit(app.exec_())
-    
-    
-    
-    
+        #sys.exit(app.exec_())
+
