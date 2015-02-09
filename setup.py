@@ -10,5 +10,5 @@ setup(
   url = 'https://github.com/mtils/ems',
   download_url = 'https://github.com/mtils/ems/tarball/0.1',
   keywords = ['qt', 'gui', 'rad','scaffolding'],
-  classifiers = [],
+  classifiers = []
 )
