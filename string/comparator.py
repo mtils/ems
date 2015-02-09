@@ -14,7 +14,8 @@ synonyms_de_DE = {
                   u'ö':'oe',
                   u'Str.':'Strasse',
                   u'str.':'strasse',
-                  #u'Straße':
+                  u'Str.':u'Straße',
+                  u'str.':u'Straße',
                   } 
 class StringComparator(object):
 
