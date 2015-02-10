@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 # coding=utf-8
+
+from __future__ import print_function
+
 from PyQt4 import QtGui
 from ems.qt4.gui.itemdelegate import ImgRepeatDelegate
 
@@ -29,8 +32,12 @@ if __name__ == '__main__':
 
     app = QtGui.QApplication(sys.argv)
 
+    if len(sys.argv) < 2:
+        print('Please provide an img file to repeat')
+        sys.exit()
+
     tableWidget = QtGui.QTableWidget(4, 4)
-    img = QtGui.QImage(u"/home/michi/Dokumente/IT/Kontakte/SmartGeomatics/Projekte/SmartGIS/UI Entwürfe/IconSammlung/crystal_project/24x24/filesystems/services.png")
+    img = QtGui.QImage(sys.argv[1])
     tableWidget.setItemDelegateForColumn(3,ImgRepeatDelegate(img,maxValue=5,initialImgSize=24,
                                                              reversedMode=True))
     tableWidget.setEditTriggers(

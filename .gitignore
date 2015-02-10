@@ -52,3 +52,9 @@ docs/_build/
 
 # PyBuilder
 target/
+
+# KDE files
+.kdev4
+*.kdev4
+**/.directory
+.kateproject*

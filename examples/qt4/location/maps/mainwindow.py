@@ -127,7 +127,6 @@ class MainWindow(QMainWindow):
         
         self._mapsWidget.initialize(self._serviceProvider.mappingManager())
         
-        #iconPath = "/home/michi/Downloads/qt-mobility-opensource-src-1.2.0/examples/mapsdemo/icons"
         iconPath = os.path.join(os.path.dirname(__file__),'images')
         self.iconPath = iconPath
         

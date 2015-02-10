@@ -260,8 +260,6 @@ class GeoReferencedImage(QImage):
 
 if __name__ == '__main__':
 
-    fileName = '/home/michi/Dokumente/IT/Kontakte/SmartGeomatics/Projekte/Datenlieferungen/2011-11-30 Pfalzgrafenweiler Orthofoto UTM32N/34705383/34705383.tif'
-
     try:
         fileSpec = sys.argv[1]
         if os.path.isdir(fileSpec):
@@ -274,7 +272,8 @@ if __name__ == '__main__':
         elif os.path.isfile(fileSpec):
             files = [fileSpec]
     except IndexError:
-        files = [fileName]
+        print('Please provide an input directory or file')
+        sys.exit()
 
     for fileName in files:
 

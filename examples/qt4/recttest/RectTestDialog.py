@@ -39,8 +39,7 @@ class RectTestDialog(QDialog,Ui_RectTestDialog):
         
         self.connect(self, SIGNAL("fileValidationChanged(bool)"),
                      self.onFileValidationChange)
-        self.fileInput.setText("/home/michi/Dokumente/IT/workspace/pydev/Smartgeomatics/application/plugins/energie/ui/qml/vector3dtest.qml")
-        
+        self.fileInput.setText(os.path.join(os.path.dirname(__file__),'vector3dtest.qml'))
     
     def onFileValidationChange(self, valid):
         if valid:
