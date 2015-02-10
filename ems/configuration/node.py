@@ -9,7 +9,7 @@ Created on 09.02.2011
 @author: michi
 '''
 
-from ems.thirdparty.odict import OrderedDict
+from collections import OrderedDict
 
 class Node(OrderedDict):
     '''

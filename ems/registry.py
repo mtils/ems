@@ -3,7 +3,7 @@ Created on 04.02.2011
 
 @author: michi
 '''
-from thirdparty.singletonmixin import Singleton
+from singletonmixin import Singleton
 
 class Registry(Singleton):
     '''

@@ -7,7 +7,7 @@ Created on 20.03.2012
 from PyQt4.QtCore import QObject, QAbstractItemModel, pyqtSignal
 from PyQt4.QtGui import QDataWidgetMapper
 
-from ems.thirdparty.singletonmixin import Singleton
+from ems.singletonmixin import Singleton
 from ems.qt4.gui.itemdelegate.mapper import MapperItemViewDelegate #@UnresolvedImport
 
 

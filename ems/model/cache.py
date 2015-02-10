@@ -3,7 +3,7 @@ Created on 04.07.2011
 
 @author: michi
 '''
-from ems.thirdparty.singletonmixin import Singleton
+from ems.singletonmixin import Singleton
 
 class SessionGetterNotSetError(Exception):
     pass

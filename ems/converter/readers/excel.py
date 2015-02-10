@@ -5,11 +5,12 @@ Created on 24.10.2010
 '''
 import re
 
+import xlrd
+
 from ems.converter.inputreader import InputReader,DataCorruptException,\
     DataNotFoundException, XPathNotImplementedError
 from ems.core.mimetype import MimeTypeDB
 from ems.core.mimetype import MimeType
-from ems.thirdparty import xlrd #@UnresolvedImport
 
 class Excel(InputReader):
     '''

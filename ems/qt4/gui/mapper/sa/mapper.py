@@ -13,7 +13,7 @@ from sqlalchemy.orm.properties import ColumnProperty, RelationshipProperty
 from sqlalchemy.util import symbol
 from sqlalchemy.ext.hybrid import hybrid_property, Comparator
 
-from ems.thirdparty.singletonmixin import Singleton
+from ems.singletonmixin import Singleton
 from ems.qt4.itemmodel.alchemyormmodel import AlchemyOrmModel
 from ems.model.sa.orm.querybuilder import SAQueryBuilder
 from delegate.itemview import MapperItemViewDelegate #@UnresolvedImport

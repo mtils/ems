@@ -7,7 +7,8 @@ from __future__ import absolute_import
 import csv as csv_o
 import codecs,cStringIO
 from random import randint
-from ems.thirdparty.xlwt import Workbook, Font, XFStyle #@UnresolvedImport
+
+from xlwt import Workbook, Font, XFStyle #@UnresolvedImport
 
 from ems.converter import Converter
 from ems.core.mimetype import MimeTypeDB

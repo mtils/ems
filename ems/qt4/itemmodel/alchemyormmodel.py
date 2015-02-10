@@ -3,12 +3,14 @@ Created on 14.06.2011
 
 @author: michi
 '''
+
+from collections import OrderedDict
+
 from PyQt4.QtCore import QAbstractTableModel, QModelIndex, Qt, QVariant
 
 from sqlalchemy.orm import object_mapper, ColumnProperty, RelationshipProperty
 
 from ems import qt4
-from ems.thirdparty.odict import OrderedDict
 
 class AlchemyOrmModel(QAbstractTableModel):
     def __init__(self,session, queriedObject, columns = []):

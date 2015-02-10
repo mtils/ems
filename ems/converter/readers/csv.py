@@ -10,7 +10,6 @@ import re
 from ems.converter.inputreader import InputReader,DataCorruptException,\
     DataNotFoundException, XPathNotImplementedError
 from ems.core.mimetype import MimeTypeDB
-from ems.thirdparty.dbfpy.dbf import *
 from ems.core.mimetype import MimeType
 
 class CSVReader(InputReader):

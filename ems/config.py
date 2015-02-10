@@ -4,7 +4,7 @@ Created on 09.02.2011
 @author: michi
 '''
 from ems.configuration.node import Node
-from ems.thirdparty.odict import OrderedDict
+from collections import OrderedDict
 from ems.pluginemitter import PluginEmitter
 from ems.configuration.loader.xml import Xml
 

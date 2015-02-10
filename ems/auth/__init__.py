@@ -4,7 +4,7 @@ Created on 23.09.2011
 @author: michi
 '''
 from ems.pluginemitter import PluginEmitter
-from ems.thirdparty.singletonmixin import Singleton
+from ems.singletonmixin import Singleton
 
 class NotAuthenticatedError(Exception):
     pass

@@ -3,7 +3,9 @@ Created on 14.06.2011
 
 @author: michi
 '''
+
 import datetime, logging
+from collections import OrderedDict
 
 from PyQt4.QtCore import QAbstractTableModel, QModelIndex, Qt, QVariant,\
      QString, QDateTime, pyqtSlot, pyqtSignal
@@ -13,7 +15,6 @@ from PyQt4.QtGui import QColor
 from sqlalchemy.orm import object_mapper
 from sqlalchemy.orm.collections import InstrumentedList
 from ems import qt4
-from ems.thirdparty.odict import OrderedDict
 from ems.model.sa.orm.querybuilder import SAQueryBuilder, OrderByClause
 from ems.qt4.util import variant_to_pyobject, VariantContainer
 from sqlalchemy.exc import SQLAlchemyError, InvalidRequestError

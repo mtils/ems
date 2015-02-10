@@ -7,7 +7,7 @@ Created on 17.02.2011
 import sys
 
 from ems.errorplugin import ErrorPlugin
-from ems.thirdparty.singletonmixin import Singleton
+from ems.singletonmixin import Singleton
 
 class ErrorHandler(Singleton):
     
