@@ -9,7 +9,7 @@ setup(
   author = 'Michael Tils',
   author_email = 'mtils@web-utils.de',
   url = 'https://github.com/mtils/ems',
-  download_url = 'https://github.com/mtils/ems/tarball/0.2',
+  download_url = 'https://github.com/mtils/ems/tarball/0.2.1',
   keywords = ['qt', 'gui', 'rad','scaffolding'],
   install_requires = [
     # 'dbfpy', not installable via pip
