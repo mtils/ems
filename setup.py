@@ -1,9 +1,10 @@
 from distutils.core import setup
+from setuptools import find_packages
 
 setup(
   name = 'ems',
-  packages = ['ems'],
-  version = '0.2',
+  packages = find_packages(),
+  version = '0.2.1',
   description = 'Small collection of classes to build model centric applications with python and Qt',
   author = 'Michael Tils',
   author_email = 'mtils@web-utils.de',
