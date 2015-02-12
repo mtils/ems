@@ -14,7 +14,7 @@ setup(
   install_requires = [
     # 'dbfpy', not installable via pip
     'xlrd',
-    'xlwt'
+    # 'xlwt' not installable via pip
   ],
   classifiers = [
         'Programming Language :: Python',
