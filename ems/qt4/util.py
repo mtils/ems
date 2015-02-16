@@ -7,7 +7,7 @@ from __future__ import print_function
 import datetime
 from pprint import pformat
 
-from PyQt4.QtCore import QVariant, pyqtSignal, QObject, Qt
+from PyQt4.QtCore import QVariant, pyqtSignal, QObject, Qt, QDateTime
 from PyQt4.QtGui import QColor
 
 class VariantContainer(tuple):
@@ -35,16 +35,16 @@ class VariantContainer(tuple):
     
     and variant_to_pyobject will return you original dict.
     The works because VariantContainer extends tuple which is immutable
-    
+
     '''
     pass
 
 def variant_to_pyobject(qvariant=None): 
     """Try to convert a QVariant to a python object as good as possible""" 
-    
+
     if not isinstance(qvariant, QVariant):
         return qvariant
-    
+
     if not qvariant: 
         return None 
     if qvariant.isNull(): 
@@ -79,8 +79,23 @@ def variant_to_pyobject(qvariant=None):
         value = qvariant.toPyObject()
         if isinstance(value, VariantContainer):
             value = value[0]
-   
+
     return value
+
+def cast_to_variant(value):
+    if isinstance(value, basestring):
+        return QVariant(unicode(value))
+    elif isinstance(value, datetime.datetime):
+        return QVariant(QDateTime(value.year, value.month, value.day,
+                                    value.hour, value.minute, value.second))
+    elif isinstance(value, (dict, list)):
+        return QVariant(VariantContainer((value,)))
+    elif value is None:
+        return QVariant()
+    return QVariant(value)
+
+def pyobject_to_variant(value):
+    return cast_to_variant(value)
 
 def hassig(obj, signalName):
 #    if signalName == 'windowTitleChanged':
