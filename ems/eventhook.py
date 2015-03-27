@@ -49,7 +49,7 @@ class EventHook(object):
 
     def fire(self, *args, **keywargs):
         """Fires a 'event', not really it calls every assigned callable
-           If some callable returns true, it will stop Propagation        
+           If some callable returns true, it will stop Propagation
 
         :returns: void
         """
@@ -59,6 +59,18 @@ class EventHook(object):
             result = handler(*args, **keywargs)
             if result:
                 return
+
+    def __call__(self, *args, **keywargs):
+        """Alias for fire(). The main purpose of this method is to allow
+           chaining of events. So like
+           instance.hook += my_callable
+           you can write
+           instance.hook += my_object.hook
+           Than the event of instance will be fired if my_object.hook is fired
+
+        :rtype: void
+        """
+        return self.fire(*args, **keywargs)
 
     def clearOfType(self, receiverObj):
         """Removes all receivers of the class of the class
