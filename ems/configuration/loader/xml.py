@@ -27,7 +27,8 @@ class Xml(Base):
     TYPE_DATE = 'date'
     TYPE_DATETIME = 'datetime'
     
-    def _load(self,fileName):
+    def load(self, fileName, configObj):
+        self.configObj = configObj
         """
     A simple function to converts XML data into native Python object.
     """
@@ -145,8 +146,11 @@ class Xml(Base):
         for key in profile:
             entry = ET.SubElement(parentElement, 'entry', {'name':key})
             entry.text = profile[key]
-    
-    def _save(self,fileName):
+
+    def save(self, fileName, configObj):
+
+        self.configObj = configObj
+
         root = ET.Element("pyconfig")
         if len(self.configObj.profiles) > 1:
             for profileId in self.configObj.profiles:

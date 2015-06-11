@@ -24,6 +24,7 @@ class EventHook(object):
     def __init__(self):
         self.__receivers = []
         self.fireBlocked = False
+        self.wasFired = False
 
     def __iadd__(self, handler):
         """Adds a receiver to this EventHook
@@ -55,6 +56,9 @@ class EventHook(object):
         """
         if self.fireBlocked:
             return
+
+        self.wasFired = True
+
         for handler in self.__receivers:
             result = handler(*args, **keywargs)
             if result:

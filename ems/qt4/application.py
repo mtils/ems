@@ -9,8 +9,9 @@ from PyQt4.QtCore import QTimer, Qt
 from PyQt4.QtGui import QApplication, QAction
 
 from ems.util import platformName
+from ems.app import App
 
-class MainApplication(QApplication):
+class MainApplication(QApplication, App):
     '''
     classdocs
     '''
@@ -20,6 +21,7 @@ class MainApplication(QApplication):
         Constructor
         '''
         QApplication.__init__(self,argv)
+        App.__init__(self)
 
         self._services = {}
         self._serviceTimers = {}
@@ -70,6 +72,10 @@ class MainApplication(QApplication):
             action.setVisible(self._standardActions[name].isVisible())
             action.setWhatsThis(self._standardActions[name].whatsThis())
         return action
+
+    def start(self, path, argv):
+        App.start(self, path, argv)
+        return QApplication.exec_()
 
     def setStandardAction(self, name, action):
         self._standardActions[name] = action

@@ -16,7 +16,7 @@ class Registry(Singleton):
         '''
         self.__objectRegistry = {}
     
-    def registerObject(self,name,object,throwExceptionIfExists=True):
+    def registerObject(self,name,object,throwExceptionIfExists=False):
         if self.__objectRegistry.has_key(name) and throwExceptionIfExists:
             raise KeyError("The Object %s is already registered" % name)
         self.__objectRegistry[name] = object

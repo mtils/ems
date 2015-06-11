@@ -129,6 +129,7 @@ class Test(unittest.TestCase):
         tempFile = os.path.join(tempfile.gettempdir(),
                               'unittest.save.ems.config.xml')
         c = Config(tempFile)
+        c.autoload = False
         c.setProfile('first', Node())
         c.setProfileName('first', 'First Profile')
         c['testPath'] = '/a/b/c'
@@ -154,9 +155,9 @@ class Test(unittest.TestCase):
         f.close()
         c = Config(tempFile)
         c.autoload = True
-        self.assertEqual(c.configLoaded,False)
+        self.assertEqual(c.isConfigLoaded(),False)
         self.assertEqual(c['driver'],'sqlite')
-        self.assertEqual(c.configLoaded,True)
+        self.assertEqual(c.isConfigLoaded(),True)
         os.remove(tempFile)
         
         #Not existing File

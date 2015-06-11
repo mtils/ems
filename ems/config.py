@@ -5,8 +5,8 @@ Created on 09.02.2011
 '''
 from ems.configuration.node import Node
 from collections import OrderedDict
-from ems.pluginemitter import PluginEmitter
 from ems.configuration.loader.xml import Xml
+from ems.eventhook import EventHook
 
 class NoDefaultProfileError(ReferenceError):
     pass
@@ -19,23 +19,33 @@ class Config(object):
     '''
     classdocs
     '''
-    def __init__(self,fileName=None):
+    def __init__(self, fileName=None, loader=None):
         '''
         Constructor
         '''
+        self.__loader = None
         self.__defaultProfile = None
         self.__calculatedDefaultProfile = None
         self.__noProfile = '_noname_' 
         self.__profiles = OrderedDict()
-        self.__pluginEmitter = None
         self.__fileName = fileName
         self.__profileNames = {}
-        self._loadInProgress = False
         self.__configLoaded = False
-        self.__autoload = False
+        self.__autoload = True
         self.appPath = None
 
-    def getConfigLoaded(self):
+        self.loader = loader if loader else Xml()
+
+        self.standardProfileChanged = EventHook()
+        self.profileChanged = EventHook()
+        self.profileDeleted = EventHook()
+        self.profileNameChanged = EventHook()
+        self.entryChanged = EventHook()
+        self.entryDeleted = EventHook()
+        self.configLoaded = EventHook()
+        self.configSaved = EventHook()
+
+    def isConfigLoaded(self):
         return self.__configLoaded
 
 
@@ -54,14 +64,6 @@ class Config(object):
     def delFileName(self):
         del self.__fileName
 
-
-    def getPluginEmitter(self):
-        return self.__pluginEmitter
-
-    def setPluginEmitter(self, emitter):
-        if not isinstance(emitter, PluginEmitter):
-            raise TypeError("emitter has to be instance of PluginEmitter")
-        self.__pluginEmitter = emitter
 
     def getDefaultProfile(self):
         if self.__defaultProfile is None:
@@ -85,122 +87,129 @@ class Config(object):
         self.__profiles = OrderedDict()
 
     def getProfiles(self):
-        if self.__autoload:
-            if not self.__configLoaded and self.__fileName is not None:
-                self.load()
+        self.__autoloadIfNeeded()
         return self.__profiles
 
     def setDefaultProfile(self, value):
         self.__defaultProfile = value
-        if not self._loadInProgress:
-            self.notifyPlugins('standardProfileChanged', (value,))
-            
+        self.standardProfileChanged.fire(value)
+
     def getDefaultProfileId(self):
         return self.__defaultProfile
-    
+
     def setProfileName(self,profileId,name):
         self.__profileNames[profileId] = name
-        if not self._loadInProgress:
-            self.notifyPlugins('profileNameChanged', (profileId,name))
-    
+        self.profileNameChanged.fire(profileId, name)
+
     def __iter__(self):
         return self.__profiles[self.defaultProfile].__iter__()
-    
+
     def getProfileName(self,profileId):
         if not len(profileId):
             profileId = self.getDefaultProfile()
         return self.__profileNames[profileId]
 
     def __getitem__(self,key):
-        if self.__autoload:
-            if not self.__configLoaded and self.__fileName is not None:
-                self.load()
-        names = self.__getProfileAndVarName(key)
-        return self.__profiles[names[0]][names[1]]
-    
+
+        self.__autoloadIfNeeded()
+        profileId, key = self.__getProfileAndVarName(key)
+
+        return self.__profiles[profileId][key]
+
     def has_key(self, key):
-        if self.__autoload:
-            if not self.__configLoaded and self.__fileName is not None:
-                self.load()
-        names = self.__getProfileAndVarName(key)
-        return self.__profiles[names[0]].has_key(key)
-    
+
+        self.__autoloadIfNeeded()
+        profileId, key = self.__getProfileAndVarName(key)
+
+        return key in self.__profiles[profileId]
+
     def __setitem__(self,key,val):
-        names = self.__getProfileAndVarName(key)
-#        print self.__profiles
-#        print names
-        self.__profiles[names[0]][names[1]] = val
-        if not self._loadInProgress:
-            self.notifyPlugins('entryChanged', (names[0],names[1],val))
-    
+
+        profileId, key = self.__getProfileAndVarName(key)
+        self.__profiles[profileId][key] = val
+        self.entryChanged.fire(profileId, key, val)
+
     def __delitem__(self,key):
-        names = self.__getProfileAndVarName(key)
-        del self.__profiles[names[0]][names[1]]
-        if not self._loadInProgress:
-            self.notifyPlugins('entryDeleted', (names[0],names[1]))
-    
+
+        profileId, key = self.__getProfileAndVarName(key)
+        del self.__profiles[profileId][key]
+        self.entryDeleted.fire(profileId, key)
+
     def __getProfileAndVarName(self,key):
         if isinstance(key, basestring):
             if ":" in key:
                 return(key[0:key.find(":")],key[key.find(":")+1:])
-        return (self.defaultProfile,key)
-    
+        return (self.defaultProfile, key)
+
     def getProfile(self,name=''):
-        if self.__autoload:
-            if not self.__configLoaded and self.__fileName is not None:
-                self.load()
+
+        self.__autoloadIfNeeded()
+
         if not len(name):
             name = self.getDefaultProfile()
         return self.__profiles[name]
-    
-    def setProfile(self,name,profile):
+
+    def setProfile(self, name, profile):
         if not isinstance(profile, Node):
             raise TypeError("Profile has to be instance of configuration.node.Node")
         self.__calculatedDefaultProfile = None
         self.__profiles[name] = profile
-        if not self._loadInProgress:
-            self.notifyPlugins('profileChanged', (name,))
-    
+        self.profileChanged.fire(name)
+
     def delProfile(self,name):
         del self.__profiles[name]
-        if not self._loadInProgress:
-            self.notifyPlugins('profileDeleted', (name,))
-    
-    def notifyPlugins(self,eventName,params):
-        if self.pluginEmitter is None:
-            return
-        self.pluginEmitter.notify(self,eventName,params)
-    
+        self.profileDeleted.fire(name)
+
     def load(self,fileName=''):
-        self._loadInProgress = True
+        self.disableEvents(True)
         if len(fileName):
             self.fileName = fileName
-            
-        self.getLoader().load(self.fileName)
-        self._loadInProgress = False
+
+        self.loader.load(self.fileName, self)
+        self.enableEvents(True)
         self.__configLoaded = True
-        self.notifyPlugins('configLoaded',(self.fileName,))
-    
+        self.configLoaded.fire(self.fileName)
+
+    def disableEvents(self, disable=True):
+
+        for event in ('standardProfileChanged', 'profileChanged',
+                      'profileDeleted', 'profileNameChanged', 'entryChanged',
+                      'entryDeleted', 'configLoaded', 'configSaved'):
+            getattr(self, event).fireBlocked = disable
+
+    def enableEvents(self, enable=True):
+        return self.disableEvents(not enable)
+
+    def __autoloadIfNeeded(self):
+
+        if not self.__autoload or self.__configLoaded:
+            return
+
+        # Only autoload if a value was never setted
+        if self.entryChanged.wasFired or self.profileChanged.wasFired:
+            return
+
+        if self.__fileName is not None:
+            self.load()
+
     def getLoader(self):
         if not self.fileName:
             raise CfgFileNameNotSettedError("Set Filename before getting a loader")
-        loader = Xml()
-        loader.configObj = self
-        return loader
-    
-    def save(self,fileName=''):
+        return self.__loader
+
+    def setLoader(self, loader):
+        self.__loader = loader
+
+    def save(self, fileName=''):
         if len(fileName):
             self.fileName = fileName
-            
-        self.getLoader().save(self.fileName)
-        self.notifyPlugins('configSaved',(self.fileName,))
-            
-    
+
+        self.loader.save(self.fileName, self)
+        self.configSaved.fire(self.fileName)
+
 
     defaultProfile = property(getDefaultProfile, setDefaultProfile, None, "defaultProfile's docstring")
     profiles = property(getProfiles, None, None, "profiles's docstring")
-    pluginEmitter = property(getPluginEmitter, setPluginEmitter, None, "pluginEmitter's docstring")
     fileName = property(getFileName, setFileName, delFileName, "fileName's docstring")
     autoload = property(getAutoload, setAutoload, None, "autoload's docstring")
-    configLoaded = property(getConfigLoaded, None, None, "configLoaded's docstring")
-    
+    loader = property(getLoader, setLoader)
