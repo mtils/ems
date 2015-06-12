@@ -9,8 +9,8 @@ class Container(object):
         self._instances = {}
         self._aliases = {}
 
-        self.resolving = EventHook()
-        self.afterResolving = EventHook()
+        self._resolvingListeners = {}
+        self._afterResolvingListeners = {}
 
     def make(self, abstract, *args, **kwargs):
 
@@ -73,17 +73,50 @@ class Container(object):
     def getInstance(self, abstract):
         return self._instances[abstract]
 
+    def resolving(self, abstract, listener):
+
+        if not callable(listener):
+            raise TypeError('Listener has to be callable')
+
+        if not abstract in self._resolvingListeners:
+            self._resolvingListeners[abstract] = []
+
+        self._resolvingListeners[abstract].append(listener)
+
+    def afterResolving(self, abstract, listener):
+
+        if not callable(listener):
+            raise TypeError('Listener has to be callable')
+
+        if not abstract in self._afterResolvingListeners:
+            self._afterResolvingListeners[abstract] = []
+
+        self._afterResolvingListeners[abstract].append(listener)
+
     def _createInstance(self, abstract, *args, **kwargs):
 
-        creator = self._bindings[abstract]['creator']
+        try:
+            creator = self._bindings[abstract]['creator']
+        except KeyError:
+            creator = abstract
 
         instance = creator(*args, **kwargs)
 
-        self.resolving.fire(instance, self)
-
-        self.afterResolving.fire(instance, self)
+        self._callListeners(abstract, instance, self._resolvingListeners)
+        self._callListeners(abstract, instance, self._afterResolvingListeners)
 
         return instance
+
+    def _callListeners(self, abstract, instance, listeners):
+
+        for key in listeners:
+            if key == abstract:
+                for listener in listeners[key]:
+                    listener(instance, self)
+
+            elif isinstance(key, type) and isinstance(instance, key):
+                for listener in listeners[key]:
+                    listener(instance, self)
 
     def __getitem__(self,key):
 
