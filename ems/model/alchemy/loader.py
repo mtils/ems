@@ -9,6 +9,7 @@ from sqlalchemy import create_engine,MetaData
 from sqlalchemy.engine.url import URL
 from sqlalchemy.orm import sessionmaker,scoped_session
 
+from ems.eventhook import EventHook
 from ems.exceptions import DuplicateIdentifierError
 
 class DriverNotConfiguredError(KeyError):
@@ -42,6 +43,8 @@ class AlchemyLoader(object):
         self.autoflush = False
         self.autocommit = False
         self.expireOnCommit = False
+
+        self.engineLoaded = EventHook()
 
     def getEngines(self):
         return self.__engines
@@ -99,6 +102,7 @@ class AlchemyLoader(object):
         self.__engines[handle] = self._createEngine(url, handle)
         self._applyConfigurators(handle,'engineAboutToLoad')
         self._applyConfigurators(handle, "engineLoaded")
+        self.engineLoaded.fire(handle, self.__engines[handle])
         return self.__engines[handle]
     
     def _createEngine(self, url, handle):

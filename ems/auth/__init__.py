@@ -5,6 +5,7 @@ Created on 23.09.2011
 '''
 from ems.pluginemitter import PluginEmitter
 from ems.singletonmixin import Singleton
+from ems.eventhook import EventHook
 
 class NotAuthenticatedError(Exception):
     pass
@@ -154,6 +155,9 @@ class Authentication(Singleton):
         self.__authenticatedUser = None
         self.__permissions = []
         self.pluginEmitter = None
+
+        self.authStateChanged = EventHook()
+        self.authenticated = EventHook()
         
 #        self.
     
@@ -163,6 +167,9 @@ class Authentication(Singleton):
     def __setIsAuthenticated(self, value):
         if self.__isAuthenticated != value:
             self.__isAuthenticated = value
+            
+            self.authStateChanged.fire(value)
+            
             if isinstance(self.pluginEmitter, PluginEmitter):
                 self.pluginEmitter.notify(self,
                                           "authenticationStateChanged",
