@@ -76,7 +76,7 @@ class AlchemyLoader(object):
         if not self.__engines.has_key(handle):
             self.loadEngine(handle,loaderHint)
         return self.__engines[handle]
-    
+
     def loadEngine(self,handle='default',loaderHint=''):
         if self.__engines.has_key(handle):
             msg = "Engine with handle \"%s\" does already exist" % handle
