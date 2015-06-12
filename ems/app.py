@@ -42,7 +42,7 @@ class App(Container):
             bootstrapper.bootstrap(self)
             self.bootstrapped.fire(bootstrapper)
 
-        self.started.fire()
+        self.started.fire(self)
 
 class Bootstrapper(object):
 
@@ -74,5 +74,5 @@ class EventBootstrapper(Bootstrapper):
     def fireBootstrapped(self, bootstrapper):
         self._dispatcher.fire('bootstrapped', bootstrapper)
 
-    def fireStarted(self):
-        self._dispatcher.fire('app.started', self.app)
+    def fireStarted(self, app):
+        self._dispatcher.fire('app.started', app)
