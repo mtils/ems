@@ -100,12 +100,39 @@ class Container(object):
         except KeyError:
             creator = abstract
 
+        if creator is abstract and self.hasTypeHint(abstract) and not args:
+            args = self._buildDependencies(abstract)
+
         instance = creator(*args, **kwargs)
 
         self._callListeners(abstract, instance, self._resolvingListeners)
         self._callListeners(abstract, instance, self._afterResolvingListeners)
 
         return instance
+
+    def hasTypeHint(self, abstract):
+
+        if not hasattr(abstract, '__init__'):
+            return False
+
+        init = abstract.__init__
+
+        if 'typehinted' not in init.func_dict:
+            return False
+
+        return True;
+
+    def _buildDependencies(self, abstract):
+
+        init = abstract.__init__
+        types = init.func_dict['types']
+
+        objects = []
+
+        for type_ in types:
+            objects.append(self.make(type_))
+
+        return objects
 
     def _callListeners(self, abstract, instance, listeners):
 
