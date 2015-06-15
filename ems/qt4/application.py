@@ -16,12 +16,12 @@ class MainApplication(QApplication, App):
     classdocs
     '''
 
-    def __init__(self,argv,appPath=None):
+    def __init__(self, argv, appPath=None):
         '''
         Constructor
         '''
         QApplication.__init__(self,argv)
-        App.__init__(self)
+        App.__init__(self, argv, appPath)
 
         self._services = {}
         self._serviceTimers = {}
@@ -80,7 +80,7 @@ class MainApplication(QApplication, App):
     def setStandardAction(self, name, action):
         self._standardActions[name] = action
 
-    def getRelativePath(self,path):
+    def getRelativePath(self, path):
         rPath = path.replace(self.appPath, "")
         if rPath.startswith(os.path.sep):
             return rPath[1:]
