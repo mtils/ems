@@ -25,6 +25,7 @@ class EventHook(object):
         self.__receivers = []
         self.fireBlocked = False
         self.wasFired = False
+        self._store = None
 
     def __iadd__(self, handler):
         """Adds a receiver to this EventHook
@@ -49,7 +50,7 @@ class EventHook(object):
         return self
 
     def fire(self, *args, **keywargs):
-        """Fires a 'event', not really it calls every assigned callable
+        """Fires a 'event'. Not really, it calls every assigned callable
            If some callable returns true, it will stop Propagation
 
         :returns: void
@@ -99,6 +100,24 @@ class EventHook(object):
         """
         self.__receivers = []
         return self
-    
+
+    def get(self):
+        """Get a value from store to reduce the if value changed lines in using objects
+           Simply set the value via self.loaded.set(True) and self.loaded.get()
+           to let Eventhook do the work
+        """
+        return self._store
+
+    def set(self, value):
+        """Set a value to a store to reduce the if value changed lines in using objects
+           Simply set the value via self.loaded.set(True) and self.loaded.get()
+           to let Eventhook do the work
+        """
+        if self._store == value:
+            return
+
+        self._store = value
+        self.fire(value)
+
     def __len__(self):
         return len(self.__receivers)
