@@ -1,25 +1,32 @@
 
-
+import os.path
 from abc import ABCMeta,abstractmethod
+
 from ems.ioc.container import Container
 from ems.event.dispatcher import Dispatcher
 from ems.eventhook import EventHook
 
 class App(Container):
 
-    def __init__(self):
+    _shortCut = None
+
+    def __init__(self, argv, path):
         super(App, self).__init__()
         self._bootstrappers = [
             EventBootstrapper()
         ]
-        self.path = ''
-        self.argv = []
+        self.argv = argv
+        self.path = path
 
         self.starting = EventHook()
         self.started = EventHook()
 
         self.bootstrapping = EventHook()
         self.bootstrapped = EventHook()
+
+        App._shortCut = self.appInstance
+
+        self.shareInstance(App, self)
 
     def addBootstrapper(self, bootstrapper):
         if not isinstance(bootstrapper, Bootstrapper):
@@ -43,6 +50,13 @@ class App(Container):
             self.bootstrapped.fire(bootstrapper)
 
         self.started.fire(self)
+
+    def appInstance(self, abstract=None, *args, **kwargs):
+
+        if abstract is None:
+            return self
+
+        return self.make(abstract, *args, **kwargs)
 
 class Bootstrapper(object):
 
@@ -76,3 +90,30 @@ class EventBootstrapper(Bootstrapper):
 
     def fireStarted(self, app):
         self._dispatcher.fire('app.started', app)
+
+def app(abstract=None, *args, **kwargs):
+    return App._shortCut(abstract, *args, **kwargs)
+
+def relative_path(path):
+
+    rPath = path.replace(app_path(), "")
+    if rPath.startswith(os.path.sep):
+        return rPath[1:]
+    return rPath
+
+def absolute_path(path):
+
+    if os.path.isabs(path):
+        return path
+
+    if not path.startswith(os.path.sep):
+        return os.path.join(app_path(), path)
+
+    return path
+
+def app_path(subPath=None):
+
+    if subPath is None:
+        return app().path
+
+    return absolute_path(subPath)
