@@ -108,16 +108,17 @@ class EventHook(object):
 
 class EventProperty(object):
 
-    def __init__(self, name=None, eventHook=None):
+    def __init__(self, name=None, default=None, eventHook=None):
         self.__name = name
         self._eventHook = EventHook() if eventHook is None else eventHook
         self._listeners = {}
         self._listenerInstalled = False
+        self._default = default
 
     def __get__(self, instance, owner):
         if instance is None:
             return self
-        return instance.__dict__.get(self._name(instance), None)
+        return instance.__dict__.get(self._name(instance), self._default)
 
     def __set__(self, instance, value):
 
