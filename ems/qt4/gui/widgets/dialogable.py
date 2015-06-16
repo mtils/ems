@@ -9,7 +9,7 @@ from PyQt4.QtCore import SIGNAL, SLOT, pyqtSignal, pyqtSlot, QString, Qt
 from PyQt4.QtGui import QWidget, QDialog, QDialogButtonBox, QVBoxLayout, \
     QAbstractButton, QHBoxLayout, QFormLayout, QGridLayout, QApplication
 
-from ems.qt4.util import hassig #@UnresolvedImport
+from ems.qt4.util import hassig
 
 class DialogableWidget(QWidget):
     
@@ -81,8 +81,14 @@ class DialogableWidget(QWidget):
         dlg.connect(dlg.rejectButton, SIGNAL('clicked()'),
                     dlg, SLOT('reject()'))
         dlg._dialogInitFinished()
-        
+
         return dlg
+    
+    def morphToDialog(self):
+
+        self._isDialog = True
+        self.setWindowFlags(self.windowFlags() | Qt.Dialog)
+        self.buttonBox = DialogableWidget._addButtonBox2Dialog(self)
     
     def windowTitle(self):
         return QWidget.windowTitle(self)
@@ -117,3 +123,29 @@ class DialogableWidget(QWidget):
         return dlg.buttonBox
         
         #dlg.form = 
+
+def to_dialog(widget):
+
+    widget._isDialog = True
+
+    widget.setWindowFlags(widget.windowFlags() | Qt.Dialog)
+
+    widget.buttonBox = DialogableWidget._addButtonBox2Dialog(widget)
+
+    widget.buttonBox.setStandardButtons(QDialogButtonBox.Apply |\
+                                        QDialogButtonBox.Cancel)
+    widget.acceptButton = widget.buttonBox.button(QDialogButtonBox.Apply)
+    widget.rejectButton = widget.buttonBox.button(QDialogButtonBox.Cancel)
+
+    if hassig(widget,'validationChanged'):
+        widget.connect(widget, SIGNAL('validationChanged(bool)'),
+                    widget.acceptButton, SLOT("setEnabled(bool)"))
+
+    widget.connect(widget.acceptButton, SIGNAL('clicked()'),
+                widget, SLOT('accept()'))
+    
+    widget.connect(widget.rejectButton, SIGNAL('clicked()'),
+                widget, SLOT('reject()'))
+    widget._dialogInitFinished()
+
+    return widget

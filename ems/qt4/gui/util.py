@@ -5,12 +5,13 @@ Created on 10.07.2011
 '''
 import sys
 
-from PyQt4.QtCore import QObject, QRectF, QPointF, QSizeF, Qt, QString
-#from PyQt4.pyqtconfig import 
+from PyQt4.QtCore import QObject, QRectF, QPointF, QSizeF, Qt
 
-from PyQt4.QtGui import QTreeWidgetItem, QTextDocument, QPainter, QApplication,\
-    QFontMetrics, QFont, QPrinter, QPalette
+from PyQt4.QtGui import QTreeWidgetItem, QFontMetrics, QFont, QPrinter
+from PyQt4.QtGui import QPalette, QDialogButtonBox, QVBoxLayout, QHBoxLayout
+from PyQt4.QtGui import QFormLayout, QGridLayout
 
+from ems.qt4.util import hassig
 
 
 class FlatTreeBuilderMixin(QObject):
@@ -190,9 +191,53 @@ class QTextDocumentHelper(object):
 #            painter.setFont(QFont(doc.defaultFont()))
 #            pageString = QString.number(index)
         painter.restore()
-            
 
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    print app.allWidgets()
-    
+def _addButtonBox2Dialog(dlg):
+
+    layout = dlg.layout()
+
+    if layout is None:
+        raise TypeError("The Widget needs a layout to assign the buttons")
+
+    if isinstance(layout, QVBoxLayout):
+        dlg.buttonBox = QDialogButtonBox(Qt.Horizontal)
+        layout.addWidget(dlg.buttonBox)
+
+    if isinstance(layout, QGridLayout):
+        dlg.buttonBox = QDialogButtonBox(Qt.Horizontal)
+        layout.addWidget(dlg.buttonBox, layout.rowCount(), 0,
+                            1, layout.columnCount())
+
+    if isinstance(layout, QFormLayout):
+        dlg.buttonBox = QDialogButtonBox(Qt.Horizontal)
+        layout.addRow(dlg.buttonBox)
+
+    if isinstance(layout, QHBoxLayout):
+        dlg.buttonBox = QDialogButtonBox(Qt.Vertical)
+        layout.addWidget(dlg.buttonBox)
+
+    return dlg.buttonBox
+
+def to_dialog(widget):
+
+    widget._isDialog = True
+
+    widget.setWindowFlags(widget.windowFlags() | Qt.Dialog)
+
+    widget.buttonBox = _addButtonBox2Dialog(widget)
+
+    widget.buttonBox.setStandardButtons(QDialogButtonBox.Apply |\
+                                        QDialogButtonBox.Cancel)
+    widget.acceptButton = widget.buttonBox.button(QDialogButtonBox.Apply)
+    widget.rejectButton = widget.buttonBox.button(QDialogButtonBox.Cancel)
+
+    if hassig(widget,'validationChanged'):
+        widget.validationChanged.connect(widget.acceptButton.setEnabled)
+
+    if hasattr(widget, 'accept') and callable(widget.accept):
+        widget.acceptButton.clicked.connect(widget.accept)
+
+    if hasattr(widget, 'reject') and callable(widget.reject):
+        widget.rejectButton.clicked.connect(widget.reject)
+
+    return widget
