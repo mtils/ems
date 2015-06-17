@@ -38,7 +38,7 @@ class Container(object):
 
         self._bindings[abstract] = {
             'creator': creator,
-            'shared': False
+            'shared': True
         }
 
     def shareInstance(self, abstract, instance):
