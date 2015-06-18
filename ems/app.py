@@ -58,6 +58,9 @@ class App(Container):
 
         return self.make(abstract, *args, **kwargs)
 
+    def __call__(self, *args, **kwargs):
+        return self.appInstance(*args, **kwargs)
+
 class Bootstrapper(object):
 
     __metaclass__ = ABCMeta

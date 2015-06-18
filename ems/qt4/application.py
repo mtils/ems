@@ -48,6 +48,14 @@ class MainApplication(QApplication, App):
             widget.setWindowFlags(Qt.Dialog)
             widget.show()
 
+    def mainWindow(self):
+
+        for widget in self.topLevelWidgets():
+            if widget.inherits('QMainWindow'):
+                return widget
+
+        return None
+
     def getStandardAction(self, name):
         action = QAction(self)
         if name in self._standardActions:

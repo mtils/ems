@@ -3,9 +3,12 @@ Created on 23.09.2011
 
 @author: michi
 '''
+from abc import ABCMeta, abstractmethod
+
 from ems.pluginemitter import PluginEmitter
 from ems.singletonmixin import Singleton
 from ems.eventhook import EventHook
+from ems.typehint import accepts
 
 class NotAuthenticatedError(Exception):
     pass
@@ -14,6 +17,9 @@ class AuthenticationFailureError(Exception):
     pass
 
 class AlreadyAuthenticatedError(TypeError):
+    pass
+
+class UserNotFoundError(AuthenticationFailureError):
     pass
 
 class AuthenticatedUser(object):
@@ -37,6 +43,10 @@ class AuthenticatedUser(object):
     @property
     def id(self):
         return self._getId()
+    
+    @property
+    def password(self):
+        return self.sourceObject.password
     
     def _getName(self):
         clsName = self.__class__.__name__
@@ -136,6 +146,25 @@ class AuthenticationAdapter(object):
         msg = "{0} has to implement getAuthenticatedObject()".format(clsName)
         raise NotImplementedError(msg)
 
+class CredentialsBroker(object):
+
+    __metaclass__ = ABCMeta
+
+    @abstractmethod
+    def validate(self, user, **credentials):
+        raise NotImplementedError('')
+
+    def translate(self, **credentials):
+        return credentials
+
+class UserProvider(object):
+
+    __metaclass__ = ABCMeta
+
+    @abstractmethod
+    def findByCredentials(self, **kwargs):
+        raise NotImplementedError('')
+
 class Permission(object):
 
     def __init__(self, code='', title='', access=1):
@@ -147,9 +176,17 @@ class Permission(object):
     def __repr__(self):
         return "<{0} code:{1} access:{2}>".format(self.__class__.__name__,self.code, self.access)
 
-class Authentication(Singleton):
-    def __init__(self):
+class Authentication(object):
+
+
+    @accepts(UserProvider, CredentialsBroker)
+    def __init__(self, userProvider, credentialsBroker):
+
         super(Authentication, self).__init__()
+
+        self.__userProvider = userProvider
+        self.__credentialsBroker = credentialsBroker
+
         self._currentAdapter = None
         self.__isAuthenticated = False
         self.__authenticatedUser = None
@@ -158,68 +195,51 @@ class Authentication(Singleton):
 
         self.authStateChanged = EventHook()
         self.authenticated = EventHook()
-        
-#        self.
-    
+        self.loggedOut = EventHook()
+
     def isAuthenticated(self):
         return self.__isAuthenticated
-    
+
     def __setIsAuthenticated(self, value):
         if self.__isAuthenticated != value:
             self.__isAuthenticated = value
-            
+
             self.authStateChanged.fire(value)
-            
+
             if isinstance(self.pluginEmitter, PluginEmitter):
                 self.pluginEmitter.notify(self,
                                           "authenticationStateChanged",
                                           value)
-            
-    
-    def getAdapter(self):
-        return self._currentAdapter
-    
+
     def login(self, **kwargs):
+
         if self.__isAuthenticated:
             raise AlreadyAuthenticatedError("Currently another User is authenticated. Logout first")
-        res = self.checkCredentials(**kwargs)
-        
-        if not res:
+
+        credentials = self.__credentialsBroker.translate(**kwargs)
+
+        try:
+            user = self.__userProvider.findByCredentials(**credentials)
+        except UserNotFoundError:
             raise AuthenticationFailureError()
-        
-        
-        adapter = self._getExistingAdapter()
-        authUser = adapter.getAuthenticatedUser(**kwargs)
 
-        if not isinstance(authUser, AuthenticatedUser):
-            msg = "{0}.getAuthentocatedUser() has to return a AuthenticatedUser Object"
-            raise TypeError(msg.format(adapter.__class__.__name__))
+        if not self.__credentialsBroker.validate(user, **credentials):
+            raise AuthenticationFailureError()
 
-        self.__authenticatedUser = authUser
+        self.__authenticatedUser = user
         self.__setIsAuthenticated(True)
 
     def logout(self):
         self.__setIsAuthenticated(False)
         self.__authenticatedUser = None
 
-    def _getExistingAdapter(self):
-        if not isinstance(self._currentAdapter, AuthenticationAdapter):
-            raise TypeError("Assign an adapter prior to checkCredentials")
-        return self._currentAdapter
-
-    def setAdapter(self, adapter):
-        if not isinstance(adapter, AuthenticationAdapter):
-            raise TypeError("Param adapter has to be AuthenticationAdapter")
-        self._currentAdapter = adapter
-
-    adapter = property(getAdapter, setAdapter)
-
-    def checkCredentials(self, **kwargs):
-        return self._getExistingAdapter().checkCredentials(**kwargs)
+    @property
+    def user(self):
+        return self.getAuthenticatedUser()
 
     def getAuthenticatedUser(self):
         if not self.isAuthenticated():
-            raise NotAuthenticatedError()
+            self.login()
         return self.__authenticatedUser
 
     @property
