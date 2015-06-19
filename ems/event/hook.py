@@ -1,6 +1,15 @@
 
 import sys
 
+class _EventForwarder(object):
+
+    def __init__(self, eventName, forwarder):
+        self.eventName = eventName
+        self.forwarder = forwarder
+
+    def __call__(self, *args, **kwargs):
+        self.forwarder(self.eventName, *args, **kwargs)
+
 class EventHook(object):
     """A 'event' Transmitter
        You can hook into it with hook += myReceiver (callable)
@@ -66,6 +75,9 @@ class EventHook(object):
             result = handler(*args, **keywargs)
             if result:
                 return
+
+    def forward(self, eventName, forwarder):
+        self.__iadd__(_EventForwarder(eventName, forwarder))
 
     def __call__(self, *args, **keywargs):
         """Alias for fire(). The main purpose of this method is to allow
@@ -166,6 +178,9 @@ class EventProperty(object):
         """
         self._eventHook.__isub__(handler)
         return self
+
+    def forward(self, eventName, forwarder):
+        return self._eventHook.forward(eventName, forwarder)
 
     def listenOn(self, instance, listener):
 
