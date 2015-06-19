@@ -21,13 +21,12 @@ class Dispatcher(object):
         if not callable(listener):
             raise TypeError('Listener has to be callable')
 
-        if not self._listeners[name]:
+        if name not in self._listeners:
             self._listeners[name] = []
 
         self._listeners[name].append(listener)
 
     def __call__(self, *args, **kwargs):
-        print "Dispatcher.__call__",args,kwargs
         return self.fire(*args, **kwargs)
 
     def hasListeners(self, name):
