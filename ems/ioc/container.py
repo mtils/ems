@@ -111,16 +111,10 @@ class Container(object):
         return instance
 
     def hasTypeHint(self, abstract):
-
-        if not hasattr(abstract, '__init__'):
+        try:
+            return ('typehinted' in abstract.__init__.func_dict)
+        except AttributeError:
             return False
-
-        init = abstract.__init__
-
-        if 'typehinted' not in init.func_dict:
-            return False
-
-        return True;
 
     def _buildDependencies(self, abstract):
 
