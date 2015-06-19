@@ -26,5 +26,9 @@ class Dispatcher(object):
 
         self._listeners[name].append(listener)
 
+    def __call__(self, *args, **kwargs):
+        print "Dispatcher.__call__",args,kwargs
+        return self.fire(*args, **kwargs)
+
     def hasListeners(self, name):
         return name in self._listeners

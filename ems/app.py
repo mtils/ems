@@ -77,7 +77,7 @@ class EventBootstrapper(Bootstrapper):
     def bootstrap(self, app):
         self.app = app
         app.alias('events', Dispatcher)
-        app.share('events', self._dispatcher)
+        app.shareInstance('events', self._dispatcher)
         self._injectEventForwards(app)
 
     def _injectEventForwards(self, app):
