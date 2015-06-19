@@ -23,6 +23,22 @@ class AlreadyAuthenticatedError(TypeError):
 class UserNotFoundError(AuthenticationFailureError):
     pass
 
+class User(object):
+
+    __metaclass__ = ABCMeta
+
+    @abstractmethod
+    def authId(self):
+        pass
+
+    @abstractmethod
+    def authPassword(self):
+        """
+        Return the hashed (stored) password
+        :returns: str
+        """
+        pass
+
 class AuthenticatedUser(object):
     def __init__(self):
         super(AuthenticatedUser, self).__init__()
@@ -133,20 +149,6 @@ class AuthGroup(object):
                 return True
         return False
 
-class AuthenticationAdapter(object):
-    def __init__(self):
-        object.__init__(self)
-    
-    def checkCredentials(self, **kwargs):
-        clsName = self.__class__.__name__
-        msg = "{0} has to implement checkCredentials()".format(clsName)
-        raise NotImplementedError(msg)
-    
-    def getAuthenticatedUser(self, **kwargs):
-        clsName = self.__class__.__name__
-        msg = "{0} has to implement getAuthenticatedObject()".format(clsName)
-        raise NotImplementedError(msg)
-
 class CredentialsValidator(object):
 
     __metaclass__ = ABCMeta
@@ -207,6 +209,14 @@ class UserProvider(object):
     @abstractmethod
     def findByCredentials(self, **kwargs):
         raise NotImplementedError('')
+
+class AccessChecker(object):
+
+    __metaclass__ = ABCMeta
+
+    @abstractmethod
+    def hasAccess(self, user, resource, context='access'):
+        pass
 
 class Permission(object):
 
