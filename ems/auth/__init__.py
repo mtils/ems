@@ -7,8 +7,9 @@ from abc import ABCMeta, abstractmethod
 
 from ems.pluginemitter import PluginEmitter
 from ems.singletonmixin import Singleton
-from ems.eventhook import EventHook
+from ems.event.hook import EventHook
 from ems.typehint import accepts
+from ems.event.hook import EventProperty
 
 class NotAuthenticatedError(Exception):
     pass
@@ -146,7 +147,7 @@ class AuthenticationAdapter(object):
         msg = "{0} has to implement getAuthenticatedObject()".format(clsName)
         raise NotImplementedError(msg)
 
-class CredentialsBroker(object):
+class CredentialsValidator(object):
 
     __metaclass__ = ABCMeta
 
@@ -154,8 +155,50 @@ class CredentialsBroker(object):
     def validate(self, user, **credentials):
         raise NotImplementedError('')
 
-    def translate(self, **credentials):
-        return credentials
+class PlainPasswordValidator(CredentialsValidator):
+
+    def __init__(self):
+        self.passwordKey = 'password'
+
+    def validate(self, user, **credentials):
+        return (getattr(user, self.passwordKey) == credentials['password'])
+
+class UserContainer(object):
+
+    __metaclass__ = ABCMeta
+
+    user = EventProperty()
+
+    @abstractmethod
+    def get(self):
+        pass
+
+    @abstractmethod
+    def set(self, user, persist=False):
+        pass
+
+    @abstractmethod
+    def clear(self):
+        pass
+
+class RemeberableUserContainer(UserContainer):
+
+    __metaclass__ = ABCMeta
+
+    @abstractmethod
+    def setAndRemember(self, user):
+        pass
+
+class TemporaryUserContainer(UserContainer):
+
+    def get(self):
+        return self.user
+
+    def set(self, user, persist=False):
+        self.user = user
+
+    def clear(self):
+        self.user = None
 
 class UserProvider(object):
 
@@ -179,23 +222,26 @@ class Permission(object):
 class Authentication(object):
 
 
-    @accepts(UserProvider, CredentialsBroker)
-    def __init__(self, userProvider, credentialsBroker):
+    @accepts(UserProvider, CredentialsValidator, UserContainer)
+    def __init__(self, userProvider, credentialsValidator, userContainer):
 
         super(Authentication, self).__init__()
 
         self.__userProvider = userProvider
-        self.__credentialsBroker = credentialsBroker
+        self.__credentialsValidator = credentialsValidator
+        self._userContainer = userContainer
 
         self._currentAdapter = None
         self.__isAuthenticated = False
-        self.__authenticatedUser = None
         self.__permissions = []
         self.pluginEmitter = None
 
         self.authStateChanged = EventHook()
         self.authenticated = EventHook()
+        self.loggedIn = EventHook()
         self.loggedOut = EventHook()
+
+        UserContainer.user.listenOn(userContainer, self._onContainerChanges)
 
     def isAuthenticated(self):
         return self.__isAuthenticated
@@ -211,40 +257,42 @@ class Authentication(object):
                                           "authenticationStateChanged",
                                           value)
 
-    def login(self, **kwargs):
+    def login(self, **credentials):
 
         if self.__isAuthenticated:
             raise AlreadyAuthenticatedError("Currently another User is authenticated. Logout first")
 
-        credentials = self.__credentialsBroker.translate(**kwargs)
+        user = self.__userProvider.findByCredentials(**credentials)
 
-        try:
-            user = self.__userProvider.findByCredentials(**credentials)
-        except UserNotFoundError:
+        if not self.__credentialsValidator.validate(user, **credentials):
             raise AuthenticationFailureError()
 
-        if not self.__credentialsBroker.validate(user, **credentials):
-            raise AuthenticationFailureError()
-
-        self.__authenticatedUser = user
-        self.__setIsAuthenticated(True)
+        self._userContainer.set(user, True)
 
     def logout(self):
-        self.__setIsAuthenticated(False)
-        self.__authenticatedUser = None
+        self._userContainer.clear()
 
     @property
     def user(self):
-        return self.getAuthenticatedUser()
+        user = self._userContainer.get()
+        if not user:
+            raise NotAuthenticatedError()
+        return user
 
-    def getAuthenticatedUser(self):
-        if not self.isAuthenticated():
-            self.login()
-        return self.__authenticatedUser
+    @user.setter
+    def user(self, user):
+        self._userContainer.set(user, False)
 
     @property
     def permissions(self):
         return self.__permissions
+
+    def _onContainerChanges(self, user):
+
+        if user is None:
+            self.loggedOut.fire()
+
+        self.loggedIn.fire(user)
 
     def registerPermission(self, permission):
         for perm in self.__permissions:
