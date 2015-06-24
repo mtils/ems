@@ -1,12 +1,18 @@
 
-from PyQt4.QtCore import Qt, QString, QSize, QRect, QRectF
+from PyQt4.QtCore import Qt, QString, QSize, QRect, QRectF, pyqtSignal
 from PyQt4.QtGui import QWidget, QLabel, QStyle, QPushButton, QSizePolicy
 from PyQt4.QtGui import QApplication, QTextOption, QGridLayout, QLayout, QPen
 from PyQt4.QtGui import QPalette, QColor, QPainterPath, QPainter, QBitmap
-from PyQt4.QtGui import QBrush, QPixmap
+from PyQt4.QtGui import QBrush, QPixmap, QGraphicsDropShadowEffect
 
 
 class BalloonTip(QWidget):
+
+    titleChanged = pyqtSignal(QString)
+
+    stateChanged = pyqtSignal(int)
+
+    NONE = 0
 
     INFO = 1
 
@@ -14,16 +20,35 @@ class BalloonTip(QWidget):
 
     ERROR = 3
 
-    def __init__(self, parent=None):
+    def __init__(self, parent):
 
         super(BalloonTip, self).__init__(parent, Qt.ToolTip)
 
-        self.state = self.INFO
+        self._state = self.INFO
 
         self._setupUi()
 
-        #if parent:
-            #print parent.destro
+    def getTitle(self):
+        return self.titleLabel.text()
+
+    def setTitle(self, title):
+        if title == self.titleLabel.text():
+            return
+        self.titleLabel.setText(title)
+        self.titleChanged.emit(QString.fromUtf8(title))
+
+    title = property(getTitle, setTitle)
+
+    def getState(self):
+        return self._state
+
+    def setState(self, state):
+        if self._state == state:
+            return
+        self._state = state
+        self.stateChanged.emit(state)
+
+    state = property(getState, setState)
 
     def _setupUi(self):
 
@@ -117,6 +142,8 @@ class BalloonTip(QWidget):
 
         arrowAtTop = (pos.y() + sizeHint.height() + ah < screen.height())
         arrowAtLeft = (pos.x() + sizeHint.width() - ao < screen.width())
+        arrowAtTop = False
+        print arrowAtTop, arrowAtLeft
 
         self.setContentsMargins(
             border + 3,
@@ -155,7 +182,6 @@ class BalloonTip(QWidget):
                 path.lineTo(mr - ao - aw, mt)
                 path.lineTo(mr - ao, mt - ah)
                 path.lineTo(mr - ao, mt)
-
             self.move(min(pos.x() - sizeHint.width() + ao, screen.right() - sizeHint.width() - 2), pos.y())
 
 
@@ -208,6 +234,19 @@ class BalloonTip(QWidget):
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.drawPixmap(self.rect(), self.pixmap)
+
+    def resizeEvent(self, event):
+        super(BalloonTip, self).resizeEvent(event)
+
+    def eventFilter(self, qobject, event):
+
+        if hasattr(qobject, 'isWindow') and qobject.isWindow() and event.type() == event.Move:
+            self.move(self.pos() + (event.pos() - event.oldPos()))
+
+        if event.type() == event.Hide:
+            self.close()
+
+        return super(BalloonTip, self).eventFilter(qobject, event)
 
     def _updatePaletteColors(self):
         palette = self.palette()
