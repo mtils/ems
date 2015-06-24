@@ -173,6 +173,17 @@ class StringType(XType):
     def value2String(self, value):
         return value
 
+class FilesystemPathType(StringType):
+    def __init__(self):
+        super(FilesystemPathType, self).__init__()
+        self.mustExist = False
+
+class FilePathType(FilesystemPathType):
+    pass
+
+class DirectoryPathType(FilesystemPathType):
+    pass
+
 class UnitType(NumberType):
     
     PREPEND = 1
@@ -325,6 +336,18 @@ class NamedFieldType(ComplexType):
 
     def __iter__(self):
         return self.__keys.__iter__()
+
+    @classmethod
+    def create(cls, keys=None, **kwargs):
+
+        keys = kwargs if keys is None else keys
+
+        xtype = cls.__new__(cls)
+        xtype.__init__()
+
+        for key in keys:
+            xtype.addKey(key, keys[key])
+        return xtype
 
 class SequenceType(ComplexType):
     def __init__(self, itemType, canBeNone=None, defaultValue=None):

@@ -55,3 +55,6 @@ class FileSelectPlugin(QPyDesignerCustomWidgetPlugin):
                " </property>\n"
                "</widget>\n"
                )
+
+    def includeFile(self):
+        return 'inputs.filesystem'

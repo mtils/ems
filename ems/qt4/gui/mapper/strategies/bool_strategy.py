@@ -6,7 +6,7 @@ Created on 21.03.2012
 from PyQt4.QtCore import QVariant, Qt
 from PyQt4.QtGui import QStyledItemDelegate, QComboBox, QButtonGroup
 
-from ems.qt4.gui.mapper.base import BaseStrategy #@UnresolvedImport
+from ems.qt4.gui.mapper.base import BaseStrategy
 from ems.xtype.base import BoolType #@UnresolvedImport
 from ems.qt4.gui.itemdelegate.xtypes.stringtype import StringTypeDelegate #@UnresolvedImport
 from ems.qt4.gui.itemdelegate.xtypes.oneofalisttype import OneOfAListDelegate #@UnresolvedImport
