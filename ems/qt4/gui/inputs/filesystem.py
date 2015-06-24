@@ -3,11 +3,11 @@ from __future__ import print_function
 
 import os.path
 
-from PyQt4.QtCore import pyqtSignal, QString, QDir
+from PyQt4.QtCore import pyqtSignal, QString, QDir, Qt
 from PyQt4.QtGui import QWidget, QLineEdit, QPushButton, QHBoxLayout
-from PyQt4.QtGui import QFileDialog, QFileSystemModel, QCompleter
+from PyQt4.QtGui import QFileDialog, QFileSystemModel, QCompleter, QFrame
 
-class FileSelect(QWidget):
+class FileSelect(QFrame):
 
     pathChanged = pyqtSignal(QString)
 
@@ -34,6 +34,8 @@ class FileSelect(QWidget):
         self._setupUi()
 
         self._setupSignals()
+        self.setFrameStyle(QFrame.Plain)
+        self.setFrameShape(QFrame.NoFrame)
 
     def isExistanceForced(self):
         return self._forceExisting
@@ -108,6 +110,7 @@ class FileSelect(QWidget):
 
         self.setLayout(QHBoxLayout())
         self.layout().setStretch(0,1)
+        self.layout().setContentsMargins(0, 0, 0, 0)
 
         self.lineEdit = QLineEdit(self)
 
