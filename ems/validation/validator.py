@@ -2,19 +2,28 @@
 
 from abc import ABCMeta, abstractmethod
 
+from ems.util import snake_case
+
 
 class Validator(object):
 
     __metaclass__ = ABCMeta
 
+    baseLangKey = 'validation'
+
     @abstractmethod
-    def validate(self, data):
+    def validate(self, key, value, params={}, allData={}):
         raise NotImplementedError()
+
+    @property
+    def langKey(self):
+        classKey = snake_case(self.__class__.__name__)[0:-10] # cut _validator
+        return u".".join((self.baseLangKey, classKey))
 
 
 class ValidationError(Exception):
 
-    def __init__(self, messages, messageParams):
+    def __init__(self, messages=None, key=None, message=None):
 
         super(ValidationError, self).__init__('')
 
@@ -48,7 +57,7 @@ class DictValidator(Validator):
     def __init__(self):
         self._validators = {}
 
-    def validate(self, data):
+    def validate(self, key, data, params={}, allData={}):
 
         for fieldName in self._validators:
 
@@ -66,4 +75,6 @@ class DictValidator(Validator):
                 raise ValidationError(messages)
 
     def addValidator(self, fieldName, validator):
-        self._validators[fieldName] = validator
+        if not fieldName in self._validators:
+            self._validators[fieldName] = []
+        self._validators[fieldName].append(validator)

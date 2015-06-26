@@ -5,7 +5,7 @@ Created on 02.07.2011
 @author: michi
 '''
 
-import sys
+import sys, re
 
 from difflib import SequenceMatcher
 from uuid import uuid4
@@ -204,6 +204,19 @@ def methodResults2list(listOfAttributeAccessable, methodName):
 
 def global_uid():
     return "{" + str(uuid4()) + "}"
+
+def snake_case(camelCase):
+    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', camelCase)
+    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+
+def camelCase(value):
+    def camelcase(): 
+        yield str.lower
+        while True:
+            yield str.capitalize
+
+    c = camelcase()
+    return "".join(c.next()(x) if x else '_' for x in value.split("_"))
 
 if __name__ == '__main__':
     #tests = (
