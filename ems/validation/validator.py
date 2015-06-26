@@ -3,6 +3,7 @@
 from abc import ABCMeta, abstractmethod
 
 from ems.util import snake_case, classproperty
+from ems.inspection.util import Args
 
 
 class Validator(object):
@@ -11,12 +12,8 @@ class Validator(object):
 
     baseLangKey = 'validation'
 
-    supportedParams = ()
-
-    minParams = 0
-
     @abstractmethod
-    def validate(self, key, value, params={}, allData={}, keyname=''):
+    def validate(self, value):
         raise NotImplementedError()
 
     @property
@@ -105,33 +102,46 @@ class RuleValidator(object):
 class Registry(object):
 
     def __init__(self):
+        self._validatorClasses = {}
         self._validators = {}
+        self._validatorArgs = {}
 
     def __iadd__(self, validator):
-        self._validators[validator.name] = validator
+        self._validatorClasses[validator.name] = validator
         return self
 
     def __isub__(self, validator):
-        if validator.name in self._validators:
-            del self._validators[validator.name]
+        if validator.name in self._validatorClasses:
+            del self._validatorClasses[validator.name]
         return self
 
     def __iter__(self):
-        yield self._validators
+        yield self._validatorClasses
 
     def __len__(self):
-        return len(self._validators)
+        return len(self._validatorClasses)
 
     def __contains__(self, item):
 
         if not isinstance(item, Validator):
-            return item in self._validators
+            return item in self._validatorClasses
 
-        for validator in self._validators:
+        for validator in self._validatorClasses:
             if validator is item:
                 return True
 
         return False
 
     def __call__(self, name):
-        return self._validators[name]()
+
+        if name in self._validators:
+            return self._validators[name]
+
+        self._validators[name] = self._validatorClasses[name]()
+
+        return self._validators[name]
+
+    def buildArgs(self, name):
+        if not name in self._validatorArgs:
+            self._validatorArgs[name] = Args(self._validatorClasses[name].validate)
+        return self._validatorArgs[name].buildKwargs()
