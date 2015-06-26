@@ -7,3 +7,18 @@ class RequiredValidator(Validator):
 
         if value is None:
             raise ValidationError
+
+
+class BetweenValidator(Validator):
+
+    supportedParams = ('min', 'max')
+
+    def validate(self, key, value, params={}, allData={}):
+
+        if value is None:
+            raise ValidationError
+
+        value = float(value)
+
+        if value < params['min'] or value > params['max']:
+            raise ValidationError
