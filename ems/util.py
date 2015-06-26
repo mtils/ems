@@ -218,6 +218,10 @@ def camelCase(value):
     c = camelcase()
     return "".join(c.next()(x) if x else '_' for x in value.split("_"))
 
+class classproperty(property):
+    def __get__(self, cls, owner):
+        return self.fget.__get__(None, owner)()
+
 if __name__ == '__main__':
     #tests = (
              #("Östliche Rheinbrückenstraße","Östliche Rheinbrückenstr."),
