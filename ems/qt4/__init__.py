@@ -4,6 +4,9 @@ FieldTitleLongRole = 66
 FieldDescriptionRole = 67
 CurrentItemRole = 68
 
+validationStateRole = 96
+validationMessageRole = 97
+
 ForeignKeysRole = 128
 RowObjectRole = 256
 

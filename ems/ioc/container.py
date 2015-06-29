@@ -1,7 +1,8 @@
 
+from ems.patterns.factory import Factory
 from ems.eventhook import EventHook
 
-class Container(object):
+class Container(Factory):
 
     def __init__(self):
 

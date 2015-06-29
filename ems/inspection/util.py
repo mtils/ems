@@ -53,7 +53,7 @@ class Args(object):
             self._defaults = dict(
                 zip(
                     reversed(self.argspec.args),
-                    reversed(self.argspec.defaults)
+                    reversed(self.argspec.defaults if self.argspec.defaults else ())
                 )
             )
         return self._defaults
