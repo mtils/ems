@@ -3,6 +3,7 @@ import unittest
 
 from ems.validation.validator import Registry, Validator, RuleValidator
 from ems.validation.validator import SimpleMessageProvider, ValidationError
+from ems.validation.validators.base import RequiredValidator
 from ems.patterns.factory import DummyFactory
 
 class RegistryTest(unittest.TestCase):
@@ -177,6 +178,27 @@ class RuleValidatorTest(unittest.TestCase):
         self.assertEquals(parsed, validator.parseRules(parsed))
 
 
+    def test_rule_parsing_always_inserts_required_at_zero(self):
+
+        validator = self.newRuleValidator()
+
+        rules = {
+            'agb_confirmed': 'accepted',
+            'age'          : 'numeric|between:18,132|required',
+            'birthday'     : 'required|pastdate',
+            'category_id'  : 'numeric|exists:categories,id'
+        }
+
+        parsed = {
+            'agb_confirmed': [('accepted',[])],
+            'age'          : [('required',[]),('numeric',[]),('between',['18','132'])],
+            'birthday'     : [('required',[]),('pastdate',[])],
+            'category_id'  : [('numeric',[]),('exists',['categories','id'])]
+        }
+
+        self.assertEquals(parsed, validator.parseRules(rules))
+        self.assertEquals(parsed, validator.parseRules(parsed))
+
     def test_passing_validation(self):
 
         registry = self.newRegistry()
@@ -238,6 +260,43 @@ class RuleValidatorTest(unittest.TestCase):
         self.assertEquals(messages['street'], [tpls['does_not_exist']])
         self.assertEquals(messages['age'], [tpls['numeric'],tpls['min_max']])
 
+    def test_failing_required_validation_skips_others(self):
+
+        registry = self.newRegistry()
+
+        registry += RequiredValidator
+        registry += ExistsValidator
+        registry += DoesNotExistValidator
+        registry += MinMaxValidator
+        registry += NumericValidator
+
+        validator = self.newRuleValidator(registry)
+
+        rules = {
+            'name'  : 'exists',
+            'street': 'does_not_exist',
+            'age'   : 'required|numeric|min_max:18,132'
+        }
+
+        data = {
+            'name' : 'foi',
+            'street': 'foo',
+            'age' : ''
+        }
+
+        self.assertRaises(ValidationError, validator.validate, data, rules)
+
+        try:
+            validator.validate(data, rules)
+        except ValidationError as e:
+            messages = e.messages()
+
+        tpls = self.newMessageProvider().messages
+
+        self.assertEquals(messages['name'], [tpls['exists']])
+        self.assertEquals(messages['street'], [tpls['does_not_exist']])
+        self.assertEquals(messages['age'], [tpls['required']])
+
     def newRuleValidator(self, registry=None, messageProvider=None):
 
         registry = registry if registry is not None else self.newRegistry()
@@ -255,7 +314,8 @@ class RuleValidatorTest(unittest.TestCase):
             'exists': 'The value has to be foo',
             'does_not_exist': 'The value shouldt be foo',
             'min_max': 'The value is not in allowed range',
-            'numeric': 'The value has to be numeric'
+            'numeric': 'The value has to be numeric',
+            'required': "The value is required"
         }
 
         return SimpleMessageProvider(messages)

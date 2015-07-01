@@ -1,5 +1,7 @@
 
 
+from copy import copy
+
 from abc import ABCMeta, abstractmethod
 
 from ems.patterns.factory import Factory
@@ -61,11 +63,29 @@ class SimpleMessageProvider(MessageProvider):
 
     def buildMessage(self, validatorName, key, params, keynames):
 
-        message = self.messages[validatorName]
-
         params['keyname'] = keynames[key] if key in keynames else key
 
-        return message.format(params)
+        return self.message(validatorName, params).format(**params)
+
+    def message(self, validatorName, params):
+
+        typedKey = u"{0}.{1}".format(validatorName, self.typeSubKey(params['value']))
+
+        if typedKey in self.messages:
+            return self.messages[typedKey]
+
+        return self.messages[validatorName]
+
+    def typeSubKey(self, value):
+
+        if isinstance(value, basestring):
+            return 'string'
+        if isinstance(value, (int,float)):
+            return 'numeric'
+        if hasattr(value, '__getitem__'):
+            return 'collection'
+
+        return ''
 
 class Registry(object):
 
@@ -141,9 +161,10 @@ class AbstractRuleValidator(object):
 
 class RuleValidator(AbstractRuleValidator):
 
+    requiredValidators = ['required']
+
     @accepts(Registry, MessageProvider)
     def __init__(self, registry, messageProvider):
-        self._validators = {}
         self._registry = registry
         self._messageProvider = messageProvider
 
@@ -156,13 +177,30 @@ class RuleValidator(AbstractRuleValidator):
         messages = ValidationError()
 
         for key in parsedRules:
+
+            ruleNames = [ruleName[0] for ruleName in parsedRules[key]]
+
             for ruleName, ruleParams in parsedRules[key]:
+
+                isRequiredRule = self._isRequiredRule(ruleName)
+
                 params = self.buildParams(key, data, ruleName, ruleParams)
+
+                # If a rule is not required and value is empty, skip it
+                if not isRequiredRule and self._isEmpty(params['value']):
+                    continue
+
                 validator = self._registry(ruleName)
 
-                if not validator.validate(**params):
-                    message = self._messageProvider.buildMessage(ruleName, key, params, keynames)
-                    messages.addMessage(key, message)
+                if validator.validate(**params):
+                    continue
+
+                message = self._messageProvider.buildMessage(ruleName, key, params, keynames)
+                messages.addMessage(key, message)
+
+                # If a required rule fails, all others will be skipped
+                if isRequiredRule:
+                    break
 
 
         if len(messages):
@@ -201,15 +239,32 @@ class RuleValidator(AbstractRuleValidator):
 
             parsed[key] = []
             ruleChain = self.parseRuleChain(rules[key])
+
+            requiredRules = []
+            notRequiredRules = []
+
             for rule in ruleChain:
-                parsed[key].append(self.splitIntoNameAndParams(rule))
+                ruleNameAndParams = self.splitIntoNameAndParams(rule)
+
+                if self._isRequiredRule(ruleNameAndParams[0]):
+                    requiredRules.append(ruleNameAndParams)
+                else:
+                    notRequiredRules.append(ruleNameAndParams)
+
+            parsed[key] = requiredRules + notRequiredRules
 
         return parsed
 
     def parseRuleChain(self, rule):
+
+        return rule.split('|') if isinstance(rule, basestring) else copy(rule)
+
         if isinstance(rule, basestring):
             return rule.split('|')
         return rule
+
+    def _isRequiredRule(self, ruleName):
+        return ruleName in self.requiredValidators
 
     def splitIntoNameAndParams(self, ruleChain):
 
@@ -223,3 +278,16 @@ class RuleValidator(AbstractRuleValidator):
             return (ruleChain[0], ruleChain[1].split(','))
 
         return (ruleChain[0], ruleChain[1])
+
+    def _isEmpty(self, value):
+
+        if value is None:
+            return True
+
+        if isinstance(value, basestring) and (value.strip() == ''):
+            return True
+
+        if hasattr(value, '__len__') and len(value) == 0:
+            return True
+
+        return False

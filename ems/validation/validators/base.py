@@ -66,7 +66,7 @@ class DictValidator(Validator):
     def validate(self, value):
         return hasattr(value, '__getitem__')
 
-class BooleanValidator(Validator):
+class BoolValidator(Validator):
 
     def validate(self, value):
         acceptable = [True, False, 0, 1, '0', '1']
@@ -89,7 +89,7 @@ class NumericValidator(Validator):
         try:
             num = float(value)
             return True
-        except ValueError:
+        except (ValueError, TypeError):
             return False
 
 class StringValidator(Validator):
@@ -137,7 +137,7 @@ class BetweenValidator(Validator):
         except ValueError:
             return False
 
-        return value >= min_ and value <= max_
+        return ((value >= min_) and (value <= max_))
 
 class MinValidator(Validator):
 
@@ -150,8 +150,11 @@ class MinValidator(Validator):
 
         try:
             value = float(value)
-        except ValueError:
-            return False
+        except (ValueError, TypeError):
+            try:
+                value = len(value)
+            except (ValueError, TypeError):
+                return False
 
         return value >= min_
 
@@ -166,8 +169,11 @@ class MaxValidator(Validator):
 
         try:
             value = float(value)
-        except ValueError:
-            return False
+        except (ValueError, TypeError):
+            try:
+                value = len(value)
+            except (ValueError, TypeError):
+                return False
 
         return value <= max_
 
