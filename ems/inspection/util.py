@@ -1,6 +1,7 @@
 
 from __future__ import print_function
 
+import sys
 import inspect
 from collections import OrderedDict
 
@@ -79,6 +80,13 @@ class Args(object):
         for key in self.names:
             args[key] = self.default(key) if self.hasDefault(key) else None
         return args
+
+def classes(moduleName):
+    moduleClasses = []
+    for name, obj in inspect.getmembers(sys.modules[moduleName]):
+        if inspect.isclass(obj):
+            moduleClasses.append(obj)
+    return moduleClasses
 
 if __name__ == '__main__':
 
