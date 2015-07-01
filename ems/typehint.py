@@ -56,8 +56,8 @@ def accepts(*types, **kwtypes):
             for i,arg in enumerate(args):
                 if not isinstance(arg, types[i]):
                     if defaults[i] is NonDefaultArg or arg != defaults[i]:
-                        msg_args = (i, argnames[i],fdef.func_name, types[i])
-                        raise TypeError("Argument #{0}:{1} of {2}() has to be instanceof {3}".format(*msg_args))
+                        msg_args = (i, argnames[i],fdef.func_name, types[i], arg.__class__)
+                        raise TypeError("Argument #{0}:{1} of {2}() has to be instanceof {3}, not {4}".format(*msg_args))
 
             return func(*args, **kwargs)
 
