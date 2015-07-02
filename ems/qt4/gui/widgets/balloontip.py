@@ -28,7 +28,8 @@ class BalloonTip(QWidget):
 
         super(BalloonTip, self).__init__(parent)
 
-        self.setWindowFlags(Qt.ToolTip | Qt.FramelessWindowHint)
+        self.setWindowFlags(Qt.ToolTip | Qt.FramelessWindowHint | Qt.X11BypassWindowManagerHint)
+        self.setAttribute(Qt.WA_TranslucentBackground)
 
         self._state = self.INFO
 
