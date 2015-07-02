@@ -7,7 +7,7 @@ from ems.qt4 import ValidationStateRole, ValidationMessageRole, ColumnNameRole
 from ems.qt4.util import variant_to_pyobject as py, cast_to_variant as variant
 from ems.qt4.itemmodel.editable_proxymodel import EditableProxyModel
 
-class ValidatorModel(EditableProxyModel):
+class RuleValidatorModel(EditableProxyModel):
 
     rulesChanged = pyqtSignal(dict)
 
@@ -28,7 +28,7 @@ class ValidatorModel(EditableProxyModel):
 
         if role not in (ValidationStateRole, ValidationMessageRole,
                         Qt.EditRole, Qt.DisplayRole):
-            return super(ValidatorModel, self).data(proxyIndex, role)
+            return super(RuleValidatorModel, self).data(proxyIndex, role)
 
         row = proxyIndex.row()
         column = proxyIndex.column()
@@ -42,12 +42,12 @@ class ValidatorModel(EditableProxyModel):
         try:
             return self._invalidData[row][column]
         except KeyError:
-            return super(ValidatorModel, self).data(proxyIndex, role)
+            return super(RuleValidatorModel, self).data(proxyIndex, role)
 
     def setData(self, index, value, role=Qt.EditRole):
 
         if role != Qt.EditRole:
-            return super(ValidatorModel, self).setData(index, value, role)
+            return super(RuleValidatorModel, self).setData(index, value, role)
 
         data = self._validationData(index, value)
 
@@ -55,7 +55,7 @@ class ValidatorModel(EditableProxyModel):
 
             self.validator.validate(data, self._rules)
 
-            result = super(ValidatorModel, self).setData(index, value)
+            result = super(RuleValidatorModel, self).setData(index, value)
 
             if result:
                 self._flushInvalidData(index)
@@ -143,7 +143,7 @@ class ValidatorModel(EditableProxyModel):
             if column == changedIndex.column():
                 continue
             index = self.index(row, column)
-            super(ValidatorModel, self).setData(index, self._invalidData[row][column])
+            super(RuleValidatorModel, self).setData(index, self._invalidData[row][column])
 
         self._clearInvalidData(row)
 

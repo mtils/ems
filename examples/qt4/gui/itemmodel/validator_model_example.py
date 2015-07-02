@@ -10,7 +10,7 @@ from ems.xtype.base import NumberType, StringType, BoolType, UnitType, DictType
 from ems.validation.rule_validator import RuleValidator, SimpleMessageProvider
 from ems.validation.registry import Registry
 from ems import qt4
-from ems.qt4.itemmodel.validator_model import ValidatorModel
+from ems.qt4.itemmodel.validator_model import RuleValidatorModel
 from ems.qt4.itemmodel.listofdictsmodel import ListOfDictsModel
 from examples.xtype.persondata import itemType, testData, listType
 from ems.qt4.itemmodel.listofdictsmodel import ListOfDictsModel
@@ -53,7 +53,7 @@ def create_dialogs(app):
     dlg.baseModelView.setModel(dlg.srcModel)
     dlg.baseModelView.horizontalHeader().setResizeMode(QHeaderView.Stretch)
 
-    dlg.model = ValidatorModel(parent=dlg.validationView)
+    dlg.model = RuleValidatorModel(parent=dlg.validationView)
     dlg.model.setSourceModel(dlg.srcModel)
 
 
