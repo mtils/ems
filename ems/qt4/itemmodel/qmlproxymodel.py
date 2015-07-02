@@ -4,7 +4,6 @@ from PyQt4.QtCore import QModelIndex, Qt, QVariant
 from PyQt4.QtGui import QPixmap
 from PyQt4.QtDeclarative import QDeclarativeImageProvider
 
-from ems.registry import Registry
 from ems.qt4.util import variant_to_pyobject as py
 
 from editable_proxymodel import EditableProxyModel

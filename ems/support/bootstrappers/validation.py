@@ -4,9 +4,9 @@ import os.path
 
 from ems.app import Bootstrapper
 from ems.inspection.util import classes
-from ems.validation.validator import Registry, AbstractRuleValidator, Validator
-from ems.validation.validator import RuleValidator
-from ems.validation.validator import MessageProvider, SimpleMessageProvider
+from ems.validation.abstract import Validator, MessageProvider
+from ems.validation.registry import Registry
+from ems.validation.rule_validator import RuleValidator, SimpleMessageProvider
 from ems.validation.validators.base import *
 
 class ValidationBootstrapper(Bootstrapper):

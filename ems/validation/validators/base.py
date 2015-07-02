@@ -1,7 +1,7 @@
 
 import re, socket
 
-from ems.validation.validator import Validator, ValidationError
+from ems.validation.abstract import Validator, ValidationError
 
 class RequiredValidator(Validator):
 

@@ -2,7 +2,7 @@
 from PyQt4.QtCore import pyqtSignal, Qt, QVariant, QString
 
 from ems.typehint import accepts
-from ems.validation.validator import AbstractRuleValidator, ValidationError
+from ems.validation.abstract import ValidationError
 from ems.qt4 import ValidationStateRole, ValidationMessageRole, ColumnNameRole
 from ems.qt4.util import variant_to_pyobject as py, cast_to_variant as variant
 from ems.qt4.itemmodel.editable_proxymodel import EditableProxyModel

@@ -1,8 +1,9 @@
 
 import unittest
 
-from ems.validation.validator import Registry, Validator, RuleValidator
-from ems.validation.validator import SimpleMessageProvider, ValidationError
+from ems.validation.registry import Registry
+from ems.validation.abstract import ValidationError, Validator
+from ems.validation.rule_validator import SimpleMessageProvider, RuleValidator
 from ems.validation.validators.base import RequiredValidator
 from ems.patterns.factory import DummyFactory
 

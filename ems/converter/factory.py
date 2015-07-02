@@ -26,7 +26,6 @@ from ems.converter.modifiers.concat import Concat
 from ems.converter.modifiers.join import Join #@UnresolvedImport
 from ems.converter.modifiers.generatecacheid import GenerateCacheId
 from ems.converter.modifiers.substring import Substring
-from ems.registry import Registry
 from ems.converter.plugin import Plugin
 
 

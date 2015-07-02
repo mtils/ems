@@ -7,7 +7,8 @@ from PyQt4.QtGui import QHeaderView
 
 from examples.qt4.bootstrap.create_app import create_app, app_path
 from ems.xtype.base import NumberType, StringType, BoolType, UnitType, DictType
-from ems.validation.validator import RuleValidator, Registry, SimpleMessageProvider
+from ems.validation.rule_validator import RuleValidator, SimpleMessageProvider
+from ems.validation.registry import Registry
 from ems import qt4
 from ems.qt4.itemmodel.validator_model import ValidatorModel
 from ems.qt4.itemmodel.listofdictsmodel import ListOfDictsModel
