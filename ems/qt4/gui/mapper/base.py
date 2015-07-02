@@ -95,6 +95,7 @@ class BaseMapper(QObject, MapperInterfaceMixin):
         if not isinstance(self._dataWidgetMapper, QDataWidgetMapper):
             self._dataWidgetMapper = QDataWidgetMapper(self)
             self._dataWidgetMapper.setModel(self.model)
+            self._dataWidgetMapper.currentIndexChanged.connect(self.currentIndexChanged)
             itemDelegate = MapperItemViewDelegate(self, self._dataWidgetMapper)
             itemDelegate.setObjectName("MapperDelegate")
             self._dataWidgetMapper.setItemDelegate(itemDelegate)
@@ -133,7 +134,7 @@ class BaseMapper(QObject, MapperInterfaceMixin):
         return strategy.getEditor(self, type_, parent)
     
     def _getTypeOfPropertyName(self, propertyName):
-        return self._model.columnType(propertyName)
+        return self._model.columnType(self._model.columnOfName(propertyName))
         
     def addMapping(self, widget, propertyName):
         if not isinstance(self._model, QAbstractItemModel):

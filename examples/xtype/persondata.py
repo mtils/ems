@@ -21,7 +21,7 @@ weightType.thousandsSeparator = '.'
 weightType.decimalsSeparator = ','
 
 moneyType = UnitType('$', float)
-moneyType.minValue = 400.0
+moneyType.minValue = 100.0
 moneyType.maxValue = 15000.0
 moneyType.value2UnitSpace = 1
 moneyType.decimalsCount = 2

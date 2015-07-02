@@ -11,6 +11,10 @@ class RuleValidatorModel(EditableProxyModel):
 
     rulesChanged = pyqtSignal(dict)
 
+    messageChanged = pyqtSignal(int, int, QString)
+
+    messagesCleared = pyqtSignal(int)
+
     def __init__(self, validator=None, rules=None, parent=None):
         super(EditableProxyModel, self).__init__(parent)
         self._invalidData = {}
@@ -52,14 +56,12 @@ class RuleValidatorModel(EditableProxyModel):
         data = self._validationData(index, value)
 
         try:
-
             self.validator.validate(data, self._rules)
 
             result = super(RuleValidatorModel, self).setData(index, value)
+            self._flushInvalidData(index)
 
-            if result:
-                self._flushInvalidData(index)
-            return result
+            return True
 
         except ValidationError as e:
             self._updateInvalidData(data, index, e.messages())
@@ -118,9 +120,12 @@ class RuleValidatorModel(EditableProxyModel):
         # Clear all messages of this row and rewrite em
         self._messages[row] = {}
 
+        changedMessages = {}
+
         for key in messages:
             column = self.columnOfName(key)
             message = QString.fromUtf8(u"\n".join(messages[key]))
+            changedMessages[column] = message
             self._messages[row][column] = variant(message)
 
 
@@ -131,12 +136,24 @@ class RuleValidatorModel(EditableProxyModel):
             column = self.columnOfName(key)
             self._invalidData[row][column] = variant(data[key])
 
+        # To simplify the current behavour, send changed on all columns of this
+        # row
+
+        self._emitRowChange(row)
+
+        for column in range(self.columnCount()):
+            if column in changedMessages:
+                self.messageChanged.emit(row, column, changedMessages[column])
+            else:
+                self.messageChanged.emit(row, column, QString())
+
     def _flushInvalidData(self, changedIndex):
 
         row = changedIndex.row()
 
         if not row in self._invalidData:
             self._clearInvalidData(row)
+            self._emitRowChange(row)
             return
 
         for column in self._invalidData[row]:
@@ -147,6 +164,8 @@ class RuleValidatorModel(EditableProxyModel):
 
         self._clearInvalidData(row)
 
+        self._emitRowChange(row)
+
     def _clearInvalidData(self, row):
         try:
             del self._invalidData[row]
@@ -154,6 +173,7 @@ class RuleValidatorModel(EditableProxyModel):
             pass
         try:
             del self._messages[row]
+            self.messagesCleared.emit(row)
         except KeyError:
             pass
 
@@ -176,4 +196,9 @@ class RuleValidatorModel(EditableProxyModel):
         return self._messages[row][column]
 
     def columnMessage(self, row, column):
-        return self.columnMessageVariant().toString()
+        return self.columnMessageVariant(row, column).toString()
+
+    def _emitRowChange(self, row):
+        lowestIndex = self.index(row, 0)
+        highestIndex = self.index(row, self.columnCount())
+        self.dataChanged.emit(lowestIndex, highestIndex)

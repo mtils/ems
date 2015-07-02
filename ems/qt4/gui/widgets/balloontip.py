@@ -26,7 +26,9 @@ class BalloonTip(QWidget):
 
     def __init__(self, parent, message=None, title=None, state=None):
 
-        super(BalloonTip, self).__init__(parent, Qt.ToolTip)
+        super(BalloonTip, self).__init__(parent)
+
+        self.setWindowFlags(Qt.ToolTip | Qt.FramelessWindowHint)
 
         self._state = self.INFO
 
@@ -87,7 +89,7 @@ class BalloonTip(QWidget):
         return self.titleLabel.text()
 
     def setTitle(self, title):
-        title = QString.fromUtf8(title)
+        title = title if isinstance(title, QString) else QString.fromUtf8(title)
         if title == self.titleLabel.text():
             return
         self.titleLabel.setText(title)
@@ -110,7 +112,7 @@ class BalloonTip(QWidget):
         return self.msgLabel.text()
 
     def setMessage(self, msg):
-        msg = QString.fromUtf8(msg)
+        msg = msg if isinstance(msg, QString) else QString.fromUtf8(msg)
         if msg == self.msgLabel.text():
             return
 
@@ -158,6 +160,11 @@ class BalloonTip(QWidget):
         self._arrowAtLeft = (pos.x() + self.sizeHint().width() - self._arrowOffset < screen.width())
 
         return self._arrowAtLeft
+
+    def setArrowAtLeft(self, atLeft=True):
+        self._arrowAtLeft = atLeft
+
+    arrowAtLeft = property(isArrowAtLeft, setArrowAtLeft)
 
     def textColor(self):
         return self._stateColors[self._state]
@@ -456,8 +463,9 @@ class WindowEventFilter(QObject):
 
     def eventFilter(self, window, event):
 
-        if event.type() == event.Move:
-            self.parent().move(self.parent().pos() + (event.pos() - event.oldPos()))
+        if event.type() in (event.Move, event.Resize):
+            #self.parent().move(self.parent().pos() + (event.pos() - event.oldPos()))
+            self.parent()._correctPosition()
 
         if event.type() == event.Hide:
             self.parent().close()
