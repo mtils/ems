@@ -11,7 +11,6 @@ from ems.xtype.base import UnitType #@UnresolvedImport
 from ems.qt4.gui.itemdelegate.xtypedelegate import XTypeDelegate #@UnresolvedImport
 from ems.qt4.util import variant_to_pyobject
 from ems.qt4.gui.itemdelegate.htmldelegate import HtmlDelegate
-from ems.model.sa.orm.decorator import friendly_name
 
 
 class DictDelegate(XTypeDelegate):

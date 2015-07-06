@@ -11,7 +11,6 @@ from ems.xtype.base import UnitType #@UnresolvedImport
 from ems.qt4.gui.itemdelegate.xtypedelegate import XTypeDelegate #@UnresolvedImport
 from ems.qt4.util import variant_to_pyobject
 from ems.qt4.gui.itemdelegate.htmldelegate import HtmlDelegate
-from ems.model.sa.orm.decorator import friendly_name
 
 
 class ObjectInstanceDelegate(XTypeDelegate):
@@ -20,6 +19,7 @@ class ObjectInstanceDelegate(XTypeDelegate):
         XTypeDelegate.__init__(self, xType, parent)
     
     def getString(self, value):
+        print "Ich binnat"
         return friendly_name(value)
         
     def createEditor(self, parent, option, index):
@@ -52,4 +52,16 @@ class ObjectInstanceDelegate(XTypeDelegate):
     
     
     
-        
+
+def friendly_name(classProperty):
+    if hasattr(classProperty, '__get__'):
+        cls = classProperty.class_
+        try:
+            return cls.__ormDecorator__().getPropertyFriendlyName(classProperty.key)
+        except AttributeError:
+            return classProperty.key
+    elif hasattr(classProperty, '__ormDecorator__'):
+        try:
+            return classProperty.__ormDecorator__().getReprasentiveString(classProperty)
+        except AttributeError:
+            return ''
