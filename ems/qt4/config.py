@@ -82,6 +82,10 @@ class QConfig(QObject):
         self.__config.configLoaded += self.configLoaded.emit
         self.__config.configSaved += self.configSaved.emit
 
+    @property
+    def baseConfig(self):
+        return self.__config
+
     defaultProfile = property(getDefaultProfile, setDefaultProfile, None, "defaultProfile's docstring")
     profiles = property(getProfiles, None, None, "profiles's docstring")
     fileName = property(getFileName, setFileName, delFileName, "fileName's docstring")

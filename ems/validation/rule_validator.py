@@ -1,7 +1,7 @@
 
 
 from copy import copy
-
+from collections import OrderedDict
 from abc import ABCMeta, abstractmethod
 
 from ems.patterns.factory import Factory
@@ -76,8 +76,15 @@ class RuleValidator(AbstractRuleValidator):
 
                 validator = self._registry(ruleName)
 
-                if validator.validate(**params):
-                    continue
+                if '*args' in params:
+                    varargs = params['*args']
+                    del params['*args']
+                    allParams = params.values() + varargs
+                    if validator.validate(*allParams):
+                        continue
+                else:
+                    if validator.validate(**params):
+                        continue
 
                 message = self._messageProvider.buildMessage(ruleName, key, params, keynames)
                 messages.addMessage(key, message)
@@ -99,7 +106,7 @@ class RuleValidator(AbstractRuleValidator):
 
         paramIndex = 0
 
-        params = {}
+        params = OrderedDict()
 
         for key in args.keys():
 
@@ -112,6 +119,9 @@ class RuleValidator(AbstractRuleValidator):
             else:
                 params[key] = ruleParams[paramIndex]
                 paramIndex += 1
+
+        if args.varargs is not None:
+            params['*args'] = ruleParams
 
         return params
 

@@ -77,8 +77,12 @@ class Args(object):
 
     def buildKwargs(self):
         args = OrderedDict()
+        args.varargs = None
         for key in self.names:
             args[key] = self.default(key) if self.hasDefault(key) else None
+
+        if self.argspec.varargs:
+            args.varargs = []
         return args
 
 def classes(moduleName):

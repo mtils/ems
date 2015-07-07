@@ -3,21 +3,13 @@ from __future__ import print_function
 
 import os.path
 
-from PyQt4.QtCore import pyqtSignal, QString, QDir, Qt
+from PyQt4.QtCore import pyqtSignal, QString, QDir, Qt, QVariant
 from PyQt4.QtGui import QWidget, QLineEdit, QPushButton, QHBoxLayout
 from PyQt4.QtGui import QFileDialog, QFileSystemModel, QCompleter, QFrame
 
 class FileSelect(QFrame):
 
     pathChanged = pyqtSignal(QString)
-
-    errorOccured = pyqtSignal([int],[QString])
-
-    PATH_DOES_NOT_EXIST = 1
-
-    PATH_EXISTS = 2
-
-    PATH_IS_DIR = 3
 
     def __init__(self, parent=None):
 
@@ -37,6 +29,21 @@ class FileSelect(QFrame):
         self.setFrameStyle(QFrame.Plain)
         self.setFrameShape(QFrame.NoFrame)
 
+    def getPath(self):
+        return self._path
+
+    def setPath(self, path):
+        path = path if isinstance(path, QString) else QString.fromUtf8(path)
+
+        if path == self._path:
+            return
+
+        self._path = path
+        self._lineEdit.setText(path)
+        self.pathChanged.emit(self._path)
+
+    path = property(getPath, setPath)
+
     def isExistanceForced(self):
         return self._forceExisting
 
@@ -50,14 +57,15 @@ class FileSelect(QFrame):
 
         self.delLineEdit()
         self._lineEdit = lineEdit
-        self._lineEdit.textChanged.connect(self._setPathIfExists)
+        self._lineEdit.editingFinished.connect(self._updatePath)
         self.layout().insertWidget(0, self._lineEdit)
         self._lineEdit.setCompleter(self.completer)
 
     def delLineEdit(self):
         if not self._lineEdit:
             return
-        self._lineEdit.textChanged.disconnect(self._setPathIfExists)
+
+        self._lineEdit.editingFinished.disconnect(self._updatePath)
         self.layout().removeWidget(self._lineEdit)
 
         self._lineEdit = None
@@ -120,7 +128,7 @@ class FileSelect(QFrame):
         self.button.setMaximumWidth(40)
 
     def _setupSignals(self):
-        self.errorOccured[int].connect(self._emitErrorMsg)
+        pass
 
     def showFileDialog(self):
         self._configureFileDialog(self.fileDialog)
@@ -152,58 +160,12 @@ class FileSelect(QFrame):
             fileDialog.setFileMode(QFileDialog.AnyFile)
 
     def _onFileSelected(self, fileName):
-        self.lineEdit.setText(fileName)
+        self.setPath(fileName)
 
-    def _setPathIfExists(self, path):
-
-        if path == self._path:
-            return
-
-        try:
-            self._checkPath(path)
-            self._path = path
-            self.pathChanged.emit(path)
-        except IOError as e:
-            self.errorOccured[int].emit(e.args[0])
-
-
-    def _checkPath(self, path):
-        self._checkExistance(path)
-        self._checkType(path)
-
-
-    def _checkExistance(self, path):
-
-        exists = os.path.exists(unicode(path))
-
-        if self._forceExisting and not exists:
-            raise IOError(self.PATH_DOES_NOT_EXIST)
-
-        if not self._forceExisting and exists:
-            raise IOError(self.PATH_EXISTS)
-
-        return exists
-
-    def _checkType(self, path):
-        if os.path.isdir(path):
-            raise IOError(self.PATH_IS_DIR)
-
-    def _emitErrorMsg(self, errorNum):
-        self.errorOccured[QString].emit(self.getErrorMsg(errorNum))
-
-    def getErrorMsg(self, errorNum):
-        if errorNum == self.PATH_DOES_NOT_EXIST:
-            return self.trUtf8(u"Path does not exist")
-        elif errorNum == self.PATH_EXISTS:
-            return self.trUtf8(u"Path does exist")
-        elif errorNum == self.PATH_IS_DIR:
-            return self.trUtf8(u"Path is a directory")
-
-        return QString()
+    def _updatePath(self, *args, **kwargs):
+        self.setPath(self.lineEdit.text())
 
 class DirectorySelect(FileSelect):
-
-    PATH_IS_FILE = 4
 
     def _createFsModel(self):
         model = super(DirectorySelect, self)._createFsModel()
@@ -213,18 +175,6 @@ class DirectorySelect(FileSelect):
     def _configureFileDialog(self, fileDialog):
         fileDialog.setFileMode(QFileDialog.Directory)
         fileDialog.setOptions(QFileDialog.ShowDirsOnly | QFileDialog.DontResolveSymlinks)
-
-        #super(DirectorySelect, self)._configureFileDialog(fileDialog)
-
-
-    def _checkType(self, path):
-        if os.path.isfile(path):
-            raise IOError(self.PATH_IS_FILE)
-
-    def getErrorMsg(self, errorNum):
-        if errorNum == self.PATH_IS_FILE:
-            return self.trUtf8(u"Path is a file")
-        return super(DirectorySelect, self).getErrorMsg(errorNum)
 
 if __name__ == '__main__':
 
@@ -252,31 +202,23 @@ if __name__ == '__main__':
     container.layout().addWidget(fileSelect)
 
     fileSelect.pathChanged.connect(container.printPathChange)
-    fileSelect.errorOccured[int].connect(container.printErrorNum)
-    fileSelect.errorOccured[QString].connect(container.printErrorMessage)
 
     newFileSelect = FileSelect(container)
     newFileSelect.forceExisting(False)
     container.layout().addWidget(newFileSelect)
 
     newFileSelect.pathChanged.connect(container.printPathChange)
-    newFileSelect.errorOccured[int].connect(container.printErrorNum)
-    newFileSelect.errorOccured[QString].connect(container.printErrorMessage)
 
     dirSelect = DirectorySelect(container)
     container.layout().addWidget(dirSelect)
 
     dirSelect.pathChanged.connect(container.printPathChange)
-    dirSelect.errorOccured[int].connect(container.printErrorNum)
-    dirSelect.errorOccured[QString].connect(container.printErrorMessage)
 
     newDirSelect = DirectorySelect(container)
     newDirSelect.forceExisting(False)
     container.layout().addWidget(newDirSelect)
 
     newDirSelect.pathChanged.connect(container.printPathChange)
-    newDirSelect.errorOccured[int].connect(container.printErrorNum)
-    newDirSelect.errorOccured[QString].connect(container.printErrorMessage)
 
     container.show()
 
