@@ -30,7 +30,13 @@ class SimpleMessageProvider(MessageProvider):
         if typedKey in self.messages:
             return self.messages[typedKey]
 
-        return self.messages[validatorName]
+        try:
+            return self.messages[validatorName]
+        except KeyError:
+            try:
+                return self.messages['default']
+            except KeyError:
+                return 'This value is invalid'
 
     def typeSubKey(self, value):
 
@@ -117,8 +123,11 @@ class RuleValidator(AbstractRuleValidator):
             elif key == 'key':
                 params[key] = dataKey
             else:
-                params[key] = ruleParams[paramIndex]
-                paramIndex += 1
+                try:
+                    params[key] = ruleParams[paramIndex]
+                    paramIndex += 1
+                except IndexError:
+                    pass
 
         if args.varargs is not None:
             params['*args'] = ruleParams
