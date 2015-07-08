@@ -101,7 +101,7 @@ class RuleValidatorModel(EditableProxyModel):
     def isValid(self, row=None):
 
         if row is None:
-            return bool(len(self._messages))
+            return not bool(len(self._messages))
 
         return (row in self._messages)
 
@@ -211,7 +211,6 @@ class RuleValidatorModel(EditableProxyModel):
         self.dataChanged.emit(lowestIndex, highestIndex)
 
     def manualSubmit(self):
-
         if not self.isValid():
             return False
 
