@@ -99,7 +99,12 @@ def app(abstract=None, *args, **kwargs):
 
 def relative_path(path):
 
-    rPath = path.replace(app_path(), "")
+    appPath = app_path()
+
+    if not path.startswith(appPath):
+        return path
+
+    rPath = path.replace(appPath, "")
     if rPath.startswith(os.path.sep):
         return rPath[1:]
     return rPath
