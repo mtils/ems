@@ -126,6 +126,8 @@ class Config(object):
     def __setitem__(self,key,val):
 
         profileId, key = self.__getProfileAndVarName(key)
+        if profileId not in self.__profiles:
+            self.__profiles[profileId] = {}
         self.__profiles[profileId][key] = val
         self.entryChanged.fire(profileId, key, val)
 
