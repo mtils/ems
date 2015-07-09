@@ -210,8 +210,7 @@ class RuleValidatorModel(EditableProxyModel):
         highestIndex = self.index(row, self.columnCount())
         self.dataChanged.emit(lowestIndex, highestIndex)
 
-    def manualSubmit(self):
+    def submit(self):
         if not self.isValid():
             return False
-
-        return self.sourceModel().manualSubmit()
+        return self.sourceModel().submit()
