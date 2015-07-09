@@ -301,17 +301,17 @@ class AbstractXtypeItemModel(QAbstractItemModel, ReflectableMixin):
         if self._enabledFlagColumn is not None:
             itemIsEnabled = variant_to_pyobject(self.index(index.row(),
                                                            self._enabledFlagColumn).data())
-             
+
         if not self.isEditable:
             if itemIsEnabled:
                 return Qt.ItemIsSelectable | Qt.ItemIsEnabled
             return Qt.ItemIsSelectable
-        
+
         xType = self.columnType(index.column())
-        
+
         if not xType.canBeEdited:
             return Qt.ItemIsSelectable | Qt.ItemIsEnabled
-        
+
         if not itemIsEnabled:
             return Qt.ItemIsSelectable | Qt.ItemIsEditable
         return Qt.ItemIsSelectable | Qt.ItemIsEnabled  | Qt.ItemIsEditable
