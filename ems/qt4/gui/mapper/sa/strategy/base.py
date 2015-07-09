@@ -5,7 +5,7 @@ Created on 19.06.2011
 '''
 from PyQt4.QtCore import QObject
 from PyQt4.QtGui import QLineEdit, QTextEdit, QPlainTextEdit, QSpinBox, \
-    QAbstractSlider, QDoubleSpinBox, QLabel
+    QAbstractSlider, QDoubleSpinBox, QLabel, QComboBox
 
 from sqlalchemy.types import AbstractType, String, Integer, Float, Boolean
 from sqlalchemy.orm import object_mapper
@@ -14,6 +14,7 @@ from sqlalchemy.ext.hybrid import hybrid_property, Comparator #@UnresolvedImport
 
 from ems.qt4.gui.mapper.sa.delegate.base import MapperDelegate  #@UnresolvedImport
 from ems.qt4.gui.mapper.sa.delegate.unit import UnitColumnDelegate #@UnresolvedImport
+from ems.qt4.gui.itemdelegate.xtypes.stringtypecombobox import StringComboboxDelegate
 
 class BaseStrategy(QObject):
     def __init__(self, parent=None):
@@ -195,24 +196,35 @@ class BaseStrategy(QObject):
         return None
     
     def map(self, mapper, widget, propertyName, rProperty):
-        
+
         colType = self.extractType(rProperty)
-        
+        columnIndex = mapper.model.getIndexByPropertyName(propertyName)
+
         if isinstance(colType, String):
             if isinstance(widget, (QLineEdit, QTextEdit,
                                    QPlainTextEdit)):
-                columnIndex = mapper.model.getIndexByPropertyName(propertyName)
+                
                 mapper.dataWidgetMapper.addMapping(widget,
                                                         columnIndex)
                 if isinstance(widget, QLineEdit):
                     self.setLineEditOptions(widget, rProperty)
                 self._setQWidgetParams(widget, rProperty)
+
+            elif isinstance(widget, QComboBox):
+
+                mapperDelegate = mapper.dataWidgetMapper.itemDelegate()
+                delegate = StringComboboxDelegate(colType)
+                delegate.setConnectedWidget(widget, mapper.model, columnIndex)
+                delegate.currentRow = mapper.dataWidgetMapper.currentIndex()
+                mapper.dataWidgetMapper.currentIndexChanged.connect(delegate.setCurrentRow)
+
+                mapperDelegate._columnDelegates[columnIndex] = delegate
+
             else:
                 raise TypeError("Could not map Widget %s to String" % \
                                 widget)
         elif isinstance(colType, Integer):
             if isinstance(widget, (QSpinBox, QAbstractSlider)):
-                columnIndex = mapper.model.getIndexByPropertyName(propertyName)
                 mapper.dataWidgetMapper.addMapping(widget,
                                                         columnIndex)
                 
@@ -229,7 +241,6 @@ class BaseStrategy(QObject):
             if isinstance(widget, QDoubleSpinBox):
                 self.setDoubleSpinBoxOptions(widget, rProperty, colType)
                 self._setQWidgetParams(widget, rProperty)
-                columnIndex = mapper.model.getIndexByPropertyName(propertyName)
                 mapper.dataWidgetMapper.addMapping(widget,
                                                         columnIndex)
             else:
