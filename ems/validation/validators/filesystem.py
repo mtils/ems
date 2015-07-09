@@ -61,13 +61,13 @@ class AppDirExistsValidator(DirExistsValidator):
         super(AppDirExistsValidator, self).__init__(normalizer)
 
 
-class AppNewFileValidator(NewFileValidator):
+class NewAppFileValidator(NewFileValidator):
     @accepts(PathNormalizer)
     def __init__(self, normalizer=None):
-        super(AppNewFileValidator, self).__init__(normalizer)
+        super(NewAppFileValidator, self).__init__(normalizer)
 
-class AppNewDirValidator(NewDirValidator):
+class NewAppDirValidator(NewDirValidator):
     @accepts(PathNormalizer)
     def __init__(self, normalizer=None):
-        super(AppNewDirValidator, self).__init__(normalizer)
+        super(NewAppDirValidator, self).__init__(normalizer)
 
