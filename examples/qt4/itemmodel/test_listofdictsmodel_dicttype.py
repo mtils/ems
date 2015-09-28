@@ -27,7 +27,8 @@ testData = [{'vorname':'Leo','nachname':'Tils','alter':1,'gewicht':8.9,'einkomme
             {'vorname':'Sonja','nachname':'Bentz','alter':28,'gewicht':65.9,'einkommen':450.0,'verheiratet':True},
             {'vorname':'Patrick','nachname':'Arnold','alter':29,'gewicht':79.6,'einkommen':3850.0,'verheiratet':False}]
 
-import ems.unittests.qt4.mapper.baseconfig
+#import ems.unittests.qt4.mapper.baseconfig
+from examples.qt4.bootstrap.create_app import create_app
 
 class Importer(QObject):
     def __init__(self, model, parent):
@@ -40,86 +41,94 @@ class Importer(QObject):
     
     def exportData(self):
         pprint.pprint(self.model.exportModelData())
-            
-app = QApplication(sys.argv)
 
-dlg = QDialog()
-dlg.setLayout(QVBoxLayout(dlg))
-dlg.setWindowTitle("List of Dicts Model")
+#app.started
 
-dlg.view = QTableView(dlg)
+app = create_app(sys.argv, sys.argv[0], 'testing')
 
+def testDialog(app):
+    dlg = QDialog()
+    dlg.setLayout(QVBoxLayout(dlg))
+    dlg.setWindowTitle("List of Dicts Model")
 
-
-namenType = StringType()
-namenType.minLength=1
-namenType.maxLength=12
-
-alterType = UnitType('Jahre', int)
-alterType.minValue = 0
-alterType.maxValue = 140
-alterType.value2UnitSpace = 1
-
-gewichtType = UnitType('kg', float)
-gewichtType.minValue = 1
-gewichtType.maxValue = 300
-gewichtType.value2UnitSpace = 1
-gewichtType.decimalsCount = 1
-gewichtType.thousandsSeparator = '.'
-gewichtType.decimalsSeparator = ','
-
-geldType = UnitType(u'€', float)
-geldType.minValue = 400.0
-geldType.maxValue = 15000.0
-geldType.value2UnitSpace = 1
-geldType.decimalsCount = 2
-geldType.thousandsSeparator = '.'
-geldType.decimalsSeparator = ','
-
-verheiratetType = BoolType()
-
-itemType = DictType()
-itemType.addKey('vorname', namenType)
-itemType.addKey('nachname', namenType)
-itemType.addKey('alter', alterType)
-itemType.addKey('gewicht', gewichtType)
-itemType.addKey('einkommen', geldType)
-itemType.addKey('verheiratet', verheiratetType)
-itemType.maxLength = 8
-itemType.minLength = 1
-
-listType = SequenceType(itemType)
-model = ListOfDictsModel(listType, dlg.view)
-
-model.setKeyLabel('vorname', QString.fromUtf8('Name'))
-model.setKeyLabel('nachname', QString.fromUtf8('Familienname'))
-model.setKeyLabel('alter', QString.fromUtf8('Alter'))
-model.setKeyLabel('gewicht', QString.fromUtf8('Gewicht'))
-model.setKeyLabel('einkommen', QString.fromUtf8('Einkommen'))
-model.setKeyLabel('verheiratet', QString.fromUtf8('Verheiratet'))
-
-model.addRow({'vorname':'Leo','nachname':'Tils','alter':1,'gewicht':8.9,'einkommen':850.0,'verheiratet':True})
-model.addRow(vorname='Fabian',nachname='Tils',alter=29,gewicht=67.2,einkommen=2600.0,verheiratet=False)
-#model.addRow
-
-dlg.editor = ItemViewEditor(dlg.view, parent=dlg)
-dlg.view.setModel(model)
-dlg.view.setMinimumSize(640, 480)
-dlg.layout().addWidget(dlg.editor)
+    dlg.view = QTableView(dlg)
 
 
-dlg.mapper = BaseMapper(model)
-dlg.delegate = dlg.mapper.getDelegateForItemView(dlg.view)
-dlg.view.setItemDelegate(dlg.delegate)
+
+    namenType = StringType()
+    namenType.minLength=1
+    namenType.maxLength=12
+
+    alterType = UnitType('Jahre', int)
+    alterType.minValue = 0
+    alterType.maxValue = 140
+    alterType.value2UnitSpace = 1
+
+    gewichtType = UnitType('kg', float)
+    gewichtType.minValue = 1
+    gewichtType.maxValue = 300
+    gewichtType.value2UnitSpace = 1
+    gewichtType.decimalsCount = 1
+    gewichtType.thousandsSeparator = '.'
+    gewichtType.decimalsSeparator = ','
+
+    geldType = UnitType(u'€', float)
+    geldType.minValue = 400.0
+    geldType.maxValue = 15000.0
+    geldType.value2UnitSpace = 1
+    geldType.decimalsCount = 2
+    geldType.thousandsSeparator = '.'
+    geldType.decimalsSeparator = ','
+
+    verheiratetType = BoolType()
+
+    itemType = DictType()
+    itemType.addKey('vorname', namenType)
+    itemType.addKey('nachname', namenType)
+    itemType.addKey('alter', alterType)
+    itemType.addKey('gewicht', gewichtType)
+    itemType.addKey('einkommen', geldType)
+    itemType.addKey('verheiratet', verheiratetType)
+    itemType.maxLength = 8
+    itemType.minLength = 1
+
+    listType = SequenceType(itemType)
+    model = ListOfDictsModel(listType, dlg.view)
+
+    model.setKeyLabel('vorname', QString.fromUtf8('Name'))
+    model.setKeyLabel('nachname', QString.fromUtf8('Familienname'))
+    model.setKeyLabel('alter', QString.fromUtf8('Alter'))
+    model.setKeyLabel('gewicht', QString.fromUtf8('Gewicht'))
+    model.setKeyLabel('einkommen', QString.fromUtf8('Einkommen'))
+    model.setKeyLabel('verheiratet', QString.fromUtf8('Verheiratet'))
+
+    model.addRow({'vorname':'Leo','nachname':'Tils','alter':1,'gewicht':8.9,'einkommen':850.0,'verheiratet':True})
+    model.addRow(vorname='Fabian',nachname='Tils',alter=29,gewicht=67.2,einkommen=2600.0,verheiratet=False)
+    #model.addRow
+
+    dlg.editor = ItemViewEditor(dlg.view, parent=dlg)
+    dlg.view.setModel(model)
+    dlg.view.setMinimumSize(640, 480)
+    dlg.layout().addWidget(dlg.editor)
 
 
-dlg.exportButton = QPushButton("Export", dlg)
-dlg.layout().addWidget(dlg.exportButton)
+    dlg.mapper = BaseMapper(model)
+    dlg.delegate = dlg.mapper.getDelegateForItemView(dlg.view)
+    dlg.view.setItemDelegate(dlg.delegate)
 
-dlg.importer = Importer(model, dlg)
-dlg.importButton = QPushButton("Import", dlg)
-dlg.layout().addWidget(dlg.importButton)
-dlg.importButton.clicked.connect(dlg.importer.importData)
-dlg.exportButton.clicked.connect(dlg.importer.exportData)
 
-sys.exit(dlg.exec_())
+    dlg.exportButton = QPushButton("Export", dlg)
+    dlg.layout().addWidget(dlg.exportButton)
+
+    dlg.importer = Importer(model, dlg)
+    dlg.importButton = QPushButton("Import", dlg)
+    dlg.layout().addWidget(dlg.importButton)
+    dlg.importButton.clicked.connect(dlg.importer.importData)
+    dlg.exportButton.clicked.connect(dlg.importer.exportData)
+    
+    dlg.exec_()
+
+
+app.started += testDialog
+
+sys.exit(app.start(sys.argv[0], sys.argv))
