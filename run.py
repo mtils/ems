@@ -35,6 +35,8 @@ def main(argv):
 
     app = create_app(argv, appPath, env=env)
 
+    app.setQuitOnLastWindowClosed(True)
+
     runThisModule = parser.parse_args().module
 
     app.started += lambda app:__import__(runThisModule)
