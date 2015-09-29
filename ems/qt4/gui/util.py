@@ -199,6 +199,11 @@ def _addButtonBox2Dialog(dlg):
     if layout is None:
         raise TypeError("The Widget needs a layout to assign the buttons")
 
+    if hasattr(dlg, 'dialogButtonHint'):
+        dlg.buttonBox = QDialogButtonBox(Qt.Horizontal)
+        dlg.dialogButtonHint.layout().addWidget(dlg.buttonBox)
+        return dlg.buttonBox
+
     if isinstance(layout, QVBoxLayout):
         dlg.buttonBox = QDialogButtonBox(Qt.Horizontal)
         layout.addWidget(dlg.buttonBox)
