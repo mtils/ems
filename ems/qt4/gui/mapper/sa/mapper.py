@@ -76,10 +76,11 @@ class SAMapper(QObject, SAInterfaceMixin):
     @property
     def queryBuilder(self):
         if self._queryBuilder is None:
-            if self.model is not None:
+            try:
                 self._queryBuilder = self.model.queryBuilder
-            else:
+            except AttributeError:
                 self._queryBuilder = SAQueryBuilder(self._ormObj)
+
         return self._queryBuilder
     
     @property
@@ -195,8 +196,8 @@ class SAMapper(QObject, SAInterfaceMixin):
         
     
     def addMapping(self, widget, propertyName):
-        if not isinstance(self._model, (AlchemyOrmModel, SAOrmSearchModel)):
-            raise TypeError("Assign a AlchemyOrmModel prior to addMapping")
+        #if not isinstance(self._model, (AlchemyOrmModel, SAOrmSearchModel)):
+            #raise TypeError("Assign a AlchemyOrmModel prior to addMapping")
         rProperty = self.queryBuilder.properties[propertyName]
         strategy = self.getStrategyFor(propertyName, rProperty)
         return strategy.map(self, widget, propertyName, rProperty)

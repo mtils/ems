@@ -198,7 +198,7 @@ class BaseStrategy(QObject):
     def map(self, mapper, widget, propertyName, rProperty):
 
         colType = self.extractType(rProperty)
-        columnIndex = mapper.model.getIndexByPropertyName(propertyName)
+        columnIndex = mapper.model.columnOfName(propertyName)
 
         if isinstance(colType, String):
             if isinstance(widget, (QLineEdit, QTextEdit,

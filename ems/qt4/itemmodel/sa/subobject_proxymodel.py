@@ -69,7 +69,7 @@ class SubObjectProxyModel(EditableProxyModel):
     def _fillPropertyMaps(self):
         proxyCol = 0
         for prop in self._properties:
-            sourceCol = self.sourceModel().getIndexByPropertyName(prop)
+            sourceCol = self.sourceModel().columnOfName(prop)
             self._proxy2SourceColumnMap[proxyCol] = sourceCol
             self._source2ProxyColumnMap[sourceCol] = proxyCol
             proxyCol += 1

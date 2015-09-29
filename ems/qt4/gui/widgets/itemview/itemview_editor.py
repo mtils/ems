@@ -75,7 +75,11 @@ class ItemViewEditor(QWidget):
         else:
             self._setIsRowSelected(False)
             self.lastSelectedRow = None
-        
+
+    @property
+    def currentRow(self):
+        return self.lastSelectedRow
+
     def setupUi(self):
         self.setLayout(QHBoxLayout(self))
         self.layout().addWidget(self.itemView)
@@ -113,7 +117,7 @@ class ItemViewEditor(QWidget):
             if idx.row() not in rowList:
                 rowList.append(idx.row())
         return rowList
-    
+
     def onStandardButtonClicked(self):
         if hasattr(self.itemView.model(),'setStandardRow'):
             self.itemView.model().setStandardRow(self.selectedRows[0])

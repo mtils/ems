@@ -70,15 +70,21 @@ class AlchemyOrmModel(QAbstractTableModel):
         self.perform()
         return len(self._columns)
     
-    def getPropertyNameByIndex(self, index):
+    def getPropertyNameByIndex_(self, index):
         return self._columns[index]
     
-    def getIndexByPropertyName(self, name):
+    def getIndexByPropertyName_(self, name):
+        return self._columnName2Index[name]
+
+    def nameOfColumn(self, index):
+        return self._columns[index]
+   
+    def columnOfName(self, name):
         return self._columnName2Index[name]
     
     def data(self, index, role=Qt.DisplayRole):
         self.perform()
-        columnName = self.getPropertyNameByIndex(index.column())
+        columnName = self.nameOfColumn(index.column())
         #return QVariant()
         if not index.isValid() or \
            not (0 <= index.row() < self.rowCount()):
@@ -105,7 +111,7 @@ class AlchemyOrmModel(QAbstractTableModel):
         if role != Qt.DisplayRole:
             return QVariant()
         if orientation == Qt.Horizontal:
-            columnName = unicode(self.getPropertyNameByIndex(section))
+            columnName = unicode(self.nameOfColumn(section))
 #            if self.columnHeaderTranslated.has_key(columnName):
 #                return QVariant(self.columnHeaderTranslated[columnName])
             return QVariant(columnName)
@@ -116,7 +122,7 @@ class AlchemyOrmModel(QAbstractTableModel):
 
     def flags(self, index):
         
-        propertyName = self.getPropertyNameByIndex(index.column())
+        propertyName = self.nameOfColumn(index.column())
         if not self._flagsCache.has_key(propertyName):
             isPk = False
             if isinstance(self.ormProperties[propertyName], ColumnProperty):
@@ -133,7 +139,7 @@ class AlchemyOrmModel(QAbstractTableModel):
         return self._flagsCache[propertyName]
     
     def setData(self, index, value, role=Qt.EditRole):
-        columnName = self.getPropertyNameByIndex(index.column())
+        columnName = self.nameOfColumn(index.column())
         pyValue = None
         if value.isNull():
             pyValue = None

@@ -157,7 +157,7 @@ class Many2OneComboStrategy(BaseStrategy):
 
             model = self._getObjModel(mapper, propertyName, rProperty)
             
-            col = mapper.model.getIndexByPropertyName(propertyName)
+            col = mapper.model.columnOfName(propertyName)
             
             widget.setModel(model)
             mapper.dataWidgetMapper.addMapping(widget, col)

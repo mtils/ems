@@ -141,7 +141,7 @@ class SAOrmSearchModel(QAbstractTableModel):
             
     
     def sort(self, column, sortOrder=Qt.AscendingOrder):
-        col = self.getPropertyNameByIndex(column)
+        col = self.nameOfColumn(column)
         if sortOrder == Qt.AscendingOrder:
             self.orderBy = col
         else:
@@ -209,12 +209,18 @@ class SAOrmSearchModel(QAbstractTableModel):
         self.perform()
         return len(self._columns)
     
-    def getPropertyNameByIndex(self, index):
-        return self._columns[index]
-    
-    def getIndexByPropertyName(self, name):
+    def getPropertyNameByIndex_(self, index):
+        return self.nameOfColumn(index)
+
+    def nameOfColumn(self, column):
+        return self._columns[column]
+
+    def getIndexByPropertyName_(self, name):
+        return self.columnOfName(name)
+
+    def columnOfName(self, name):
         return self._columnName2Index[name]
-    
+
     def extractObject(self, currentObj, index, propertyName):
         if hasattr(currentObj, propertyName):
             return currentObj
@@ -388,7 +394,7 @@ class SAOrmSearchModel(QAbstractTableModel):
 
                 # No Cache Entry found
                 except KeyError:
-                    columnName = self.getPropertyNameByIndex(index.column())
+                    columnName = self.nameOfColumn(index.column())
                     value = self.extractValue(obj, index, columnName)
                     try:
                         self._resultCache[index.row()][index.column()] = self._castToVariant(value)
@@ -401,7 +407,7 @@ class SAOrmSearchModel(QAbstractTableModel):
                 return QVariant()
 
         if role == qt4.ColumnNameRole:
-            return QVariant(unicode(self.getPropertyNameByIndex(index.column())))
+            return QVariant(unicode(self.nameOfColumn(index.column())))
         if role == qt4.RowObjectRole:
             return QVariant(self.getObject(index.row()))
 
@@ -409,7 +415,7 @@ class SAOrmSearchModel(QAbstractTableModel):
 
     def setData(self, index, value, role=Qt.EditRole):
         self.perform()
-        columnName = self.getPropertyNameByIndex(index.column())
+        columnName = self.nameOfColumn(index.column())
         val = variant_to_pyobject(value)
 
         currentObj = self._objectCache[index.row()]
@@ -616,7 +622,7 @@ class SAOrmSearchModel(QAbstractTableModel):
             return QVariant(int(Qt.AlignRight|Qt.AlignVCenter))
 
         if role == qt4.ColumnNameRole and orientation == Qt.Horizontal:
-            return QVariant(self.getPropertyNameByIndex(section))
+            return QVariant(self.nameOfColumn(section))
 
         if role != Qt.DisplayRole:
             return QVariant()
@@ -624,7 +630,7 @@ class SAOrmSearchModel(QAbstractTableModel):
         if orientation == Qt.Horizontal:
             if self.sectionFriendlyNames.has_key(section):
                 return self.sectionFriendlyNames[section]
-            columnName = unicode(self.getPropertyNameByIndex(section))
+            columnName = unicode(self.nameOfColumn(section))
             name = self.getPropertyFriendlyName(columnName)
 
             return QVariant(name)
@@ -651,7 +657,7 @@ class SAOrmSearchModel(QAbstractTableModel):
             return Qt.ItemIsSelectable | Qt.ItemIsEnabled
 
         if index.column() not in self._flagsCache:
-            propertyName = self.getPropertyNameByIndex(index.column())
+            propertyName = self.nameOfColumn(index.column())
             if self._queryBuilder.isAutoProperty(propertyName):
                 flags = Qt.ItemIsSelectable | Qt.ItemIsEnabled
             else:
