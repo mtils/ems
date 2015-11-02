@@ -245,25 +245,15 @@ class QmlProxyModel(EditableProxyModel):
             return QModelIndex()
         return self.createIndex(row, column)
 
-    @pyqtSlot(int, result=QObject)
+    @pyqtSlot(int, result='QVariantMap')
     def get(self, row):
 
         res = {}
 
         src = self.sourceModel()
 
-        #return QObject()
-
-        #return QVariant('Labelulu')
-
-        #for col in self._column2RoleName:
-            #res[self._column2RoleName[col]] = src.index(row, col).data()
-        #return QVariant(res)
-
-        res = QObject()
         for col in self._column2RoleName:
-            #setattr(res, self._column2RoleName[col], src.index(row, col).data())
-            res.setProperty(self._column2RoleName[col], src.index(row, col).data())
+            res[self._column2RoleName[col]] = src.index(row, col).data()
 
         return res
 
@@ -271,22 +261,3 @@ class QmlProxyModel(EditableProxyModel):
     def setProperty(self, row, roleName, value):
         col = self.columnOfRoleName(roleName)
         self.sourceModel().setData(self.sourceModel().index(row, col), value, Qt.EditRole)
-
-class GetInvoker(object):
-
-    def __init__(self, row, model):
-        self.row = row
-        self.model = model
-
-    def __call__(self, method, arg):
-        return self.get(self.row)
-
-    def get(self, row):
-        print "nochmal"
-        res = {}
-
-        for i in self.model.rowCount():
-            res[self.model.roleOfColumn(i)] = self.model.index(row, i).data()
-
-        
-        return res
