@@ -10,6 +10,8 @@ ValidationMessageRole = 97
 ForeignKeysRole = 128
 RowObjectRole = 256
 
+DecorationSourceRole = 257
+
 # XType General Infos
 XTypeRole = 512
 XTypeGroupRole = 513

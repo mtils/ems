@@ -1,12 +1,16 @@
 from copy import copy
 
-from PyQt4.QtCore import QModelIndex, Qt, QVariant
+from PyQt4.QtCore import QModelIndex, Qt, QVariant, pyqtSlot, QString, QObject
 from PyQt4.QtGui import QPixmap
 from PyQt4.QtDeclarative import QDeclarativeImageProvider
 
 from ems.qt4.util import variant_to_pyobject as py
 
 from editable_proxymodel import EditableProxyModel
+
+class QmlDataContainer(object):
+    def __call__(self, method, *args):
+        print "called", method
 
 class QmlProxyModelImageProvider(QDeclarativeImageProvider):
     def __init__(self, qmlModel):
@@ -200,6 +204,7 @@ class QmlProxyModel(EditableProxyModel):
 
 
     def _getImage(self, pixmapPath):
+
         roleName,row, updateCounter = str(pixmapPath).split('/')
         row = int(row)
         srcRole = None
@@ -209,8 +214,8 @@ class QmlProxyModel(EditableProxyModel):
                 break
         if srcRole is None:
             return
+
         if not srcRole in self._roleSrcColumns:
-            print self._roleSrcColumns
             return 
         column = self._roleSrcColumns[srcRole]
 
@@ -239,3 +244,49 @@ class QmlProxyModel(EditableProxyModel):
         if not self.sourceModel() or parent.isValid():
             return QModelIndex()
         return self.createIndex(row, column)
+
+    @pyqtSlot(int, result=QObject)
+    def get(self, row):
+
+        res = {}
+
+        src = self.sourceModel()
+
+        #return QObject()
+
+        #return QVariant('Labelulu')
+
+        #for col in self._column2RoleName:
+            #res[self._column2RoleName[col]] = src.index(row, col).data()
+        #return QVariant(res)
+
+        res = QObject()
+        for col in self._column2RoleName:
+            #setattr(res, self._column2RoleName[col], src.index(row, col).data())
+            res.setProperty(self._column2RoleName[col], src.index(row, col).data())
+
+        return res
+
+    @pyqtSlot(int, QString, QVariant)
+    def setProperty(self, row, roleName, value):
+        col = self.columnOfRoleName(roleName)
+        self.sourceModel().setData(self.sourceModel().index(row, col), value, Qt.EditRole)
+
+class GetInvoker(object):
+
+    def __init__(self, row, model):
+        self.row = row
+        self.model = model
+
+    def __call__(self, method, arg):
+        return self.get(self.row)
+
+    def get(self, row):
+        print "nochmal"
+        res = {}
+
+        for i in self.model.rowCount():
+            res[self.model.roleOfColumn(i)] = self.model.index(row, i).data()
+
+        
+        return res

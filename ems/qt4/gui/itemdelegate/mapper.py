@@ -4,6 +4,8 @@ Created on 20.03.2012
 @author: michi
 '''
 
+from PyQt4.QtGui import QStyledItemDelegate
+
 from ems import qt4
 from ems.qt4.util import variant_to_pyobject as py
 from ems.qt4.gui.itemdelegate.genericdelegate import GenericDelegate
@@ -36,6 +38,8 @@ class MapperItemViewDelegate(GenericDelegate):
         col = index.column()
         if col not in self._columnDelegates:
             xtype = py(index.data(qt4.XTypeRole))
+            if xtype is None:
+                return QStyledItemDelegate()
             self._columnDelegates[col] = self._mapper.getDelegateForItem(xtype)
 
         return self._columnDelegates[col]

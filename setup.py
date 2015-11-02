@@ -4,7 +4,7 @@ from setuptools import find_packages
 setup(
   name = 'ems',
   packages = find_packages(),
-  version = '0.2.4',
+  version = '0.2.6',
   description = 'Small collection of classes to build model centric applications with python and Qt',
   author = 'Michael Tils',
   author_email = 'mtils@web-utils.de',
