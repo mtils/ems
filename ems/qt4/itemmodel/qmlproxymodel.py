@@ -1,7 +1,8 @@
 from copy import copy
 
 from PyQt4.QtCore import QModelIndex, Qt, QVariant, pyqtSlot, QString, QObject
-from PyQt4.QtGui import QPixmap
+from PyQt4.QtCore import pyqtProperty, QSize
+from PyQt4.QtGui import QPixmap, QIcon
 from PyQt4.QtDeclarative import QDeclarativeImageProvider
 
 from ems.qt4.util import variant_to_pyobject as py
@@ -22,9 +23,14 @@ class QmlProxyModelImageProvider(QDeclarativeImageProvider):
             self._prefix = prefix
 
     def requestPixmap(self, pixmapId, size, requestedSize):
+
         image = self.qmlModel._getImage(pixmapId)
+
         if isinstance(image, QPixmap):
             return image
+        if isinstance(image, QIcon):
+            size = size if size.isValid() else image.availableSizes()[0]
+            return image.pixmap(size)
         return QPixmap()
 
 
@@ -117,6 +123,10 @@ class QmlProxyModel(EditableProxyModel):
             return 0
         return self.sourceModel().rowCount()
 
+    @pyqtProperty(int)
+    def count(self):
+        return self.rowCount()
+
     def mapColumnToRoleName(self, column, roleName, srcRole=None):
 
         srcRole = self.defaultSrcRole if srcRole is None else srcRole
@@ -192,16 +202,17 @@ class QmlProxyModel(EditableProxyModel):
         if srcRole != Qt.DecorationRole:
             return self.sourceModel().data(self._mapWithRole(proxyIndex, role), srcRole)
 
+
         roleName = self._mappings[role]['roleName']
 
-        url = "image://{0}/{1}/{2}/{3}".format(self._imageProviderPrefix,
-                                                    roleName, proxyIndex.row(),
-                                                    self._imageUpdateCounter(roleName,
-                                                                                proxyIndex.row()))
+        url = self._imageUrl(roleName, proxyIndex.row())
 
         return QVariant(url)
 
     def _getImage(self, pixmapPath):
+
+        #if self.sourceModel().__class__.__name__ == 'AvailableHeizungenModel':
+            #print "_getImage", pixmapPath
 
         roleName, row, updateCounter = str(pixmapPath).split('/')
         row = int(row)
@@ -236,6 +247,12 @@ class QmlProxyModel(EditableProxyModel):
             return self.sourceModel().index(index.row(), self._mappings[role]['column'])
         return self.mapToSource(index)
 
+    def _imageUrl(self, roleName, row, column=0):
+        return "image://{0}/{1}/{2}/{3}".format(self._imageProviderPrefix,
+                                                roleName,
+                                                row,
+                                                self._imageUpdateCounter(roleName, row))
+
     def parent(self, index=QModelIndex()):
         return QModelIndex()
 
@@ -255,7 +272,10 @@ class QmlProxyModel(EditableProxyModel):
             roleName = self._mappings[targetRole]['roleName']
             col = self._mappings[targetRole]['column']
             srcRole = self._mappings[targetRole]['sourceRole']
-            res[roleName] = src.index(row, col).data(srcRole)
+            if srcRole == Qt.DecorationRole:
+                res[roleName] = self._imageUrl(roleName, row)
+            else:
+                res[roleName] = src.index(row, col).data(srcRole)
 
         return res
 
