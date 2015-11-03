@@ -8,10 +8,6 @@ from ems.qt4.util import variant_to_pyobject as py
 
 from editable_proxymodel import EditableProxyModel
 
-class QmlDataContainer(object):
-    def __call__(self, method, *args):
-        print "called", method
-
 class QmlProxyModelImageProvider(QDeclarativeImageProvider):
     def __init__(self, qmlModel):
         self.qmlModel = qmlModel
@@ -39,23 +35,24 @@ class QmlProxyModel(EditableProxyModel):
 
     def __init__(self, parent=None):
         super(QmlProxyModel, self).__init__(parent)
-        self._column2RoleName = {}
-        self._role2RoleName = {}
         self._roleSrcColumns = {}
         self._roleMappings = {}
+        self._mappings = {}
+        self._mapCount = QmlProxyModel.RoleOffset
         self._imageProvider = None
         self._imageUpdateCount = 0
         QmlProxyModel.InstanceCount += 1
         self._imageProviderPrefix = 'qmlproxy{0}'.format(QmlProxyModel.InstanceCount)
         self._connectedToSourceModel = False
+        self.defaultSrcRole=Qt.DisplayRole
 
     def columnMapCount(self):
-        return len(self._column2RoleName)
+        return len(self._mappings)
 
     def columnOfRoleName(self, roleName):
-        for col, srcRole in self._column2RoleName.iteritems():
-            if srcRole == roleName:
-                return col
+        for targetRole in self._mappings:
+            if self._mappings[targetRole]['roleName'] == roleName:
+                return self._mappings[targetRole]['column']
 
     def _imageUpdateCounter(self, roleName, row):
         # TODO This should work for more than one image column
@@ -73,15 +70,21 @@ class QmlProxyModel(EditableProxyModel):
         return self._imageProviderPrefix
 
     def roleOfColumn(self, column):
-        return self._column2RoleName[column]
+        for targetRole in self._mappings:
+            if self._mappings[targetRole]['column'] == column:
+                return self._mappings[targetRole]['roleName']
 
     def roleOfRoleName(self, roleName):
-        for role, srcRoleName in self._roleMappings.iteritems():
-            if srcRoleName == roleName:
-                return role
+        for targetRole in self._mappings:
+            if self._mappings[targetRole]['roleName'] == roleName:
+                return targetRole
 
     def column2RoleNameMap(self):
-        return copy(self._column2RoleName)
+        colRoleMap = {}
+        for targetRole in self._mappings:
+            colRoleMap[self._mappings[targetRole]['column']] = self._mappings[targetRole]['roleName']
+
+        return colRoleMap
 
     def roleMappings(self):
         return copy(self._roleMappings)
@@ -114,26 +117,30 @@ class QmlProxyModel(EditableProxyModel):
             return 0
         return self.sourceModel().rowCount()
 
-    def mapColumnToRoleName(self, column, roleName):
-        self._column2RoleName[column] = roleName
+    def mapColumnToRoleName(self, column, roleName, srcRole=None):
+
+        srcRole = self.defaultSrcRole if srcRole is None else srcRole
+
+        targetRole = self._nextMappingId()
+
+        self._mappings[targetRole] = {
+            'column': column,
+            'sourceRole': srcRole,
+            'targetRole': targetRole,
+            'roleName': roleName
+        }
+
+        if srcRole == Qt.DecorationRole:
+            self._connectToSourceModel()
+            self._roleSrcColumns[srcRole] = column
+
         self._updateRoleMappings()
 
-    def unMapColumnToRoleName(self, colOrRole):
-        if isinstance(colOrRole, int):
-            del self._column2RoleName[colOrRole]
-        else:
-            for key in self._column2RoleName:
-                if self._column2RoleName[key] == colOrRole:
-                    del self._column2RoleName[key]
-                    break
+        self._mapCount += 1
 
     def mapRoleToRoleName(self, role, roleName, srcColumn=None):
-        if role == Qt.DecorationRole:
-            self._connectToSourceModel()
-        self._role2RoleName[role] = roleName
-        if srcColumn is not None:
-            self.setRoleSourceColumn(role, srcColumn)
-        self._updateRoleMappings()
+        srcColumn = 0 if srcColumn is None else srcColumn
+        return self.mapColumnToRoleName(srcColumn, roleName, role)
 
     def _connectToSourceModel(self):
         if  self._connectedToSourceModel:
@@ -159,24 +166,13 @@ class QmlProxyModel(EditableProxyModel):
     def _onSourceModelReset(self):
         self._imageUpdateCount += 1
 
-    def unMapRoleToRoleName(self, roleOrRoleName):
-        if isinstance(roleOrRoleName, int):
-            del self._role2RoleName[roleOrRoleName]
-        else:
-            for key in self._role2RoleName:
-                if self._role2RoleName[key] == roleOrRoleName:
-                    del self._role2RoleName[key]
-                    break
-
-    def setRoleSourceColumn(self, role, column):
-        self._roleSrcColumns[role] = column
-
     def _createRoleMappings(self):
+
         roleNames = {}
-        for col in self._column2RoleName:
-            roleNames[QmlProxyModel.RoleOffset+col] = self._column2RoleName[col]
-        for role in self._role2RoleName:
-            roleNames[role] = self._role2RoleName[role]
+
+        for targetRole in self._mappings:
+            roleNames[targetRole] = self._mappings[targetRole]['roleName']
+
         return roleNames
 
     def _updateRoleMappings(self):
@@ -184,48 +180,51 @@ class QmlProxyModel(EditableProxyModel):
         self.setRoleNames(self._roleMappings)
 
     def data(self, proxyIndex, role=Qt.DisplayRole):
+
         if not self.sourceModel():
             return QVariant()
-        if role >= QmlProxyModel.RoleOffset:
-            return self.sourceModel().data(self._mapWithRole(proxyIndex, role), Qt.DisplayRole)
 
-        column = 0
-        if role in self._roleSrcColumns:
-            column = self._roleSrcColumns[role]
-            if role == Qt.DecorationRole:
-                roleName = self._role2RoleName[role]
-                url = "image://{0}/{1}/{2}/{3}".format(self._imageProviderPrefix,
+        if role < QmlProxyModel.RoleOffset:
+            return self.sourceModel().data(self.mapToSource(proxyIndex), role)
+
+        srcRole = self._mappings[role]['sourceRole']
+
+        if srcRole != Qt.DecorationRole:
+            return self.sourceModel().data(self._mapWithRole(proxyIndex, role), srcRole)
+
+        roleName = self._mappings[role]['roleName']
+
+        url = "image://{0}/{1}/{2}/{3}".format(self._imageProviderPrefix,
                                                     roleName, proxyIndex.row(),
                                                     self._imageUpdateCounter(roleName,
                                                                                 proxyIndex.row()))
-                return QVariant(url)
 
-        return self.sourceModel().data(self.mapToSource(proxyIndex, column), role)
-
+        return QVariant(url)
 
     def _getImage(self, pixmapPath):
 
-        roleName,row, updateCounter = str(pixmapPath).split('/')
+        roleName, row, updateCounter = str(pixmapPath).split('/')
         row = int(row)
-        srcRole = None
-        for role in self._role2RoleName:
-            if self._role2RoleName[role] == roleName:
-                srcRole = role
-                break
-        if srcRole is None:
-            return
 
-        if not srcRole in self._roleSrcColumns:
-            return 
-        column = self._roleSrcColumns[srcRole]
+        for targetRole in self._mappings:
+            if self._mappings[targetRole]['roleName'] == roleName:
+                column = self._mappings[targetRole]['column']
+                srcRole = self._mappings[targetRole]['sourceRole']
+                break
 
         return py(self.sourceModel().index(row, column).data(srcRole))
 
     def setData(self, index, value, role=Qt.EditRole):
+
         if not self.sourceModel():
             return False
-        if role >= QmlProxyModel.RoleOffset:
-            return self.sourceModel().setData(self._mapWithRole(index, role), value, Qt.EditRole)
+
+        if role < QmlProxyModel.RoleOffset:
+            return self.sourceModel().setData(self.mapToSource(index), value, role)
+
+        srcRole = self._mappings[role]['sourceRole']
+
+        return self.sourceModel().setData(self._mapWithRole(index, role), value, srcRole)
 
         column = 0
         if role in self._roleSrcColumns:
@@ -234,7 +233,7 @@ class QmlProxyModel(EditableProxyModel):
 
     def _mapWithRole(self, index, role):
         if role >= QmlProxyModel.RoleOffset:
-            return self.sourceModel().index(index.row(), role-QmlProxyModel.RoleOffset)
+            return self.sourceModel().index(index.row(), self._mappings[role]['column'])
         return self.mapToSource(index)
 
     def parent(self, index=QModelIndex()):
@@ -252,8 +251,11 @@ class QmlProxyModel(EditableProxyModel):
 
         src = self.sourceModel()
 
-        for col in self._column2RoleName:
-            res[self._column2RoleName[col]] = src.index(row, col).data()
+        for targetRole in self._mappings:
+            roleName = self._mappings[targetRole]['roleName']
+            col = self._mappings[targetRole]['column']
+            srcRole = self._mappings[targetRole]['sourceRole']
+            res[roleName] = src.index(row, col).data(srcRole)
 
         return res
 
@@ -261,3 +263,6 @@ class QmlProxyModel(EditableProxyModel):
     def setProperty(self, row, roleName, value):
         col = self.columnOfRoleName(roleName)
         self.sourceModel().setData(self.sourceModel().index(row, col), value, Qt.EditRole)
+
+    def _nextMappingId(self):
+        return QmlProxyModel.RoleOffset + self._mapCount
