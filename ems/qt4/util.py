@@ -10,6 +10,8 @@ from pprint import pformat
 from PyQt4.QtCore import QVariant, pyqtSignal, QObject, Qt, QDateTime
 from PyQt4.QtGui import QColor
 
+from ems import qt4
+
 class VariantContainer(tuple):
     '''
     This is an Container to protected the contents of an
@@ -170,3 +172,12 @@ def findIndexesOfValue(model, value, inRow=None, inColumn=None,
                 indexes.append(index)
 
     return indexes
+
+def columnOfName(model, colName):
+
+    for i in range(model.columnCount()):
+        modelColName = variant_to_pyobject(model.headerData(i, Qt.Horizontal, qt4.ColumnNameRole))
+        if modelColName == colName:
+            return i
+
+    return -1
