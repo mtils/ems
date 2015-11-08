@@ -221,22 +221,3 @@ def camelCase(value):
 class classproperty(property):
     def __get__(self, cls, owner):
         return self.fget.__get__(None, owner)()
-
-if __name__ == '__main__':
-    #tests = (
-             #("Östliche Rheinbrückenstraße","Östliche Rheinbrückenstr."),
-             #("Östliche Rheinbrückenstraße","Östliche Rheinbrückenstraße"),
-             #("Östliche Rheinbrückenstraße","Rheinbrückenstr."),
-             #("Östliche Rheinbrückenstraße","Östl. Rheinbrückenstr."),
-             #("Östliche Rheinbrückenstraße","Marienweg"),
-             #("Hauptstraße","Hauptstr."),
-             #("Cresbacher Str.", "Breslauer Str."),
-             #(u"Im Gässle", u"Im Gäßle"),
-             #(u"Hafenweg", u"HAFENWEG")
-             #)
-    #for test in tests:
-        #print "%s (%s) %s:" % (test[0], len(test[0]), test[1])
-        #print "%s %s%%" % (stringSimilarity(*test), stringSimilarity(*test, returnPercent=True))
-    
-    clause = GenClause('kontaktTypId').in_(14,15,178)
-    print clause

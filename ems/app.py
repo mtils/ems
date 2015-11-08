@@ -10,7 +10,7 @@ class App(Container):
 
     _shortCut = None
 
-    def __init__(self, argv, path):
+    def __init__(self, argv, path=None):
         super(App, self).__init__()
         self._bootstrappers = [
             EventBootstrapper()
@@ -26,6 +26,8 @@ class App(Container):
 
         App._shortCut = self.appInstance
 
+        self._setPath(argv, path)
+
         self.shareInstance(App, self)
 
     def addBootstrapper(self, bootstrapper):
@@ -38,7 +40,7 @@ class App(Container):
 
     bootstrappers = property(getBootstrappers)
 
-    def start(self, path, argv):
+    def start(self, path=None, argv=None):
 
         self.path = path
         self.argv = argv
@@ -60,6 +62,9 @@ class App(Container):
 
     def __call__(self, *args, **kwargs):
         return self.appInstance(*args, **kwargs)
+
+    def _setPath(self, argv, path):
+        self.path = path if path else os.path.abspath(os.path.dirname(argv[0]))
 
 class Bootstrapper(object):
 
