@@ -9,7 +9,7 @@ from sqlalchemy import create_engine,MetaData
 from sqlalchemy.engine.url import URL
 from sqlalchemy.orm import sessionmaker,scoped_session
 
-from ems.eventhook import EventHook
+from ems.event.hook import EventHook
 from ems.exceptions import DuplicateIdentifierError
 
 class DriverNotConfiguredError(KeyError):
@@ -44,7 +44,10 @@ class AlchemyLoader(object):
         self.autocommit = False
         self.expireOnCommit = False
 
+        self.engineAboutToLoad = EventHook()
         self.engineLoaded = EventHook()
+        self.sessionMakerAboutToLoad = EventHook()
+        self.sessionMakerLoaded = EventHook()
 
     def getEngines(self):
         return self.__engines
@@ -58,30 +61,14 @@ class AlchemyLoader(object):
 
     def setLoader(self, value):
         self.__loader = value
-    
-    def addConfigurator(self,cfgFunction,handle='default'):
-        if not callable(cfgFunction):
-            raise TypeError('cfgFunction has to be callable')
-        if not self.__configurators.has_key(handle):
-            self.__configurators[handle] = []
-        self.__configurators[handle].append(cfgFunction)
-    
-    def _applyConfigurators(self,handle,eventName):
-        if self.__configurators.has_key(handle):
-            for cfgFunc in self.__configurators[handle]:
-                cfgFunc(self,
-                        eventName,
-                        self.getEngine(handle),
-                        self.getMetaData(handle),
-                        handle)
-    
+
     def getEngine(self,handle='default',loaderHint=''):
-        if not self.__engines.has_key(handle):
-            self.loadEngine(handle,loaderHint)
+        if handle not in self.__engines:
+            self.loadEngine(handle, loaderHint)
         return self.__engines[handle]
 
     def loadEngine(self,handle='default',loaderHint=''):
-        if self.__engines.has_key(handle):
+        if handle in self.__engines:
             msg = "Engine with handle \"%s\" does already exist" % handle
             raise HandleAlreadyUsedError(msg)
         if isinstance(loaderHint, basestring):
@@ -93,34 +80,37 @@ class AlchemyLoader(object):
         else:
             engineConfig = loaderHint
             self.setCfgForHandle(handle, engineConfig)
-        
-        if not engineConfig.has_key('driver'):
+
+        if 'driver' not in engineConfig:
             raise DriverNotConfiguredError("EngineConfig %s misses driver"
                                            % loaderHint)
-#        print self.getCfgForHandle(handle)
+
         url = self.buildUrl(engineConfig)
-        self.__engines[handle] = self._createEngine(url, handle)
-        self._applyConfigurators(handle,'engineAboutToLoad')
-        self._applyConfigurators(handle, "engineLoaded")
-        self.engineLoaded.fire(handle, self.__engines[handle])
+
+        self.__engines[handle] = engine = self._createEngine(url, handle)
+        metadata = self.getMetaData(handle)
+
+        self.engineAboutToLoad.fire(handle, engine, metadata)
+        self.engineLoaded.fire(handle, engine, metadata)
+
         return self.__engines[handle]
-    
+
     def _createEngine(self, url, handle):
         return create_engine(url,echo=self.logQueries)
     
     def buildUrl(self, cfg):
         url = URL(cfg['driver'])
-        if cfg.has_key('username'):
+        if 'username' in cfg:
             url.username = cfg['username']
-        if cfg.has_key('password'):
+        if 'password' in cfg:
             url.password = cfg['password']
-        if cfg.has_key('host'):
+        if 'host' in cfg:
             url.host = cfg['host']
-        if cfg.has_key('port'):
+        if 'port' in cfg:
             url.port = cfg['port']
-        if cfg.has_key('database'):
+        if 'database' in cfg:
             url.database = cfg['database']
-        if cfg.has_key('databasefile'):
+        if 'databasefile' in cfg:
             if os.path.isabs(cfg['databasefile']):
                 url.database = cfg['databasefile']
             else:
@@ -134,12 +124,12 @@ class AlchemyLoader(object):
                         raise TypeError("appPath of loader not set")
                     url.database = os.path.join(self.__loader.appPath,
                                                 cfg['databasefile'])
-        if cfg.has_key('options'):
+        if 'options' in cfg:
             url.query = cfg['options']
         return url
         
     def getCfgForHandle(self,handle):
-        if self.__engineConfigs.has_key(handle):
+        if handle in self.__engineConfigs:
             return self.__engineConfigs[handle]
         raise NoConfigFound("No Config for handle %s found" % handle)
     
@@ -163,41 +153,49 @@ class AlchemyLoader(object):
         pass
     
     def hasCon(self,handle):
-        return self.__engines.has_key(handle) 
+        return handle in self.__engines 
     
     def remove(self,handle):
-        if self.__engineConfigs.has_key(handle):
+        if handle in self.__engineConfigs:
             self.__engines[handle].dispose()
             del self.__engines[handle]
             del self.__engineConfigs[handle]
             del self.__metaDatas[handle]
         else:
             raise KeyError("No engine with Handle %s found" % handle)
-    
+
     def disposeEngine(self, handle):
-        if self.__engineConfigs.has_key(handle):
+        if handle in self.__engineConfigs:
             self.__engines[handle].dispose()
-    
-    def getMetaData(self,handle='default'):
-        if not self.__metaDatas.has_key(handle):
+
+    def getMetaData(self, handle='default'):
+        if handle not in self.__metaDatas:
             self.__metaDatas[handle] = MetaData()
             self.__metaDatas[handle].bind = self.getEngine(handle)
         return self.__metaDatas[handle]
-    
+
     def getSession(self, handle='default'):
         return scoped_session(self.getSessionMaker(handle))
-    
+
     def getSessionMaker(self, handle='default'):
-        if not self.__sessionMakers.has_key(handle):
-            self.__sessionMakers[handle] = \
-                sessionmaker(bind=self.getEngine(handle),
+
+        if handle in self.__sessionMakers:
+            return self.__sessionMakers[handle]
+
+        metadata = self.getMetaData(handle)
+
+        maker = sessionmaker(bind=self.getEngine(handle),
                              autoflush=self.autoflush,
                              autocommit=self.autocommit,
                              expire_on_commit=False)
-            self._applyConfigurators(handle, "sessionMakerAboutToLoad")
-            self._applyConfigurators(handle, "sessionMakerLoaded")
+
+        self.__sessionMakers[handle] = maker
+
+        self.sessionMakerAboutToLoad.fire(handle, metadata)
+        self.sessionMakerLoaded.fire(handle, metadata)
+
         return self.__sessionMakers[handle]
-    
+
     def printEngines(self):
         print "AlchemyLoader.printEngines:"
         for handle in self.__engines:
