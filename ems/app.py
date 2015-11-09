@@ -10,8 +10,11 @@ class App(Container):
 
     _shortCut = None
 
-    def __init__(self, argv, path=None):
-        super(App, self).__init__()
+    def __init__(self, argv, path=None, **kwargs):
+        kwargs['argv'] = argv
+
+        super(App, self).__init__(**kwargs)
+
         self._bootstrappers = [
             EventBootstrapper()
         ]

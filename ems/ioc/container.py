@@ -4,7 +4,7 @@ from ems.eventhook import EventHook
 
 class Container(Factory):
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
 
         self._bindings = {}
         self._instances = {}
