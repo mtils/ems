@@ -40,7 +40,7 @@ class Xml(Base):
                 self.currentProfile = ''
                 self.currentVarname = ''
                 self.currentVarType = Xml.TYPE_STRING
-                
+
             def startElement(self, name, attrs):
                 if name == 'profile':
                     profileInfo = {}
@@ -51,17 +51,17 @@ class Xml(Base):
                             profileInfo['name'] = v
                         if k == 'standard' and v in ('True','true','1'):
                             profileInfo['standard'] = True
-                    
-                    if not profileInfo.has_key('id'):
+
+                    if not 'id' in profileInfo:
                         raise CfgFileInvalidError("Profile missing Id")
                     if profileInfo.has_key('name'):
                         self.configObj.setProfileName(profileInfo['id'],
                                                       profileInfo['name'])
-                    if profileInfo.has_key('standard'):
+                    if 'standard' in profileInfo:
                         self.configObj.setDefaultProfile(profileInfo['id'])
                     self.configObj.setProfile(profileInfo['id'],Node())
                     self.currentProfile = profileInfo['id']
-                                        
+
                 if name == 'entry':
                     entryInfo = {} 
                     self.currentVarType = Xml.TYPE_STRING
@@ -71,7 +71,7 @@ class Xml(Base):
                         if k == 'type':
                             self.currentVarType = v
                                 
-                    if not entryInfo.has_key('name'):
+                    if 'name' not in entryInfo:
                         raise CfgFileInvalidError("Entry tag misses name attribute")
                     if self.currentProfile:
                         self.currentVarname = "%s:%s" % (self.currentProfile,entryInfo['name'])
@@ -134,11 +134,11 @@ class Xml(Base):
             builder = TreeBuilder(self.configObj)
             xml.sax.parse(fileName, builder)
             return True
-        except IOError,e:
+        except IOError as e:
             raise CfgFileNotFoundError(str(e))
-        except ValueError,e:
+        except ValueError as e:
             raise CfgFileInvalidError(str(e))
-        except xml.sax.SAXParseException,e:
+        except xml.sax.SAXParseException as e:
             raise CfgFileInvalidError(str(e))
             
     

@@ -14,6 +14,7 @@ setup(
   install_requires = [
     # 'dbfpy', not installable via pip
     'xlrd',
+    'six'
     # 'xlwt' not installable via pip
   ],
   classifiers = [

@@ -3,6 +3,9 @@ Created on 09.02.2011
 
 @author: michi
 '''
+
+import six
+
 from ems.configuration.node import Node
 from collections import OrderedDict
 from ems.configuration.loader.xml import Xml
@@ -70,7 +73,7 @@ class Config(object):
             if self.__calculatedDefaultProfile is None:
                 if len(self.__profiles) < 2:
                     try:
-                        self.__calculatedDefaultProfile = self.__profiles.keys()[0]
+                        self.__calculatedDefaultProfile = list(self.__profiles.keys())[0]
                     except IndexError:
                         self.__profiles[self.__noProfile] = Node()
                         self.__calculatedDefaultProfile = self.__noProfile
@@ -138,7 +141,7 @@ class Config(object):
         self.entryDeleted.fire(profileId, key)
 
     def __getProfileAndVarName(self,key):
-        if isinstance(key, basestring):
+        if isinstance(key, six.string_types):
             if ":" in key:
                 return(key[0:key.find(":")],key[key.find(":")+1:])
         return (self.defaultProfile, key)

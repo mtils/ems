@@ -3,6 +3,8 @@ Created on 17.02.2011
 
 @author: michi
 '''
+from __future__ import print_function
+
 import os.path
 
 from sqlalchemy import create_engine,MetaData
@@ -197,10 +199,10 @@ class AlchemyLoader(object):
         return self.__sessionMakers[handle]
 
     def printEngines(self):
-        print "AlchemyLoader.printEngines:"
+        print("AlchemyLoader.printEngines:")
         for handle in self.__engines:
-            print "    %s:%s" % (handle,self.__engines[handle].name) 
-    
+            print("    {0}:{1}".format(handle,self.__engines[handle].name))
+
     engines = property(getEngines, None, None, "connections's docstring")
     engineConfigs = property(getEngineConfigs, None, None, "connectionConfigs's docstring")
     loader = property(getLoader, setLoader, None, "loader's docstring")
