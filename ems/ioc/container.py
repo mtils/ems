@@ -1,6 +1,7 @@
 
 from ems.patterns.factory import Factory
 from ems.eventhook import EventHook
+from ems.typehint import MethodWrapper
 
 class Container(Factory):
 
@@ -113,18 +114,17 @@ class Container(Factory):
 
     def hasTypeHint(self, abstract):
         try:
-            return ('typehinted' in abstract.__init__.func_dict)
+            return isinstance(abstract.__init__, MethodWrapper)
         except AttributeError:
             return False
 
     def _buildDependencies(self, abstract):
 
         init = abstract.__init__
-        types = init.func_dict['types']
 
         objects = []
 
-        for type_ in types:
+        for type_ in init.types:
             objects.append(self.make(type_))
 
         return objects
