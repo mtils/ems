@@ -112,7 +112,7 @@ class UserProvider(BaseProvider):
     propertyMap = property(getPropertyMap, setPropertyMap)
 
     def getPropertyName(self, name):
-        if not self._propertyMap.has_key(name):
+        if name not in self._propertyMap:
             raise KeyError("PropertyMap does not contain key {0}".format(name))
         return self._propertyMap[name]
 
