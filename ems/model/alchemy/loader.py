@@ -7,6 +7,8 @@ from __future__ import print_function
 
 import os.path
 
+import six
+
 from sqlalchemy import create_engine,MetaData
 from sqlalchemy.engine.url import URL
 from sqlalchemy.orm import sessionmaker,scoped_session
@@ -45,11 +47,14 @@ class AlchemyLoader(object):
         self.autoflush = False
         self.autocommit = False
         self.expireOnCommit = False
+        self.__initFired = False
 
+        self.init = EventHook()
         self.engineAboutToLoad = EventHook()
         self.engineLoaded = EventHook()
         self.sessionMakerAboutToLoad = EventHook()
         self.sessionMakerLoaded = EventHook()
+        self.metaDataCreator = lambda : MetaData()
 
     def getEngines(self):
         return self.__engines
@@ -69,11 +74,12 @@ class AlchemyLoader(object):
             self.loadEngine(handle, loaderHint)
         return self.__engines[handle]
 
-    def loadEngine(self,handle='default',loaderHint=''):
+    def loadEngine(self, handle='default', loaderHint=''):
+
         if handle in self.__engines:
             msg = "Engine with handle \"%s\" does already exist" % handle
             raise HandleAlreadyUsedError(msg)
-        if isinstance(loaderHint, basestring):
+        if isinstance(loaderHint, six.string_types):
             try:
                 engineConfig = self.getCfgForHandle(handle)
             except NoConfigFound:
@@ -88,6 +94,10 @@ class AlchemyLoader(object):
                                            % loaderHint)
 
         url = self.buildUrl(engineConfig)
+
+        if not self.__initFired:
+            self.init.fire(handle, engineConfig, url)
+            self.__initFired = True
 
         self.__engines[handle] = engine = self._createEngine(url, handle)
         metadata = self.getMetaData(handle)
@@ -172,7 +182,8 @@ class AlchemyLoader(object):
 
     def getMetaData(self, handle='default'):
         if handle not in self.__metaDatas:
-            self.__metaDatas[handle] = MetaData()
+            #self.__metaDatas[handle] = MetaData()
+            self.__metaDatas[handle] = self.metaDataCreator()
             self.__metaDatas[handle].bind = self.getEngine(handle)
         return self.__metaDatas[handle]
 
