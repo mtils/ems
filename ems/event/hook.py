@@ -74,7 +74,7 @@ class EventHook(object):
         for handler in self.__receivers:
             result = handler(*args, **keywargs)
             if result:
-                return
+                return result
 
     def forward(self, eventName, forwarder):
         self.__iadd__(_EventForwarder(eventName, forwarder))
