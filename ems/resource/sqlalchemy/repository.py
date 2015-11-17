@@ -8,28 +8,36 @@ class OrmRepository(Repository):
         self._session = session
 
     def get(self, id_):
-        return self._session
+        return self._session.query(self.ormClass).get(id_)
 
-    def new(self, attributes):
+    def all(self):
+        return self._session.query(self.ormClass).all()
+
+    def new(self, attributes=None):
         instance = self.ormClass()
-        self._fill(instance)
+        attributes = attributes if attributes is not None else {}
+        self._fill(instance, attributes)
         return instance
 
     def store(self, attributes):
         instance = self.new(attributes)
-        self.session.add(instance)
-        self.session.commit()
+        self._session.add(instance)
+        self._session.commit()
         return instance
 
     def update(self, model, changedAttributes):
         self._fill(model, changedAttributes)
-        self.session.add(model)
-        self.session.commit()
+        self._session.add(model)
+        self._session.commit()
         return model
 
     def delete(self, model):
-        self.session.delete(model)
+        self._session.delete(model)
 
     def _fill(self, ormObject, attributes):
         for key in attributes:
             setattr(ormObject, key, attributes[key])
+
+if __name__ == '__main__':
+    r = OrmRepository('A','S')
+    print(r)

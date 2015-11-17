@@ -1,10 +1,17 @@
 
 from abc import ABCMeta, abstractmethod
 
-class Repository(metaclass=ABCMeta):
+from six import add_metaclass
+
+@add_metaclass(ABCMeta)
+class Repository():
 
     @abstractmethod
     def get(self, id_):
+        pass
+
+    @abstractmethod
+    def all(self):
         pass
 
     @abstractmethod
@@ -22,3 +29,4 @@ class Repository(metaclass=ABCMeta):
     @abstractmethod
     def delete(self, model):
         pass
+

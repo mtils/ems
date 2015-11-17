@@ -53,7 +53,7 @@ class HoldsKeys(object):
         self._keys = []
 
     def withKey(self, *args):
-        self._keys = self._keys + args
+        self._keys = self._keys + list(args)
         return self
 
     @property
