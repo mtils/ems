@@ -12,16 +12,17 @@ class SearchModel(QAbstractTableModel):
     dirtyStateChanged = pyqtSignal(bool)
 
     @accepts(Search, Repository)
-    def __init__(self, search, repository=None, namer=None, parent=None):
+    def __init__(self, search, repository=None, namer=None, readOnlyKeys=None, parent=None):
 
         self._search = search
         self._repository = repository
+        self._readOnlyKeys = readOnlyKeys if readOnlyKeys is not None else ('id')
         self._namer = namer
         self._query = None
         self._objectCache = []
-        self._rowColumnCache = {}
+        self._valueCache = {}
         self._editBuffer = {}
-        self._unsubmittedRows = set()
+        self._unsubmittedObjectIds = set()
         self._needsRefill = True
         self._isDirty = False
         super().__init__(parent)
@@ -34,37 +35,38 @@ class SearchModel(QAbstractTableModel):
            not (0 <= index.row() < self.rowCount()):
             return None
 
-        if role in (Qt.DisplayRole, Qt.EditRole):
-
-            if self._isInBuffer(index):
-                return self._getFromBuffer(index)
-
-            # Object found
-            try:
-                obj = self._objectCache[index.row()]
-
-                # Cache Entry found
-                try:
-                    return self._rowColumnCache[index.row()][index.column()]
-
-                # No Cache Entry found
-                except KeyError:
-                    columnName = self._nameOfColumn(index.column())
-                    value = self._extractValue(obj, columnName)
-                    try:
-                        self._rowColumnCache[index.row()][index.column()] = value
-                    except KeyError:
-                        self._rowColumnCache[index.row()] = {index.column():value}
-                    return self._rowColumnCache[index.row()][index.column()]
-
-            # No Object found
-            except IndexError:
-                return None
-
         if role == ItemData.ColumnNameRole:
             return self._nameOfColumn(index.column())
+
+        try:
+            obj = self._objectCache[index.row()]
+        except IndexError:
+            return None
+
         if role == ItemData.RowObjectRole:
-            return self.getObject(index.row())
+            return obj
+
+        if role not in (Qt.DisplayRole, Qt.EditRole):
+            return None
+
+        objectId = self._objectId(obj)
+        key = self._nameOfColumn(index.column())
+
+        if self._isInBuffer(objectId, key):
+            return self._getFromBuffer(objectId, key)
+
+        try:
+
+            # Cache Entry found
+            return self._valueCache[objectId][key]
+
+        # No Cache Entry found
+        except KeyError:
+
+            objCache = self._valueCache.setdefault(objectId, {})
+            objCache[key] = self._extractValue(obj, key)
+
+            return objCache[key]
 
         return None
 
@@ -75,17 +77,20 @@ class SearchModel(QAbstractTableModel):
 
         self.refillIfNeeded()
 
-        try: 
+        try:
             obj = self._objectCache[index.row()]
-            columnName = self._nameOfColumn(index.column())
-            originalValue = self._extractValue(obj, columnName)
-            if originalValue == value:
-                return False
         except IndexError:
-            pass
+            return False
 
-        buffer = self._editBuffer.setdefault(index.row(), {})
-        buffer[index.column()] = value
+        key = self._nameOfColumn(index.column())
+        originalValue = self._extractValue(obj, key)
+        objectId = self._objectId(obj)
+
+        if originalValue == value:
+            return False
+
+        buffer = self._editBuffer.setdefault(objectId, {})
+        buffer[key] = value
 
         self._setDirty(True)
 
@@ -93,7 +98,7 @@ class SearchModel(QAbstractTableModel):
 
     def rowCount(self, index=QModelIndex()):
         self.refillIfNeeded()
-        return len(self._objectCache) + len(self._unsubmittedRows)
+        return len(self._objectCache)
 
     def columnCount(self, index=QModelIndex()):
         self.refillIfNeeded()
@@ -135,16 +140,12 @@ class SearchModel(QAbstractTableModel):
         if not self._repository:
             return Qt.ItemIsSelectable | Qt.ItemIsEnabled
 
-        return Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsEditable
+        key = self._nameOfColumn(index.column())
 
-        if index.column() not in self._flagsCache:
-            propertyName = self.nameOfColumn(index.column())
-            if self._queryBuilder.isAutoProperty(propertyName):
-                flags = Qt.ItemIsSelectable | Qt.ItemIsEnabled
-            else:
-                flags = Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsEditable
-            self._flagsCache[index.column()] = flags
-        return self._flagsCache[index.column()]
+        if key in self._readOnlyKeys:
+            return Qt.ItemIsSelectable | Qt.ItemIsEnabled
+
+        return Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsEditable
 
     def refillIfNeeded(self):
 
@@ -156,17 +157,17 @@ class SearchModel(QAbstractTableModel):
         self.beginResetModel()
 
         self._objectCache = []
-        self._rowColumnCache.clear()
+        self._valueCache.clear()
         self._editBuffer.clear()
-        self._unsubmittedRows = set()
+        self._unsubmittedObjectIds = set()
 
         for i, obj in enumerate(self._getFromSearch()):
             self._objectCache.append(obj)
-            self._rowColumnCache[i] = {}
+            #self._valueCache[i] = {}
 
         self.endResetModel()
         self.layoutChanged.emit()
-        self.headerDataChanged.emit(Qt.Vertical, 0, self.rowCount(QModelIndex()))
+        #self.headerDataChanged.emit(Qt.Vertical, 0, self.columnCount(QModelIndex()))
         self._setDirty(False)
 
     @pyqtSlot()
@@ -182,40 +183,48 @@ class SearchModel(QAbstractTableModel):
 
         createdRows = set()
 
-        for row in self._unsubmittedRows:
+        for objectId in self._unsubmittedObjectIds:
+
             data = {}
-            for col in self._editBuffer[row]:
-                value = self._editBuffer[row][col]
+
+            if objectId not in self._editBuffer:
+                continue
+
+            for key in self._editBuffer[objectId]:
+                value = self._editBuffer[objectId][key]
+
                 if value is None:
                     continue
 
-                colName = self._nameOfColumn(col)
-                data[colName] = self._editBuffer[row][col]
+                data[key] = value
 
             if not len(data):
                 continue
 
-            self._objectCache.append(self._repository.store(data))
-            createdRows.add(row)
+            self._repository.store(data, self._objectById(objectId))
+            createdRows.add(objectId)
 
-        for row in createdRows:
-            del self._editBuffer[row]
+        self._unsubmittedObjectIds.clear()
 
-        for row in self._editBuffer:
+        for objectId in createdRows:
+            del self._editBuffer[objectId]
+
+        for objectId in self._editBuffer:
 
             data = {}
 
             try:
-                obj = self._objectCache[row]
-            except IndexError:
+                obj = self._objectById(objectId)
+            except LookupError:
                 continue
 
-            for col in self._editBuffer[row]:
-                colName = self._nameOfColumn(col)
-                data[colName] = self._editBuffer[row][col]
+            for key in self._editBuffer[objectId]:
+                data[key] = self._editBuffer[objectId][key]
 
             self._repository.update(obj, data)
 
+        self._editBuffer.clear()
+        self._valueCache.clear()
         self._setDirty(False)
 
         return True
@@ -224,59 +233,40 @@ class SearchModel(QAbstractTableModel):
     def revert(self):
         self.beginResetModel()
         self._editBuffer.clear()
-        self._unsubmittedRows.clear()
+        self._removeUnsubmitted()
         self.endResetModel()
-        return True
 
     def insertRows(self, row, count, parent=QModelIndex()):
 
-        if count > 1:
-            raise NotImplementedError("Currently only one row can be inserted")
+        self.beginInsertRows(parent, row, row+count-1)
 
-        rowCount = self.rowCount(parent)
+        for i in range(count):
+            newObj = self._repository.new()
+            self._objectCache.insert(row, newObj)
+            self._unsubmittedObjectIds.add(self._objectId(newObj))
 
-        if row != rowCount:
-            raise NotImplementedError("Currently the row can be inserted at the end")
-
-        newObj = self._repository.new()
-
-        rowData = {}
-        for i in range(self.columnCount()):
-            columnName = self._nameOfColumn(i)
-            rowData[i] = getattr(newObj, columnName)
-
-        self.beginInsertRows(parent, row, row)
-        self._editBuffer[row] = rowData
-        self._unsubmittedRows.add(row)
         self.endInsertRows()
+
         return True
 
     def removeRows(self, row, count, parentIndex=QModelIndex()):
 
-        if count > 1:
-            raise NotImplementedError("Currently only one row can be removed")
+        self.beginRemoveRows(parentIndex, row, row+count-1)
 
-        self.beginRemoveRows(parentIndex, row, row)
+        objects = []
 
-        if row in self._unsubmittedRows:
-            self._unsubmittedRows.remove(row)
-            del self._editBuffer[row]
-            self._resultCache.clear()
-            return True
+        for i in range(row, row+count):
+            objects.append(self._objectCache[i])
 
-        try:
-            obj = self._objectCache[row]
-        except IndexError:
-            return False
+        for obj in objects:
+            objectId = self._objectId(obj)
+            if objectId in self._unsubmittedObjectIds:
+                self._objectCache.remove(obj)
+                self._unsubmittedObjectIds.remove(objectId)
+                continue
 
-        del self._objectCache[row]
-
-        if row in self._unsubmittedRows:
-            self._unsubmittedRows.remove(row)
-        else:
-            self._deletedObjects.append(obj)
-
-        self._resultCache.clear()
+            self._repository.delete(obj)
+            self._objectCache.remove(obj)
 
         self.endRemoveRows()
         self._setDirty(True)
@@ -288,6 +278,11 @@ class SearchModel(QAbstractTableModel):
     @pyqtSlot()
     def appendNew(self):
         return self.insertRows(self.rowCount(), 1)
+
+    def _removeUnsubmitted(self):
+        for objectId in self._unsubmittedObjectIds:
+            self._objectCache.remove(self._objectById(objectId))
+        self._unsubmittedObjectIds.clear()
 
     def _getFromSearch(self):
         return self._search.all()
@@ -320,12 +315,12 @@ class SearchModel(QAbstractTableModel):
         pathStack.pop(0)
         return self._extractValueRecursive(nextObj, pathStack)
 
-    def _isInBuffer(self, index):
-        return (index.row() in self._editBuffer and
-                index.column() in self._editBuffer[index.row()])
+    def _isInBuffer(self, objectId, key):
+        return (objectId in self._editBuffer and
+                key in self._editBuffer[objectId])
 
-    def _getFromBuffer(self, index):
-        return self._editBuffer[index.row()][index.column()]
+    def _getFromBuffer(self, objectId, key):
+        return self._editBuffer[objectId][key]
 
     def _setDirty(self, dirty):
         if self._isDirty == dirty:
@@ -336,3 +331,9 @@ class SearchModel(QAbstractTableModel):
 
     def _objectId(self, obj):
         return id(obj)
+
+    def _objectById(self, objectId):
+        for obj in self._objectCache:
+            if self._objectId(obj) == objectId:
+                return obj
+        raise LookupError()

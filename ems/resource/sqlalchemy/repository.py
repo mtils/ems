@@ -19,8 +19,8 @@ class OrmRepository(Repository):
         self._fill(instance, attributes)
         return instance
 
-    def store(self, attributes):
-        instance = self.new(attributes)
+    def store(self, attributes, obj=None):
+        instance = self._fill(obj, attributes) if obj else self.new(attributes)
         self._session.add(instance)
         self._session.commit()
         return instance
@@ -33,10 +33,13 @@ class OrmRepository(Repository):
 
     def delete(self, model):
         self._session.delete(model)
+        self._session.commit()
+        return model
 
     def _fill(self, ormObject, attributes):
         for key in attributes:
             setattr(ormObject, key, attributes[key])
+        return ormObject
 
 if __name__ == '__main__':
     r = OrmRepository('A','S')
