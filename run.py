@@ -14,10 +14,27 @@ import os.path
 import sip
 import argparse
 
-from examples.qt4.bootstrap.create_app import create_app
+#from examples.qt4.bootstrap.create_app import create_app
 
 def runModule(module):
     __import__(module)
+
+def create_needed_app(runThisModule, argv, appPath, env):
+
+    if ".qt4." in runThisModule:
+        from examples.qt4.bootstrap.create_app import create_app
+        app = create_app(argv, appPath, env=env)
+        app.setQuitOnLastWindowClosed(True)
+        return app
+
+    if ".qt5." in runThisModule:
+        from examples.qt5.bootstrap.create_app import create_app
+        app = create_app(argv, appPath, env=env)
+        app.setQuitOnLastWindowClosed(True)
+        return app
+
+    from examples.bootstrap.create_app import create_app
+    return create_app(argv, appPath, env=env)
 
 def main(argv):
 
@@ -33,11 +50,9 @@ def main(argv):
 
     env = parser.parse_args().env
 
-    app = create_app(argv, appPath, env=env)
-
-    app.setQuitOnLastWindowClosed(True)
-
     runThisModule = parser.parse_args().module
+
+    app = create_needed_app(runThisModule, argv, appPath, env)
 
     app.started += lambda app:__import__(runThisModule)
 
