@@ -1,18 +1,22 @@
 
-from PyQt5.QtCore import QAbstractTableModel, Qt, QModelIndex, pyqtSlot
+from PyQt5.QtCore import QAbstractTableModel, Qt, QModelIndex, pyqtSlot, QByteArray
 from PyQt5.QtCore import pyqtSignal
 
 from ems.typehint import accepts
 from ems.search.base import Search
-from ems.qt.identifiers import ItemData
+from ems.qt.identifiers import ItemData, RoleOffset
 from ems.resource.repository import Repository
 
 class SearchModel(QAbstractTableModel):
 
     dirtyStateChanged = pyqtSignal(bool)
 
+    error = pyqtSignal(Exception)
+
     @accepts(Search, Repository)
     def __init__(self, search, repository=None, namer=None, readOnlyKeys=None, parent=None):
+
+        super().__init__(parent)
 
         self._search = search
         self._repository = repository
@@ -25,21 +29,33 @@ class SearchModel(QAbstractTableModel):
         self._unsubmittedObjectIds = set()
         self._needsRefill = True
         self._isDirty = False
-        super().__init__(parent)
+        self._roleNames = None
+
+        # Needs to ne done first, even if no one asks because qml asks rowCount
+        # before its ready
+        self.refillIfNeeded()
 
     def data(self, index, role=Qt.DisplayRole):
 
         self.refillIfNeeded()
 
+        row = index.row()
+        column = index.column()
+
+        if role >= RoleOffset:
+            column = role - RoleOffset
+            #print('Asking for row', row, 'role:', role, 'column:', column)
+            role = Qt.DisplayRole
+
         if not index.isValid() or \
-           not (0 <= index.row() < self.rowCount()):
+           not (0 <= row < self.rowCount()):
             return None
 
         if role == ItemData.ColumnNameRole:
-            return self._nameOfColumn(index.column())
+            return self._nameOfColumn(column)
 
         try:
-            obj = self._objectCache[index.row()]
+            obj = self._objectCache[row]
         except IndexError:
             return None
 
@@ -50,7 +66,7 @@ class SearchModel(QAbstractTableModel):
             return None
 
         objectId = self._objectId(obj)
-        key = self._nameOfColumn(index.column())
+        key = self._nameOfColumn(column)
 
         if self._isInBuffer(objectId, key):
             return self._getFromBuffer(objectId, key)
@@ -72,17 +88,24 @@ class SearchModel(QAbstractTableModel):
 
     def setData(self, index, value, role=Qt.EditRole):
 
+        self.refillIfNeeded()
+
+        row = index.row()
+        column = index.column()
+
+        if role >= RoleOffset:
+            column = role - RoleOffset
+            role = Qt.EditRole
+
         if role != Qt.EditRole:
             return False
 
-        self.refillIfNeeded()
-
         try:
-            obj = self._objectCache[index.row()]
+            obj = self._objectCache[row]
         except IndexError:
             return False
 
-        key = self._nameOfColumn(index.column())
+        key = self._nameOfColumn(column)
         originalValue = self._extractValue(obj, key)
         objectId = self._objectId(obj)
 
@@ -97,11 +120,13 @@ class SearchModel(QAbstractTableModel):
         return True
 
     def rowCount(self, index=QModelIndex()):
+        #print("rowCount", len(self._objectCache), self)
         self.refillIfNeeded()
+        #print("rowCount after refillIfNeeded", len(self._objectCache), self)
         return len(self._objectCache)
 
     def columnCount(self, index=QModelIndex()):
-        self.refillIfNeeded()
+        #self.refillIfNeeded()
         return len(self._search.keys)
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
@@ -159,15 +184,14 @@ class SearchModel(QAbstractTableModel):
         self._objectCache = []
         self._valueCache.clear()
         self._editBuffer.clear()
-        self._unsubmittedObjectIds = set()
+        self._unsubmittedObjectIds.clear()
 
-        for i, obj in enumerate(self._getFromSearch()):
-            self._objectCache.append(obj)
-            #self._valueCache[i] = {}
+
+        self._objectCache = [obj for obj in self._getFromSearch()]
 
         self.endResetModel()
         self.layoutChanged.emit()
-        #self.headerDataChanged.emit(Qt.Vertical, 0, self.columnCount(QModelIndex()))
+        #self.headerDataChanged.emit(Qt.Vertical, 0, self.columnCount())
         self._setDirty(False)
 
     @pyqtSlot()
@@ -201,7 +225,11 @@ class SearchModel(QAbstractTableModel):
             if not len(data):
                 continue
 
-            self._repository.store(data, self._objectById(objectId))
+            try:
+                self._repository.store(data, self._objectById(objectId))
+            except Exception as e:
+                self.error.emit(e)
+                return False
             createdRows.add(objectId)
 
         self._unsubmittedObjectIds.clear()
@@ -272,12 +300,37 @@ class SearchModel(QAbstractTableModel):
         self._setDirty(True)
         return True
 
+    def index(self, row, column, parent=QModelIndex()):
+        return self.createIndex(row, column, object=0)
+
+    def parent(self, index):
+        return QModelIndex()
+
+    def hasChildren(self, parent):
+        return False
+
+    def roleNames(self):
+
+        if self._roleNames is not None:
+            return self._roleNames
+
+        self._roleNames = {}
+
+        for column in range(self.columnCount()):
+            targetRole = RoleOffset + column
+            columnName = self._nameOfColumn(column)
+            columnName = columnName if columnName != 'id' else 'ID'
+            self._roleNames[targetRole] = bytearray(columnName, encoding='ascii')
+
+        return self._roleNames
+
     def isDirty(self):
         return self._isDirty
 
     @pyqtSlot()
     def appendNew(self):
         return self.insertRows(self.rowCount(), 1)
+
 
     def _removeUnsubmitted(self):
         for objectId in self._unsubmittedObjectIds:

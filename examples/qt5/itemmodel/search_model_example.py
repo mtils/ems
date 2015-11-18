@@ -47,6 +47,7 @@ class AddRemoveHandler:
     def __init__(self, view):
         self.view = view
         self.model = view.model()
+        self.model.error.connect(self.printError)
 
     def addAfterLastSelected(self):
 
@@ -76,6 +77,9 @@ class AddRemoveHandler:
         for index in selectionModel.selectedIndexes():
             rows.append(index.row())
         return rows
+
+    def printError(self, exception):
+        print(exception)
 
 engine = create_engine('sqlite:///:memory:', echo=True)
 

@@ -61,3 +61,5 @@ class Action(object):
     PrintAction = 4
     ImportAction = 5
     ExportAction = 6
+
+RoleOffset = 1024
