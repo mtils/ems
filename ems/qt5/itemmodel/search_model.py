@@ -324,6 +324,20 @@ class SearchModel(QAbstractTableModel):
 
         return self._roleNames
 
+    @pyqtSlot(int, result='QVariantMap')
+    def get(self, row):
+
+        res = {}
+
+        roleNames = self.roleNames()
+
+        for targetRole in roleNames:
+            roleName = roleNames[targetRole]
+            res[roleName.decode()] = self.index(row, 0).data(targetRole)
+
+        #print(res)
+        return res
+
     def isDirty(self):
         return self._isDirty
 
