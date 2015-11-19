@@ -8,8 +8,9 @@ from ems.typehint import accepts
 from ems.search.base import Search
 from ems.qt.identifiers import ItemData, RoleOffset
 from ems.resource.repository import Repository
+from ems.qt5.itemmodel.qml_basemodel import QmlTableModel
 
-class SearchModel(QAbstractTableModel):
+class SearchModel(QmlTableModel):
 
     dirtyStateChanged = pyqtSignal(bool)
 
@@ -31,7 +32,6 @@ class SearchModel(QAbstractTableModel):
         self._unsubmittedObjectIds = set()
         self._needsRefill = True
         self._isDirty = False
-        self._roleNames = None
 
         # Needs to ne done first, even if no one asks because qml asks rowCount
         # before its ready
@@ -316,69 +316,6 @@ class SearchModel(QAbstractTableModel):
     def hasChildren(self, parent):
         return False
 
-    def roleNames(self):
-
-        if self._roleNames is not None:
-            return self._roleNames
-
-        self._roleNames = {}
-
-        for column in range(self.columnCount()):
-            targetRole = RoleOffset + column
-            columnName = self._nameOfColumn(column)
-            columnName = columnName if columnName != 'id' else 'ID'
-            self._roleNames[targetRole] = bytearray(columnName, encoding='ascii')
-
-        return self._roleNames
-
-    @pyqtSlot(int, result='QVariantMap')
-    def get(self, row):
-
-        res = {}
-
-        roleNames = self.roleNames()
-
-        for targetRole in roleNames:
-            roleName = roleNames[targetRole]
-            res[roleName.decode()] = self.index(row, 0).data(targetRole)
-
-        #print(res)
-        return res
-
-    @pyqtSlot(int, "QJSValue")
-    def set(self, row, jsValue):
-        data = jsValue.toVariant()
-
-        roleNames = self.roleNames()
-
-        for key in data:
-            try:
-                targetRole = [role for role, value in roleNames.items() if value.decode() == key][0]
-                self.setData(self.index(row, 0), data[key], targetRole)
-            except IndexError:
-                pass
-
-        self.submit()
-
-    @pyqtSlot("QJSValue")
-    def append(self, jsValue):
-        data = jsValue.toVariant()
-
-        roleNames = self.roleNames()
-
-        nextRow = self.rowCount()
-
-        self.insertRows(nextRow, 1)
-
-        for key in data:
-            try:
-                targetRole = [role for role, value in roleNames.items() if value.decode() == key][0]
-                self.setData(self.index(nextRow, 0), data[key], targetRole)
-            except IndexError:
-                pass
-
-        #self.submit()
-
     def isDirty(self):
         return self._isDirty
 
@@ -386,10 +323,6 @@ class SearchModel(QAbstractTableModel):
     def appendNew(self):
         return self.insertRows(self.rowCount(), 1)
 
-
-    @pyqtProperty(int)
-    def count(self):
-        return self.rowCount()
 
     def _removeUnsubmitted(self):
         for objectId in self._unsubmittedObjectIds:
