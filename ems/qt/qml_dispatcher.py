@@ -70,13 +70,6 @@ class QmlDispatcher(object):
         item = self.show(component, routeName)
         self.itemAdded.fire(routeName, item)
 
-        #if component:
-            #item = self.show(component, routeName)
-            #self.itemAdded.fire(routeName, item)
-            #return item
-
-        #print(self._fileLoader.fileName(routeName))
-
         obj, method  = self._createHandler(routeName)
 
         if not obj:
@@ -97,7 +90,7 @@ class QmlDispatcher(object):
     def _createHandler(self, routeName):
 
         if routeName not in configures.handlers:
-            return
+            return (None, None)
 
         handler = configures.handlers[routeName]
 
