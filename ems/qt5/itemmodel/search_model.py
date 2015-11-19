@@ -1,6 +1,8 @@
 
+from datetime import datetime
+
 from PyQt5.QtCore import QAbstractTableModel, Qt, QModelIndex, pyqtSlot, QByteArray
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import pyqtSignal, QDateTime, QDate, pyqtProperty
 
 from ems.typehint import accepts
 from ems.search.base import Search
@@ -80,7 +82,7 @@ class SearchModel(QAbstractTableModel):
         except KeyError:
 
             objCache = self._valueCache.setdefault(objectId, {})
-            objCache[key] = self._extractValue(obj, key)
+            objCache[key] = self._castToQt(self._extractValue(obj, key))
 
             return objCache[key]
 
@@ -105,6 +107,8 @@ class SearchModel(QAbstractTableModel):
         except IndexError:
             return False
 
+        #value = self._castToPython(value)
+
         key = self._nameOfColumn(column)
         originalValue = self._extractValue(obj, key)
         objectId = self._objectId(obj)
@@ -121,13 +125,10 @@ class SearchModel(QAbstractTableModel):
         return True
 
     def rowCount(self, index=QModelIndex()):
-        #print("rowCount", len(self._objectCache), self)
         self.refillIfNeeded()
-        #print("rowCount after refillIfNeeded", len(self._objectCache), self)
         return len(self._objectCache)
 
     def columnCount(self, index=QModelIndex()):
-        #self.refillIfNeeded()
         return len(self._search.keys)
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
@@ -220,7 +221,7 @@ class SearchModel(QAbstractTableModel):
                 continue
 
             for key in self._editBuffer[objectId]:
-                value = self._editBuffer[objectId][key]
+                value = self._castToPython(self._editBuffer[objectId][key])
 
                 if value is None:
                     continue
@@ -233,6 +234,7 @@ class SearchModel(QAbstractTableModel):
             try:
                 self._repository.store(data, self._objectById(objectId))
             except Exception as e:
+                print(e)
                 self.error.emit(e)
                 return False
             createdRows.add(objectId)
@@ -252,7 +254,7 @@ class SearchModel(QAbstractTableModel):
                 continue
 
             for key in self._editBuffer[objectId]:
-                data[key] = self._editBuffer[objectId][key]
+                data[key] = self._castToPython(self._editBuffer[objectId][key])
 
             self._repository.update(obj, data)
 
@@ -344,8 +346,8 @@ class SearchModel(QAbstractTableModel):
         return res
 
     @pyqtSlot(int, "QJSValue")
-    def set(self, row, variant):
-        data = variant.toVariant()
+    def set(self, row, jsValue):
+        data = jsValue.toVariant()
 
         roleNames = self.roleNames()
 
@@ -358,6 +360,25 @@ class SearchModel(QAbstractTableModel):
 
         self.submit()
 
+    @pyqtSlot("QJSValue")
+    def append(self, jsValue):
+        data = jsValue.toVariant()
+
+        roleNames = self.roleNames()
+
+        nextRow = self.rowCount()
+
+        self.insertRows(nextRow, 1)
+
+        for key in data:
+            try:
+                targetRole = [role for role, value in roleNames.items() if value.decode() == key][0]
+                self.setData(self.index(nextRow, 0), data[key], targetRole)
+            except IndexError:
+                pass
+
+        #self.submit()
+
     def isDirty(self):
         return self._isDirty
 
@@ -365,6 +386,10 @@ class SearchModel(QAbstractTableModel):
     def appendNew(self):
         return self.insertRows(self.rowCount(), 1)
 
+
+    @pyqtProperty(int)
+    def count(self):
+        return self.rowCount()
 
     def _removeUnsubmitted(self):
         for objectId in self._unsubmittedObjectIds:
@@ -424,3 +449,13 @@ class SearchModel(QAbstractTableModel):
             if self._objectId(obj) == objectId:
                 return obj
         raise LookupError()
+
+    def _castToPython(self, value):
+        if isinstance(value, QDateTime):
+            return value.toPyDateTime()
+        return value
+
+    def _castToQt(self, value):
+        if isinstance(value, datetime):
+            return QDateTime.fromString(value.isoformat(), Qt.ISODate)
+        return value
