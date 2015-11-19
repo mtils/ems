@@ -115,6 +115,7 @@ class SearchModel(QAbstractTableModel):
         buffer = self._editBuffer.setdefault(objectId, {})
         buffer[key] = value
 
+        self.dataChanged.emit(index, index)
         self._setDirty(True)
 
         return True
@@ -203,6 +204,10 @@ class SearchModel(QAbstractTableModel):
     def submit(self):
 
         if not self._isDirty:
+            return False
+
+        if not self._repository:
+            self.error.emit(AttributeError("No repository setted"))
             return False
 
         createdRows = set()
@@ -337,6 +342,21 @@ class SearchModel(QAbstractTableModel):
 
         #print(res)
         return res
+
+    @pyqtSlot(int, "QJSValue")
+    def set(self, row, variant):
+        data = variant.toVariant()
+
+        roleNames = self.roleNames()
+
+        for key in data:
+            try:
+                targetRole = [role for role, value in roleNames.items() if value.decode() == key][0]
+                self.setData(self.index(row, 0), data[key], targetRole)
+            except IndexError:
+                pass
+
+        self.submit()
 
     def isDirty(self):
         return self._isDirty

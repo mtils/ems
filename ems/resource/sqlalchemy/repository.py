@@ -1,4 +1,6 @@
 
+from sqlalchemy.orm.session import object_session
+
 from ems.resource.repository import Repository
 
 class OrmRepository(Repository):
@@ -26,15 +28,24 @@ class OrmRepository(Repository):
         return instance
 
     def update(self, model, changedAttributes):
+
         self._fill(model, changedAttributes)
-        self._session.add(model)
-        self._session.commit()
+
+        session = self._modelSession(model)
+        session.add(model)
+        session.commit()
+
         return model
 
     def delete(self, model):
-        self._session.delete(model)
-        self._session.commit()
+        session = self._modelSession(model)
+        session.delete(model)
+        session.commit()
         return model
+
+    def _modelSession(self, model):
+        objectSession = object_session(model)
+        return objectSession if objectSession else self._session
 
     def _fill(self, ormObject, attributes):
         for key in attributes:

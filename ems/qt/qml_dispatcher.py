@@ -1,9 +1,10 @@
 
 import inspect
 
+import os.path
 from ems.event.hook import EventHook
 
-class endpoint(object):
+class configures(object):
 
     handlers = {}
 
@@ -11,7 +12,7 @@ class endpoint(object):
         self.routeName = routeName
 
     def __call__(self, func):
-        endpoint.handlers[self.routeName] = func
+        configures.handlers[self.routeName] = func
         return func
 
 class QmlController(object):
@@ -31,36 +32,50 @@ class _FakeHandler(object):
     def invoke(self, *args, **kwargs):
         self.handler(*args, **kwargs)
 
+class QmlFileLoader(object):
+
+    def __init__(self, qmlPath):
+        self.qmlPath = qmlPath
+
+    def fileName(self, routeName):
+        pathSplit = routeName.split('.')
+        return "{0}.qml".format(os.path.join(self.qmlPath, 'resources', *pathSplit))
+
 class QmlDispatcher(object):
 
-    def __init__(self, qmlEngine, componentAdder):
-        self._engine = qmlEngine
-        self.requested = EventHook()
+    def __init__(self, componentCreator, componentAdder, fileLoader):
+        self._componentCreator = componentCreator
+        self.dispatching = EventHook()
         self.handlerCreated = EventHook()
+        self._fileLoader = fileLoader
         #self.requested += self._dispatchToHandler
         self.itemAdded = EventHook()
+        self.itemBooted = EventHook()
         self.componentAdder = componentAdder
         self.handlerCreator = lambda c: c()
 
-    def getEngine(self):
-        return self._engine
-
-    def setEngine(self, engine):
-        self._engine = engine
-
-    engine = property(getEngine, setEngine)
-
     def show(self, component, routeName):
-        return self.componentAdder(self.engine, component, routeName)
+        return self.componentAdder(component, routeName)
 
     def dispatch(self, routeName):
 
-        component = self.requested.fire(self, routeName)
+        qmlFile = self._fileLoader.fileName(routeName)
 
-        if component:
-            item = self.show(component, routeName)
-            self.itemAdded.fire(routeName, item)
-            return item
+        component = self.dispatching.fire(self, qmlFile, routeName)
+
+        if not component:
+            component = self._componentCreator(qmlFile, routeName)
+
+
+        item = self.show(component, routeName)
+        self.itemAdded.fire(routeName, item)
+
+        #if component:
+            #item = self.show(component, routeName)
+            #self.itemAdded.fire(routeName, item)
+            #return item
+
+        #print(self._fileLoader.fileName(routeName))
 
         obj, method  = self._createHandler(routeName)
 
@@ -68,29 +83,23 @@ class QmlDispatcher(object):
             print("No handler created a component for routeName: {0}".format(routeName))
             return
 
-        component = getattr(obj, method)(self.engine, routeName)
+        getattr(obj, method)(item, routeName)
 
-        item = self.show(component, routeName)
+        #item = self.show(component, routeName)
 
-        self.itemAdded.fire(routeName, item)
+        self.itemBooted.fire(routeName, item)
 
-        if hasattr(obj, 'bootItem'):
-            getattr(obj, 'bootItem')(routeName, item)
+        #if hasattr(obj, 'bootItem'):
+            #getattr(obj, 'bootItem')(routeName, item)
 
         return item
 
-    def bootItem(self, item, routeName):
-        pass
-
-    def _showContents(self, engine, component, routeName):
-        engine.show(component, routeName)
-
     def _createHandler(self, routeName):
 
-        if routeName not in endpoint.handlers:
+        if routeName not in configures.handlers:
             return
 
-        handler = endpoint.handlers[routeName]
+        handler = configures.handlers[routeName]
 
         clazz = self._handlerClass(handler)
 
