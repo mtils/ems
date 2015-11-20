@@ -78,7 +78,7 @@ class QmlDispatcher(object):
 
 
         if not obj:
-            print("No handler created a component for routeName: {0}".format(routeName))
+            print("No handler found for routeName: {0}".format(routeName))
             return
 
         getattr(obj, method)(item, routeName)
