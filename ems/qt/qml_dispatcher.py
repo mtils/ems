@@ -64,13 +64,18 @@ class QmlDispatcher(object):
         component = self.dispatching.fire(self, qmlFile, routeName)
 
         if not component:
-            component = self._componentCreator(qmlFile, routeName)
+            try:
+                component = self._componentCreator(qmlFile, routeName)
+            except RuntimeError as e:
+                self._handleQmlError(routeName, e)
+                return
 
 
         item = self.show(component, routeName)
         self.itemAdded.fire(routeName, item)
 
         obj, method  = self._createHandler(routeName)
+
 
         if not obj:
             print("No handler created a component for routeName: {0}".format(routeName))
@@ -120,3 +125,14 @@ class QmlDispatcher(object):
 
         if inspect.isclass(parent):
             return parent
+
+    def _handleQmlError(self, routeName, exception):
+
+        if len(exception.args) < 2:
+            print("Creating component '{0}' raised error '{1}'".format(routeName, exception))
+
+        print("Creating component '{0}' raised the following errors:".format(routeName))
+
+        for error in exception.args[1]:
+            print(error.toString())
+
