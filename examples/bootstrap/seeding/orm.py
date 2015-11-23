@@ -25,3 +25,11 @@ class Contact(Base):
     address_addition = Column(String(255), nullable=True)
     memo = Column(Text, nullable=True)
     image = Column(String(255), nullable=True)
+
+class ContactNote(Base):
+    __tablename__ = 'contact_notes'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    contact_id = Column(ForeignKey('contacts.id'))
+    memo = Column(Text, nullable=False)
+    contact = relationship("Contact", backref=backref('notes', order_by=id))

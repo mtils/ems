@@ -70,6 +70,9 @@ class SearchModel(QmlTableModel):
         objectId = self._objectId(obj)
         key = self._nameOfColumn(column)
 
+        if key == 'notes':
+            print("Jaja")
+
         if self._isInBuffer(objectId, key):
             return self._getFromBuffer(objectId, key)
 

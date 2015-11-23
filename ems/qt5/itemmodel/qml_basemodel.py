@@ -1,5 +1,6 @@
 
 from PyQt5.QtCore import QObject, pyqtSlot, pyqtProperty, QAbstractTableModel
+from PyQt5.QtQml import QJSValue
 #from PyQt5.QtCore import QString, QVariant
 
 from ems.qt.identifiers import ItemData, RoleOffset

@@ -1,5 +1,5 @@
 
-from examples.bootstrap.seeding.orm import Contact
+from examples.bootstrap.seeding.orm import Contact, ContactNote
 
 def seed_contacts(session):
 
@@ -57,5 +57,28 @@ def seed_contacts(session):
     for data in contactData:
         contact = Contact(**data)
         session.add(contact)
+
+    session.commit()
+
+def seed_contact_notes(session):
+
+    notes = [
+        {
+            'memo': 'Has pets'
+        },
+        {
+            'memo': 'Loves Music'
+        },
+        {
+            'memo': 'Has a loud voice'
+        }
+    ]
+
+    contact = session.query(Contact).first()
+
+    for data in notes:
+        note = ContactNote(**data)
+        note.contact_id = contact.id
+        session.add(note)
 
     session.commit()
