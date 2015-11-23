@@ -15,12 +15,14 @@ class SequenceColumnModel(SearchModel):
     sourceColumnChanged = pyqtSignal(int)
 
     @accepts(Repository, QAbstractTableModel)
-    def __init__(self, itemRepository, parentModel):
+    def __init__(self, itemRepository, parentModel, idKey='id'):
 
         search = SequenceColumnSearch(parentModel)
+        repository = SequenceColumnRepository(parentModel, itemRepository, idKey)
 
-        super().__init__(search)
-        self._parentModel = parentModel
+        super().__init__(search, repository)
+        self._parentModel = None
+        self.setParentModel(parentModel)
         self._currentRow = -1
         self._sourceColumn = -1
         self._itemRepository = itemRepository
@@ -37,6 +39,7 @@ class SequenceColumnModel(SearchModel):
 
     def setParentModel(self, parentModel):
         self._parentModel = parentModel
+        self._parentModel.dataChanged.connect(self._onParentModelDataChanged)
 
     def getCurrentRow(self):
         return self._currentRow
@@ -46,6 +49,7 @@ class SequenceColumnModel(SearchModel):
             return
         self._currentRow = row
         self._search.setCurrentRow(row)
+        self._repository.setCurrentRow(row)
         self.currentRowChanged.emit(self._currentRow)
 
     currentRow = pyqtProperty(int, getCurrentRow, setCurrentRow, notify=currentRowChanged)
@@ -54,10 +58,27 @@ class SequenceColumnModel(SearchModel):
         return self._sourceColumn
 
     def setSourceColumn(self, column):
+        if self._sourceColumn == column:
+            return
         self._sourceColumn = column
         self._search.setSourceColumn(column)
+        self._repository.setSourceColumn(column)
+        self.sourceColumnChanged.emit(self._sourceColumn)
 
     sourceColumn = pyqtProperty(int, getSourceColumn, setSourceColumn)
+
+    def _onParentModelDataChanged(self, topLeft, bottomRight):
+
+        if self.currentRow < topLeft.row() or self.currentRow > bottomRight.row():
+            return
+
+        if self.sourceColumn < topLeft.column() or self.sourceColumn > bottomRight.column():
+            return
+
+        if self._isInSubmit:
+            return
+
+        self.refill()
 
 class CurrentRowColumnMixin(object):
 
@@ -102,7 +123,7 @@ class SequenceColumnSearch(Search, CurrentRowColumnMixin):
     def all(self):
         index = self._itemsIndex()
         items = self._itemsIndex().data(Qt.EditRole)
-        print("SequenceColumnSearch.all()", items)
+        #print("SequenceColumnSearch.all()", type(items), items)
         return [] if items is None else items
 
 class SequenceColumnRepository(Repository, CurrentRowColumnMixin):
@@ -121,18 +142,27 @@ class SequenceColumnRepository(Repository, CurrentRowColumnMixin):
     def get(self, id_):
         return self._findItemByModelId(id_)
 
-    def new(self, attributes):
+    def new(self, attributes=None):
         return self._modelRepository.new(attributes)
 
     def store(self, attributes, obj=None):
-        obj = self.new(attributes) if obj is None else obj
+        #print("receiving", obj.__dict__, attributes)
+        obj = self.new(attributes) if obj is None else self._fill(obj, attributes)
+        #print("after self.new", obj.__dict__)
         items = self._getItemsFromModel()
         items.append(obj)
+        #print("storing:", items)
+        #for item in items:
+            #print("writing", item.__dict__)
         self._writeItemsToModel(items)
 
     def update(self, model, changedAttributes):
-        for key, val in changedAttributes:
+
+        items = self._getItemsFromModel()
+        for key, val in changedAttributes.items():
             setattr(model, key, val)
+        # force dataChanged
+        self._writeItemsToModel(items)
 
     def delete(self, model):
         items = self._getItemsFromModel()
@@ -149,8 +179,13 @@ class SequenceColumnRepository(Repository, CurrentRowColumnMixin):
             if getattr(item, self._idKey) == modelId:
                 return item
 
+    def _fill(self, ormObject, attributes):
+        for key in attributes:
+            setattr(ormObject, key, attributes[key])
+        return ormObject
     def _getItemsFromModel(self):
-        return self._itemsIndex().data(Qt.EditRole)
+        items = self._itemsIndex().data(Qt.EditRole)
+        return [] if items is None else items
 
     def _writeItemsToModel(self, items):
         self._parentModel.setData(self._itemsIndex(), items)

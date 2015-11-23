@@ -16,7 +16,7 @@ class Repository():
         pass
 
     @abstractmethod
-    def new(self, attributes):
+    def new(self, attributes=None):
         """
         Instantiate an object
 

@@ -1,5 +1,5 @@
 
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QObject
 
 from examples.bootstrap.seeding.orm import Contact, Base, ContactNote
 from examples.qt5.helpers.table_manager import TableManager
@@ -15,7 +15,7 @@ from ems.resource.sqlalchemy.repository import OrmRepository
 from ems.qt5.itemmodel.search_model import SearchModel
 from ems.qt5.itemmodel.sequencecolumn_model import SequenceColumnModel
 
-engine = create_engine('sqlite:///:memory:', echo=False)
+engine = create_engine('sqlite:///:memory:', echo=True)
 
 Base.metadata.create_all(engine)
 

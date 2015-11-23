@@ -32,6 +32,7 @@ class SearchModel(QmlTableModel):
         self._unsubmittedObjectIds = set()
         self._needsRefill = True
         self._isDirty = False
+        self._isInSubmit = False
 
         # Needs to ne done first, even if no one asks because qml asks rowCount
         # before its ready
@@ -69,9 +70,6 @@ class SearchModel(QmlTableModel):
 
         objectId = self._objectId(obj)
         key = self._nameOfColumn(column)
-
-        if key == 'notes':
-            print("Jaja")
 
         if self._isInBuffer(objectId, key):
             return self._getFromBuffer(objectId, key)
@@ -116,7 +114,12 @@ class SearchModel(QmlTableModel):
         originalValue = self._extractValue(obj, key)
         objectId = self._objectId(obj)
 
-        if originalValue == value:
+        #print(self.__class__.__name__, "setData", index.row(), key, value, role)
+
+
+        # Comparing lists is tricky with a few item types, if one item in the list
+        # was changed 
+        if originalValue == value and not isinstance(value, list):
             return False
 
         buffer = self._editBuffer.setdefault(objectId, {})
@@ -214,7 +217,11 @@ class SearchModel(QmlTableModel):
             self.error.emit(AttributeError("No repository setted"))
             return False
 
+        self._isInSubmit = True
+
         createdRows = set()
+
+        changedIds = set()
 
         for objectId in self._unsubmittedObjectIds:
 
@@ -236,9 +243,11 @@ class SearchModel(QmlTableModel):
 
             try:
                 self._repository.store(data, self._objectById(objectId))
+                changedIds.add(objectId)
             except Exception as e:
                 print(e)
                 self.error.emit(e)
+                self._isInSubmit = False
                 return False
             createdRows.add(objectId)
 
@@ -260,10 +269,14 @@ class SearchModel(QmlTableModel):
                 data[key] = self._castToPython(self._editBuffer[objectId][key])
 
             self._repository.update(obj, data)
+            changedIds.add(objectId)
 
         self._editBuffer.clear()
         self._valueCache.clear()
         self._setDirty(False)
+
+        self._emitDataChangedForObjectIds(changedIds)
+        self._isInSubmit = False
 
         return True
 
@@ -304,7 +317,10 @@ class SearchModel(QmlTableModel):
                 continue
 
             self._repository.delete(obj)
-            self._objectCache.remove(obj)
+            try:
+                self._objectCache.remove(obj)
+            except ValueError:
+                pass
 
         self.endRemoveRows()
         self._setDirty(True)
@@ -386,6 +402,12 @@ class SearchModel(QmlTableModel):
                 return obj
         raise LookupError()
 
+    def _rowByObjectId(self, objectId):
+        for i, obj in enumerate(self._objectCache):
+            if self._objectId(obj) == objectId:
+                return i
+        raise LookupError()
+
     def _castToPython(self, value):
         if isinstance(value, QDateTime):
             return value.toPyDateTime()
@@ -395,3 +417,17 @@ class SearchModel(QmlTableModel):
         if isinstance(value, datetime):
             return QDateTime.fromString(value.isoformat(), Qt.ISODate)
         return value
+
+    def _emitDataChangedForObjectIds(self, objectIds):
+
+        for objectId in objectIds:
+
+            try:
+                row = self._rowByObjectId(objectId)
+            except LookupError:
+                continue
+
+            topLeft = self.index(row, 0)
+            bottomRight = self.index(row, self.columnCount()-1)
+            self.dataChanged.emit(topLeft, bottomRight)
+            print(row, "did change")
