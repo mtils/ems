@@ -9,6 +9,44 @@ from ems.search.base import Search
 from ems.resource.repository import Repository
 
 class SequenceColumnModel(SearchModel):
+    """
+    The SequenceColumnModel is like an proxy model. If you have a model property
+    which holds non-scalar data like a relation (a list, set, tuple , called
+    sequence here) you cannot simply put that relations in a qt view (widgets or qml)
+    So this model comes in and acts a little like the DataWidgetMapper.
+
+    Give it a sourceColumn and a currentRow and it will behave like an own model
+    for the (scalable) data of this single value.
+
+    In some sense this will get nasty complicated, because I think it is where
+    important to let the datastore untouched until the model is submitted.
+    If you write directly to your database models or relation properties this
+    is not the case.
+    So the model will write to its parent model through ModelBuffer objects,
+    which are basically dicts and the related models are all untouched.
+
+    If you submit this model, it will call parentModel.setData, which is only
+    a submit to its parentModel and not to the dataStore.
+    If you submit the parentModel, the changed Data is an dict with all 
+    items of that model. Your repository than have to care about syncing the
+    passed array with the relation.
+
+    Why oh why so complicated? Please let me write directly to the related 
+    models.
+
+    No ;-)
+
+    Sqlalchemy for example can handle all sorts of nested relation updating,
+    but you couldnt send our plain orm objects through a http request.
+    And because the repositories and the most other parts shouldnt depend of
+    whatever your datastore or the client is, cast to dicts and back.
+
+    Repositories which accept dicts are very good to test because they have
+    no hard dependencies to the outer world.
+
+    The same is with validation. Validate an array of data, not the models after
+    setting their state. This is to late.
+    """
 
     currentRowChanged = pyqtSignal(int)
 
@@ -67,6 +105,11 @@ class SequenceColumnModel(SearchModel):
 
     sourceColumn = pyqtProperty(int, getSourceColumn, setSourceColumn)
 
+    @pyqtSlot()
+    def submit(self):
+        self._needsRefill = super().submit()
+        return self._needsRefill
+
     def _onParentModelDataChanged(self, topLeft, bottomRight):
 
         if self.currentRow < topLeft.row() or self.currentRow > bottomRight.row():
@@ -79,6 +122,25 @@ class SequenceColumnModel(SearchModel):
             return
 
         self.refill()
+
+    def _extractValue(self, currentObj, key):
+
+        if not isinstance(currentObj, dict):
+            return super()._extractValue(currentObj, key)
+
+        if key in currentObj:
+            return currentObj[key]
+
+        #if hasattr(currentObj, key):
+            #return currentObj.__getattribute__(key)
+
+        #elif key.find('.'):
+            #stack = key.split('.')
+            #value = self._extractValueRecursive(currentObj, stack)
+            #if value is not None:
+                #return value
+
+        return None
 
 class CurrentRowColumnMixin(object):
 
@@ -123,7 +185,6 @@ class SequenceColumnSearch(Search, CurrentRowColumnMixin):
     def all(self):
         index = self._itemsIndex()
         items = self._itemsIndex().data(Qt.EditRole)
-        #print("SequenceColumnSearch.all()", type(items), items)
         return [] if items is None else items
 
 class SequenceColumnRepository(Repository, CurrentRowColumnMixin):
@@ -146,27 +207,30 @@ class SequenceColumnRepository(Repository, CurrentRowColumnMixin):
         return self._modelRepository.new(attributes)
 
     def store(self, attributes, obj=None):
-        #print("receiving", obj.__dict__, attributes)
         obj = self.new(attributes) if obj is None else self._fill(obj, attributes)
-        #print("after self.new", obj.__dict__)
+
+        objData = self._modelToDict(obj)
+
         items = self._getItemsFromModel()
-        items.append(obj)
-        #print("storing:", items)
-        #for item in items:
-            #print("writing", item.__dict__)
+        items.append(objData)
+
         self._writeItemsToModel(items)
 
     def update(self, model, changedAttributes):
 
+        objId = id(model)
         items = self._getItemsFromModel()
+        modelDict = self._findModelEntry(model, items)
+
         for key, val in changedAttributes.items():
-            setattr(model, key, val)
-        # force dataChanged
+            modelDict[key] = val
+
         self._writeItemsToModel(items)
 
     def delete(self, model):
+
         items = self._getItemsFromModel()
-        items.remove(model)
+        items.remove(self._findModelEntry(model, items))
         self._writeItemsToModel(items)
 
     def _findItemByModelId(self, modelId):
@@ -178,14 +242,48 @@ class SequenceColumnRepository(Repository, CurrentRowColumnMixin):
         for item in self._getItemsFromModel():
             if getattr(item, self._idKey) == modelId:
                 return item
+
+    def _modelToDict(self, model):
+
+        modelData = ModelBuffer()
+        modelData.modelId = id(model)
+
+        for key, value in model.__dict__.items():
+            if key[0] == '_':
+                continue
+            modelData[key] = value
+
+        return modelData
 
     def _fill(self, ormObject, attributes):
         for key in attributes:
             setattr(ormObject, key, attributes[key])
         return ormObject
+
     def _getItemsFromModel(self):
         items = self._itemsIndex().data(Qt.EditRole)
-        return [] if items is None else items
+        items = [] if items is None else items
+
+        dictItems = []
+        for obj in items:
+            if isinstance(obj, ModelBuffer):
+                dictItems.append(obj)
+                continue
+            dictItems.append(self._modelToDict(obj))
+
+        return dictItems
 
     def _writeItemsToModel(self, items):
         self._parentModel.setData(self._itemsIndex(), items)
+
+    def _findModelEntry(self, model, modelAsDicts):
+
+        modelId = model.modelId if isinstance(model, ModelBuffer) else id(model)
+        for modelDict in modelAsDicts:
+            if modelDict.modelId == modelId:
+                return modelDict
+
+class ModelBuffer(dict):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.modelId = None

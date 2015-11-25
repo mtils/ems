@@ -47,7 +47,6 @@ class SearchModel(QmlTableModel):
 
         if role >= RoleOffset:
             column = role - RoleOffset
-            #print('Asking for row', row, 'role:', role, 'column:', column)
             role = Qt.DisplayRole
 
         if not index.isValid() or \
@@ -113,8 +112,6 @@ class SearchModel(QmlTableModel):
         key = self._nameOfColumn(column)
         originalValue = self._extractValue(obj, key)
         objectId = self._objectId(obj)
-
-        #print(self.__class__.__name__, "setData", index.row(), key, value, role)
 
 
         # Comparing lists is tricky with a few item types, if one item in the list
@@ -430,4 +427,3 @@ class SearchModel(QmlTableModel):
             topLeft = self.index(row, 0)
             bottomRight = self.index(row, self.columnCount()-1)
             self.dataChanged.emit(topLeft, bottomRight)
-            print(row, "did change")
