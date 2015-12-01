@@ -12,6 +12,7 @@ from examples.bootstrap.seeding.seeds import seed_contacts, seed_contact_notes
 
 from ems.search.sqlalchemy.orm_search import OrmSearch
 from ems.resource.sqlalchemy.repository import OrmRepository
+from ems.resource.sqlalchemy.helpers import ToManySynchronizer
 
 from ems.qt5.itemmodel.search_model import SearchModel
 from ems.qt5.itemmodel.sequencecolumn_model import SequenceColumnModel
@@ -34,72 +35,38 @@ search.withKey('id', 'contact_type', 'forename', 'surname', 'company', 'notes')
 
 class ContactRepository(OrmRepository):
 
+    def store(self, attributes, obj=None):
+
+        instance = super().store(self._withoutRelations(attributes), obj)
+
+        if 'notes' in attributes:
+            sync = ToManySynchronizer(Contact.notes)
+            sync.syncRelation(instance, attributes['notes'])
+            session = self._modelSession(instance)
+            session.add(instance)
+            session.commit()
+
+        return instance
+
     def update(self, model, changedAttributes):
 
+        if 'notes' in changedAttributes:
+            sync = ToManySynchronizer(Contact.notes)
+            sync.syncRelation(model, changedAttributes['notes'])
+
+        return super().update(model, self._withoutRelations(changedAttributes))
+
+    def _withoutRelations(self, data):
         cleanedAttributes = {}
 
-        for key, value in changedAttributes.items():
+        for key, value in data.items():
             if key == 'notes':
-                self._syncNotes(model, value)
                 continue
             cleanedAttributes[key] = value
 
-        return super().update(model, cleanedAttributes)
-
-    def _syncNotes(self, model, notesDict):
-
-        dictIds = self._collectDictNoteIds(notesDict)
-        notes = model.notes
-        self._deleteMissingNotes(notes, dictIds)
-        self._updateExistingNotes(notes, notesDict)
-        self._createNewNotes(notes, notesDict)
-
-    def _deleteMissingNotes(self, notes, dictIds):
-
-        deletes = []
-        for note in notes:
-            if note.id not in dictIds:
-                deletes.append(note)
-
-        for note in deletes:
-            notes.remove(note)
-
-    def _createNewNotes(self, notes, notesDict):
-
-        for noteDict in notesDict:
-            if 'id' in noteDict and noteDict['id'] is not None:
-                continue
-            notes.append(ContactNote(**noteDict))
-
-    def _updateExistingNotes(self, notes, notesDict):
-
-        notesById = self._notesById(notes)
-
-        for noteDict in notesDict:
-
-            if 'id' not in noteDict or noteDict['id'] is None:
-                continue
-
-            if not noteDict['id'] in notesById:
-                continue
-
-            note = notesById[noteDict['id']]
-
-            for key, value in noteDict.items():
-                if value != getattr(note, key):
-                    setattr(note, key, value)
-
-    def _collectDictNoteIds(self, notes):
-        return [note['id'] for note in notes if 'id' in note and note['id'] is not None]
-
-    def _notesById(self, notes):
-        byId = {}
-        for note in notes:
-            byId[note.id] = note
-        return byId
+        return cleanedAttributes
 
 repository = ContactRepository(Contact, session)
-
 
 model = SearchModel(search, repository)
 
