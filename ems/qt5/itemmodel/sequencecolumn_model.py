@@ -1,5 +1,5 @@
 
-from PyQt5.QtCore import QAbstractTableModel, Qt, QModelIndex, pyqtSlot, QByteArray
+from PyQt5.QtCore import QAbstractItemModel, Qt, QModelIndex, pyqtSlot, QByteArray
 from PyQt5.QtCore import pyqtSignal, QDateTime, QDate, pyqtProperty
 
 from ems.typehint import accepts
@@ -52,7 +52,7 @@ class SequenceColumnModel(SearchModel):
 
     sourceColumnChanged = pyqtSignal(int)
 
-    @accepts(Repository, QAbstractTableModel)
+    @accepts(Repository, QAbstractItemModel)
     def __init__(self, itemRepository, parentModel, idKey='id'):
 
         search = SequenceColumnSearch(parentModel)
