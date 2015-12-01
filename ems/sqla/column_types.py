@@ -1,6 +1,8 @@
 
 from decimal import Decimal
 
+import six
+
 import sqlalchemy.types as types
 from sqlalchemy.dialects.sqlite.base import SQLiteDialect
 
@@ -28,7 +30,7 @@ class Monetary(types.TypeDecorator):
 
     def process_bind_param(self, value, dialect):
         if self.is_sqlite(dialect):
-            return unicode(value)
+            return six.text_type(value)
         else:
             return value
 
