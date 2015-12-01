@@ -1,5 +1,6 @@
 
 from datetime import datetime
+from decimal import Decimal
 
 from PyQt5.QtCore import QAbstractTableModel, Qt, QModelIndex, pyqtSlot, QByteArray
 from PyQt5.QtCore import pyqtSignal, QDateTime, QDate, pyqtProperty
@@ -142,14 +143,12 @@ class SearchModel(QmlTableModel):
         #if role == Qt.TextAlignmentRole:
             #return int(Qt.AlignLeft|Qt.AlignVCenter)
 
-        if role != Qt.DisplayRole:
-            return super().headerData(section, orientation, role)
-
         if role == ItemData.ColumnNameRole:
             return self._nameOfColumn(section)
 
         if role != Qt.DisplayRole:
-            return None
+            return super().headerData(section, orientation, role)
+
 
         colName = self._nameOfColumn(section)
 
@@ -242,7 +241,6 @@ class SearchModel(QmlTableModel):
                 self._repository.store(data, self._objectById(objectId))
                 changedIds.add(objectId)
             except Exception as e:
-                print(e)
                 self.error.emit(e)
                 self._isInSubmit = False
                 return False
@@ -413,6 +411,8 @@ class SearchModel(QmlTableModel):
     def _castToQt(self, value):
         if isinstance(value, datetime):
             return QDateTime.fromString(value.isoformat(), Qt.ISODate)
+        if isinstance(value, Decimal):
+            return float(value)
         return value
 
     def _emitDataChangedForObjectIds(self, objectIds):
