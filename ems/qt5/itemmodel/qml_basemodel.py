@@ -62,26 +62,11 @@ class QmlTableModel(QAbstractTableModel):
     @pyqtSlot("QJSValue")
     def append(self, jsValue):
         return self.insert(self.rowCount(), jsValue)
-        data = jsValue.toVariant()
-
-        roleNames = self.roleNames()
-
-        nextRow = self.rowCount()
-
-        self.insertRows(nextRow, 1)
-
-        for key in data:
-            try:
-                targetRole = self._roleOfName(key)
-                self.setData(self.index(nextRow, 0), data[key], targetRole)
-            except IndexError:
-                pass
 
     @pyqtSlot(int, "QJSValue")
     def insert(self, row, jsValue):
 
         data = jsValue.toVariant()
-
         roleNames = self.roleNames()
 
         self.insertRows(row, 1)
