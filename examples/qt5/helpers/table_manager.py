@@ -39,6 +39,7 @@ class TableManager(QWidget):
         self.model().dirtyStateChanged.connect(self.cancelButton.setEnabled)
 
         self.view.selectionModel().currentRowChanged.connect(self._emitSelectedRow)
+        model.error.connect(self._printError)
 
     def _setupUi(self):
         self.setLayout(QHBoxLayout())
@@ -101,3 +102,6 @@ class TableManager(QWidget):
 
     def _emitSelectedRow(self, current, previous):
         self.selectedRowChanged.emit(current.row())
+
+    def _printError(self, exc):
+        print(exc)
