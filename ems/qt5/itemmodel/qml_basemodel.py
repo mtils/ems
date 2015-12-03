@@ -66,10 +66,13 @@ class QmlTableModel(QAbstractTableModel):
     @pyqtSlot(int, "QJSValue")
     def insert(self, row, jsValue):
 
-        data = jsValue.toVariant()
+        data = jsValue if isinstance(jsValue, dict) else jsValue.toVariant()
         roleNames = self.roleNames()
 
         self.insertRows(row, 1)
+
+        if data is None:
+            return
 
         for key in data:
             try:
