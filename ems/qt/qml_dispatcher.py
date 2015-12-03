@@ -81,14 +81,9 @@ class QmlDispatcher(object):
             print("No handler found for routeName: {0}".format(routeName))
             return
 
-        getattr(obj, method)(item, routeName)
+        getattr(obj, method)(component, item)
 
-        #item = self.show(component, routeName)
-
-        self.itemBooted.fire(routeName, item)
-
-        #if hasattr(obj, 'bootItem'):
-            #getattr(obj, 'bootItem')(routeName, item)
+        self.itemBooted.fire(routeName, component, item)
 
         return item
 
@@ -111,10 +106,6 @@ class QmlDispatcher(object):
         self.handlerCreated.fire(obj)
 
         return (obj, method)
-
-        component = getattr(obj, method)(self.engine, routeName)
-
-        return component
 
     def _handlerClass(self, handler):
 
