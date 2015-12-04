@@ -2,13 +2,16 @@
 from PyQt5.QtCore import QSortFilterProxyModel
 from PyQt5.QtCore import Qt, QModelIndex, pyqtSlot, QByteArray, pyqtProperty
 
+from ems.qt.util import Inspector
 
 class SortFilterProxyModel(QSortFilterProxyModel):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self._inspector = Inspector(self)
         self._rowFilter = None
         self._columnFilter = None
+        self._filterKey = ""
 
     def roleNames(self):
         if not self.sourceModel():
@@ -90,6 +93,30 @@ class SortFilterProxyModel(QSortFilterProxyModel):
     @pyqtProperty(int)
     def count(self):
         return self.rowCount()
+
+    def getFilterKey(self):
+        return self._filterKey
+
+    def setFilterKey(self, key):
+
+        if self._filterKey == key:
+            return
+
+        self._filterKey = key
+
+        self._refreshFilterKey(self._filterKey)
+
+    filterKey = pyqtProperty(str, getFilterKey, setFilterKey)
+
+    def setSourceModel(self, model):
+        result = super().setSourceModel(model)
+
+        if self._filterKey:
+            self._refreshFilterKey(self._filterKey)
+
+    def _refreshFilterKey(self, key):
+        column = self._inspector.columnOfName(key)
+        return self.setFilterKeyColumn(column)
 
     def _roleOfName(self, name):
         roleNames = self.roleNames()
