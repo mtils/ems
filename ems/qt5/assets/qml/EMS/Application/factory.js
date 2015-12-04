@@ -47,7 +47,7 @@ function makeComponent(type, name, parent) {
 function make(type, name, parent) {
 
     if (qmlApp !== undefined && type == 'models') {
-        return qmlApp.make(name + ".model");
+        return qmlApp.make(name + ".model", parent);
     }
 
     var component = makeComponent(type, name, parent);

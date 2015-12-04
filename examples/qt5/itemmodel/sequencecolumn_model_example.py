@@ -82,11 +82,12 @@ win.layout().addWidget(modelManager)
 
 win.detailWin = TableManager(win)
 
-noteRepository = OrmRepository(ContactNote, session)
+#noteRepository = OrmRepository(ContactNote, session)
 
-detailModel = SequenceColumnModel(noteRepository, model)
+detailModel = SequenceColumnModel()
 detailModel.search.withKey('id', 'contact_id', 'memo')
 detailModel.sourceColumn = search.keys.index('notes')
+detailModel.setParentModel(model)
 
 modelManager.selectedRowChanged.connect(detailModel.setCurrentRow)
 win.detailWin.setModel(detailModel)

@@ -14,7 +14,8 @@ class Factory(QObject):
         self._scriptEngine = scriptEngine
 
     @pyqtSlot("QString", result=QObject)
-    def make(self, abstract):
+    @pyqtSlot("QString", QObject, result=QObject)
+    def make(self, abstract, parent=None):
         obj = app(abstract)
         self._engine.setObjectOwnership(obj, self._engine.CppOwnership)
         return obj
