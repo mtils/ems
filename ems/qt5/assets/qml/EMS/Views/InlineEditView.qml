@@ -67,11 +67,13 @@ Item {
 
         function setModelProperty(row, property, value) {
 
-            var row = itemView.model.get(row)
+            var rowData = itemView.model.get(row)
 
-            if (row[property] === value) {
+            if (rowData[property] === value) {
                 return;
             }
+            
+            console.log("setModelProperty", row, property, value)
 
             itemView.model.setProperty(row, property, value);
             modelPropertyChanged(row, property, value);
