@@ -157,20 +157,12 @@ class SequenceColumnModel(SearchModel):
     @pyqtSlot()
     def submit(self):
         print("submit")
-        try:
-            result = super().submit()
-            #if result:
-                #self._editBuffer.clear()
-                #self._valueCache.clear()
-                #self._setDirty(False)
 
-            #self._needsRefill = super().submit()
-            print("super.submitted", self._needsRefill, self._isInSubmit)
-            return result
-            #if self._needsRefill:
-                #QTimer.singleShot(200, self.refill)
-            #self._needsRefill = False
-            #return True
+        if self._isInRefill or self._isInSubmit:
+            return False
+
+        try:
+            self._needsRefill = super().submit()
             return self._needsRefill
         except Exception as e:
             self.error.emit(e)

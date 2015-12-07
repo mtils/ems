@@ -34,6 +34,7 @@ class SearchModel(QmlTableModel):
         self._needsRefill = True
         self._isDirty = False
         self._isInSubmit = False
+        self._isInRefill = False
 
         # Needs to ne done first, even if no one asks because qml asks rowCount
         # before its ready
@@ -41,10 +42,13 @@ class SearchModel(QmlTableModel):
 
     def data(self, index, role=Qt.DisplayRole):
 
-        self.refillIfNeeded()
-
         row = index.row()
         column = index.column()
+
+        if self._isInRefill:
+            return None
+
+        self.refillIfNeeded()
 
         if role >= RoleOffset:
             column = role - RoleOffset
@@ -90,6 +94,9 @@ class SearchModel(QmlTableModel):
         return None
 
     def setData(self, index, value, role=Qt.EditRole):
+
+        if self._isInRefill:
+            return False
 
         self.refillIfNeeded()
 
@@ -176,10 +183,12 @@ class SearchModel(QmlTableModel):
 
     def refillIfNeeded(self):
 
-        if not self._needsRefill:
+        if not self._needsRefill or self._isInRefill:
             return
 
         print("refilling!", self)
+
+        self._isInRefill = True
 
         self._needsRefill = False
 
@@ -190,12 +199,12 @@ class SearchModel(QmlTableModel):
         self._editBuffer.clear()
         self._unsubmittedObjectIds.clear()
 
-
         self._objectCache = [obj for obj in self._getFromSearch()]
 
         self.endResetModel()
         self.layoutChanged.emit()
         self._setDirty(False)
+        self._isInRefill = False
 
     @pyqtSlot()
     def refill(self):

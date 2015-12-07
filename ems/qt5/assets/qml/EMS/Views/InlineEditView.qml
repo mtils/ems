@@ -69,7 +69,9 @@ Item {
 
             var rowData = itemView.model.get(row)
 
+            console.log(property, rowData[property], typeof rowData[property], value, typeof value)
             if (rowData[property] === value) {
+                console.log("Break cause equal")
                 return;
             }
 
