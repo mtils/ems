@@ -7,6 +7,7 @@ Row {
     height: ListView.view.delegateHeight
 
     function write(property, value) {
+        console.log("writing", index, property, value)
         ListView.view.setModelProperty(index, property, value)
     }
 

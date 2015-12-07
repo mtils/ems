@@ -1,6 +1,6 @@
 
 from PyQt5.QtCore import QAbstractItemModel, Qt, QModelIndex, pyqtSlot, QByteArray
-from PyQt5.QtCore import pyqtSignal, QDateTime, QDate, pyqtProperty
+from PyQt5.QtCore import pyqtSignal, QDateTime, QDate, pyqtProperty, QTimer
 from PyQt5.QtQml import QQmlListProperty
 
 from ems.typehint import accepts
@@ -156,8 +156,26 @@ class SequenceColumnModel(SearchModel):
 
     @pyqtSlot()
     def submit(self):
-        self._needsRefill = super().submit()
-        return self._needsRefill
+        print("submit")
+        try:
+            result = super().submit()
+            #if result:
+                #self._editBuffer.clear()
+                #self._valueCache.clear()
+                #self._setDirty(False)
+
+            #self._needsRefill = super().submit()
+            print("super.submitted", self._needsRefill, self._isInSubmit)
+            return result
+            #if self._needsRefill:
+                #QTimer.singleShot(200, self.refill)
+            #self._needsRefill = False
+            #return True
+            return self._needsRefill
+        except Exception as e:
+            self.error.emit(e)
+            return False
+
 
     def _onParentModelDataChanged(self, topLeft, bottomRight):
 
@@ -179,15 +197,6 @@ class SequenceColumnModel(SearchModel):
 
         if key in currentObj:
             return currentObj[key]
-
-        #if hasattr(currentObj, key):
-            #return currentObj.__getattribute__(key)
-
-        #elif key.find('.'):
-            #stack = key.split('.')
-            #value = self._extractValueRecursive(currentObj, stack)
-            #if value is not None:
-                #return value
 
         return None
 
@@ -238,7 +247,6 @@ class SequenceColumnSearch(Search, CurrentRowColumnMixin):
         super().__init__(parentModel)
 
     def all(self):
-
         if not self._parentModel:
             return []
 
@@ -262,6 +270,9 @@ class SequenceColumnRepository(Repository, CurrentRowColumnMixin):
         self._idKey = idKey
         self.appending = EventHook()
 
+    def sync(self, modelData):
+        pass
+
     def get(self, id_):
         return self._findItemByModelId(id_)
 
@@ -269,8 +280,6 @@ class SequenceColumnRepository(Repository, CurrentRowColumnMixin):
         return self.appending.fire(attributes)
 
     def store(self, attributes, obj=None):
-
-        #obj = self.new(attributes) if obj is None else self._fill(obj, attributes)
 
         if obj is None:
             obj = self.new(attributes)

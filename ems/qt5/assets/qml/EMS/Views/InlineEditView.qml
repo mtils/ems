@@ -72,7 +72,7 @@ Item {
             if (rowData[property] === value) {
                 return;
             }
-            
+
             console.log("setModelProperty", row, property, value)
 
             itemView.model.setProperty(row, property, value);

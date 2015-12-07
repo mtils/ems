@@ -136,7 +136,6 @@ class SearchModel(QmlTableModel):
         return len(self._search.keys)
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
-
         if orientation == Qt.Vertical:
             return super().headerData(section, orientation, role)
 
@@ -165,7 +164,6 @@ class SearchModel(QmlTableModel):
         return name
 
     def flags(self, index):
-
         if not self._repository:
             return Qt.ItemIsSelectable | Qt.ItemIsEnabled
 
@@ -181,6 +179,8 @@ class SearchModel(QmlTableModel):
         if not self._needsRefill:
             return
 
+        print("refilling!", self)
+
         self._needsRefill = False
 
         self.beginResetModel()
@@ -195,7 +195,6 @@ class SearchModel(QmlTableModel):
 
         self.endResetModel()
         self.layoutChanged.emit()
-        #self.headerDataChanged.emit(Qt.Vertical, 0, self.columnCount())
         self._setDirty(False)
 
     @pyqtSlot()
@@ -205,7 +204,6 @@ class SearchModel(QmlTableModel):
 
     @pyqtSlot()
     def submit(self):
-
         if not self._isDirty:
             return False
 
@@ -350,7 +348,6 @@ class SearchModel(QmlTableModel):
         return self._search.keys[column]
 
     def _extractValue(self, currentObj, key):
-
         if hasattr(currentObj, key):
             return currentObj.__getattribute__(key)
 
@@ -363,7 +360,6 @@ class SearchModel(QmlTableModel):
         return None
 
     def _extractValueRecursive(self, obj, pathStack):
-
         if not hasattr(obj, pathStack[0]):
             return
 
@@ -416,7 +412,6 @@ class SearchModel(QmlTableModel):
         return value
 
     def _emitDataChangedForObjectIds(self, objectIds):
-
         for objectId in objectIds:
 
             try:
