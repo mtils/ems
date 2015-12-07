@@ -91,4 +91,7 @@ class QmlTableModel(QAbstractTableModel):
 
     def _roleOfName(self, name):
         roleNames = self.roleNames()
-        return [role for role, value in roleNames.items() if value.decode() == name][0]
+        try:
+            return [role for role, value in roleNames.items() if value.decode() == name][0]
+        except IndexError:
+            raise KeyError("cannot find roleOfName {0}".format(name))
