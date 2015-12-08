@@ -156,18 +156,25 @@ class SequenceColumnModel(SearchModel):
 
     @pyqtSlot()
     def submit(self):
-        print("submit")
-
         if self._isInRefill or self._isInSubmit:
             return False
 
         try:
-            self._needsRefill = super().submit()
-            return self._needsRefill
+            result = super().submit()
+            if result:
+                self._silentlyRefill()
+            return result
         except Exception as e:
             self.error.emit(e)
             return False
 
+    def _silentlyRefill(self):
+        self._isInRefill = True
+        self._valueCache.clear()
+        self._editBuffer.clear()
+        self._unsubmittedObjectIds.clear()
+        self._objectCache = [obj for obj in self._getFromSearch()]
+        self._isInRefill = False
 
     def _onParentModelDataChanged(self, topLeft, bottomRight):
 

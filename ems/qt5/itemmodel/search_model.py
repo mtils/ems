@@ -45,8 +45,8 @@ class SearchModel(QmlTableModel):
         row = index.row()
         column = index.column()
 
-        if self._isInRefill:
-            return None
+        #if self._isInRefill:
+            #return None
 
         self.refillIfNeeded()
 
@@ -186,8 +186,6 @@ class SearchModel(QmlTableModel):
         if not self._needsRefill or self._isInRefill:
             return
 
-        print("refilling!", self)
-
         self._isInRefill = True
 
         self._needsRefill = False
@@ -213,7 +211,8 @@ class SearchModel(QmlTableModel):
 
     @pyqtSlot()
     def submit(self):
-        if not self._isDirty:
+
+        if not self._isDirty or self._isInRefill:
             return False
 
         if not self._repository:

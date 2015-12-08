@@ -69,13 +69,14 @@ Item {
 
             var rowData = itemView.model.get(row)
 
-            console.log(property, rowData[property], typeof rowData[property], value, typeof value)
+//             console.log("InlineEditView.setModelProperty property:", property, "rowData[property]:", rowData[property],"typeof rowData[property]:", typeof rowData[property], "value:", value,"typeof value:", typeof value)
+
             if (rowData[property] === value) {
-                console.log("Break cause equal")
+//                 console.log("Break cause equal")
                 return;
             }
 
-            console.log("setModelProperty", row, property, value)
+//             console.log("InlineEditView.setModelProperty after equaltest row:", row,"property:", property,"value:", value)
 
             itemView.model.setProperty(row, property, value);
             modelPropertyChanged(row, property, value);

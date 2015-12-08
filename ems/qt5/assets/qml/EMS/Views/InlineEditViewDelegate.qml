@@ -7,7 +7,7 @@ Row {
     height: ListView.view.delegateHeight
 
     function write(property, value) {
-        console.log("writing", index, property, value)
+//         console.log("InlineEditViewDelegate.write row:", index, "property:", property, "value:", value)
         ListView.view.setModelProperty(index, property, value)
     }
 
