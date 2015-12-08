@@ -118,8 +118,12 @@ class SearchModel(QmlTableModel):
         #value = self._castToPython(value)
 
         key = self._nameOfColumn(column)
-        originalValue = self._extractValue(obj, key)
         objectId = self._objectId(obj)
+
+        if self._isInBuffer(objectId, key):
+            originalValue = self._getFromBuffer(objectId, key)
+        else:
+            originalValue = self._extractValue(obj, key)
 
 
         # Comparing lists is tricky with a few item types, if one item in the list
