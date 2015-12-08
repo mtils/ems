@@ -118,6 +118,9 @@ class EventHook(object):
     def __len__(self):
         return len(self.__receivers)
 
+    def __iter__(self):
+        return iter(self.__receivers)
+
 class EventProperty(object):
 
     def __init__(self, name=None, default=None, eventHook=None):

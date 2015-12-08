@@ -32,7 +32,7 @@ seed_contact_notes(session)
 
 search = OrmSearch(session, Contact)
 columns = [str(c).split('.')[1] for c in Contact.__table__.columns]
-#search.withKey(*columns)
+
 search.withKey('id', 'contact_type', 'forename', 'surname', 'company')
 
 class ContactRepository(OrmRepository):

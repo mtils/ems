@@ -1,2 +1,4 @@
 InlineEditView 1.0 InlineEditView.qml
 InlineEditViewDelegate 1.0 InlineEditViewDelegate.qml
+FormView 1.0 FormView.qml
+FormViewDelegate 1.0 FormViewDelegate.qml

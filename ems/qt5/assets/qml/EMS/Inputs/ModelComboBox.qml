@@ -8,7 +8,9 @@ ComboBox {
 
     property string idRole: 'ID'
 
-    property string currentId: ''
+    property string currentId: ""
+
+    property bool __isWriting: false
 
     function findId(modelId) {
 
@@ -37,24 +39,45 @@ ComboBox {
 
     }
 
-    onCurrentIndexChanged: {
+    function _setCurrentIdByIndex(idx) {
+
+        if (root.__isWriting) {
+            return;
+        }
 
         if (!root.model) {
             return
         }
 
-        if (root.currentIndex == -1) {
+        if (idx == -1) {
+            root.__isWriting = true;
             currentId = '';
+            root.__isWriting = false;
             return;
         }
 
-        var rowData = root.model.get(root.currentIndex);
+        console.log("onCurrentIndexChanged", idx)
 
+        var rowData = root.model.get(idx);
+
+        root.__isWriting = true;
         root.currentId = rowData[root.idRole].toString();
+        root.__isWriting = false;
 
     }
 
+    onActivated: {
+        _setCurrentIdByIndex(index)
+        console.log("inner.activated", currentIndex, index, currentId)
+    }
+
+    onCurrentIndexChanged: _setCurrentIdByIndex(root.currentIndex)
+
     onCurrentIdChanged: {
+        console.log("currentId changed to", root.currentId)
+        if (root.__isWriting) {
+            return;
+        }
         var idIndex = root.findId(root.currentId);
         if (idIndex !== root.currentIndex) {
             root.currentIndex = idIndex;
@@ -68,7 +91,8 @@ ComboBox {
         }
 
         var idIndex = root.findId(root.currentId);
-
+        root.__isWriting = true;
         root.currentIndex = idIndex;
+        root.__isWriting = false;
     }
 }

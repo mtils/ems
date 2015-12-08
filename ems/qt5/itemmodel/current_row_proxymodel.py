@@ -26,7 +26,7 @@ class CurrentRowProxyModel(FullProxyModel):
         return self._currentRow
 
     def setCurrentRow(self, currentRow):
-        print("setCurrentRow", currentRow, self.sender())
+
         if not self._isRowValid(currentRow):
             currentRow = -1
 
@@ -35,8 +35,6 @@ class CurrentRowProxyModel(FullProxyModel):
 
         if self._currentRow == -1 and currentRow >= 0:
             self._queueRowInsert = True
-
-        print("really setting currentRow", currentRow, self.sender())
 
         self._currentRow = currentRow
         self.currentRowChanged.emit(self._currentRow)
@@ -50,7 +48,7 @@ class CurrentRowProxyModel(FullProxyModel):
         if self.__isValid == valid:
             return
         self.__isValid = valid
-        print("isValid changed to", valid)
+
         self.isValidChanged.emit(self.__isValid)
 
     isValid = pyqtProperty(bool, getValid, notify=isValidChanged)
@@ -74,7 +72,6 @@ class CurrentRowProxyModel(FullProxyModel):
         if self.__hasNext == hasNext:
             return
         self.__hasNext = hasNext
-        print("hasNext changed to", hasNext)
         self.hasNextChanged.emit(self.__hasNext)
 
     hasNext = pyqtProperty(bool, getHasNext, notify=hasNextChanged)

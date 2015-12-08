@@ -4,7 +4,7 @@ from abc import ABCMeta,abstractmethod
 
 from ems.ioc.container import Container
 from ems.event.dispatcher import Dispatcher
-from ems.eventhook import EventHook
+from ems.event.hook import EventHook
 
 class App(Container):
 
@@ -26,6 +26,7 @@ class App(Container):
 
         self.bootstrapping = EventHook()
         self.bootstrapped = EventHook()
+        self.booted = EventHook()
 
         App._shortCut = self.appInstance
 
@@ -53,6 +54,8 @@ class App(Container):
             self.bootstrapping.fire(bootstrapper)
             bootstrapper.bootstrap(self)
             self.bootstrapped.fire(bootstrapper)
+
+        self.booted.fire(self)
 
         self.started.fire(self)
 

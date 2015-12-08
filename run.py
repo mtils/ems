@@ -27,6 +27,12 @@ def create_needed_app(runThisModule, argv, appPath, env):
         app.setQuitOnLastWindowClosed(True)
         return app
 
+    if ".qt5." in runThisModule and ".qml_application" in runThisModule:
+        from examples.qt5.bootstrap.create_qml_app import create_app
+        app = create_app(argv, appPath, env=env)
+        app.setQuitOnLastWindowClosed(True)
+        return app
+
     if ".qt5." in runThisModule:
         from examples.qt5.bootstrap.create_app import create_app
         app = create_app(argv, appPath, env=env)
