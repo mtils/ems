@@ -49,9 +49,9 @@ ComboBox {
             return
         }
 
-        if (idx == -1) {
+        if (idx === -1) {
             root.__isWriting = true;
-            currentId = '';
+            root.currentId = '';
             root.__isWriting = false;
             return;
         }
@@ -68,7 +68,7 @@ ComboBox {
 
     onActivated: {
         _setCurrentIdByIndex(index)
-        console.log("inner.activated", currentIndex, index, currentId)
+        console.log("inner.activated", currentIndex, index, root.currentId)
     }
 
     onCurrentIndexChanged: _setCurrentIdByIndex(root.currentIndex)
@@ -78,9 +78,13 @@ ComboBox {
         if (root.__isWriting) {
             return;
         }
+
         var idIndex = root.findId(root.currentId);
+
         if (idIndex !== root.currentIndex) {
+            root.__isWriting = true;
             root.currentIndex = idIndex;
+            root.__isWriting = false;
         }
     }
 

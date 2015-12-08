@@ -95,7 +95,7 @@ IndexTableEditor {
                         }
                     }
                     onActivated: {
-                        write('contact_type', currentId)
+                        write('contact_type', contact_typeInput.currentId)
                     }
                 }
 

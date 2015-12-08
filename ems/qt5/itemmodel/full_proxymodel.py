@@ -42,13 +42,6 @@ class FullProxyModel(QAbstractProxyModel):
             'end': end
         }
 
-    def _onSourceModelRowsInsertFinished(self, parentIndex, start, end):
-        if not self._insertQueue:
-            return
-        params = self._insertQueue
-        self._insertQueue = None
-        print(params)
-
     def onSourceModelRowsInserted(self, parentIndex, start, end):
         self.beginInsertRows(parentIndex, start, end)
         self.endInsertRows()

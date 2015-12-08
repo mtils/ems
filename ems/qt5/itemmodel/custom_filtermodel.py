@@ -50,6 +50,7 @@ class SortFilterProxyModel(QSortFilterProxyModel):
     @pyqtSlot(int, 'QString', 'QVariant')
     def setProperty(self, row, roleName, value):
         targetRole = self._roleOfName(roleName)
+        #print("setProperty", row, roleName, value, targetRole)
         self.setData(self.index(row, 0), value, targetRole)
 
     @pyqtSlot("QJSValue")

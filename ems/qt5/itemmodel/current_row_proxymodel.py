@@ -147,7 +147,6 @@ class CurrentRowProxyModel(FullProxyModel):
         self.currentRow = -1
 
     def onDataChanged(self, fromIndex, toIndex):
-
         if self._currentRow == -1:
             return
 
