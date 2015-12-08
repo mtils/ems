@@ -90,18 +90,24 @@ class TableManager(QWidget):
         if not rows:
             return
 
+        print(rows)
+
         self.model().removeRows(min(rows), len(rows))
 
     def collectSelectedRows(self):
         selectionModel = self.view.selectionModel()
-        rows = []
+        rows = set()
         for index in selectionModel.selectedIndexes():
-            rows.append(index.row())
+            rows.add(index.row())
 
         return rows
 
+    def selectRow(self, row):
+        self.view.selectRow(row)
+
     def _emitSelectedRow(self, current, previous):
         self.selectedRowChanged.emit(current.row())
+
 
     def _printError(self, exc):
         print(exc)
