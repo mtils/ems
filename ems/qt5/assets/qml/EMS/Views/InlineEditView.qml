@@ -49,7 +49,9 @@ Item {
         property int delegateHeight: 30
 
         onCountChanged: buttonView.syncModel()
-        onModelChanged: buttonView.syncModel()
+        onModelChanged: {
+            buttonView.syncModel()
+        }
 
         function appendRow() {
             itemView.model.append(modelDefaults)

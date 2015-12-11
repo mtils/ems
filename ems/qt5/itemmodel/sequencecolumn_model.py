@@ -60,24 +60,31 @@ class SequenceColumnModel(SearchModel):
 
     @accepts(QAbstractItemModel)
     def __init__(self, parentModel=None, idKey='id'):
-
-        search = SequenceColumnSearch(parentModel)
-        repository = SequenceColumnRepository(parentModel, idKey)
-
-        super().__init__(search, repository)
-        self._parentModel = None
-        self._inspector = None
-        if parentModel:
-            self.setParentModel(parentModel)
         self._currentRow = -1
         self._sourceColumn = -1
         self._sourceKey = ''
         self.appending = EventHook()
         self.appended = EventHook()
 
+        search = SequenceColumnSearch(parentModel)
+        repository = SequenceColumnRepository(parentModel, idKey)
+
+        self._search = search
+        self._repository = repository
+
+        super().__init__(search, repository)
+        self._parentModel = None
+        self._inspector = None
+        if parentModel:
+            self.setParentModel(parentModel)
+
         self.appending += repository.appending
 
-        self.currentRowChanged.connect(self.refill)
+        self.currentRowChanged.connect(self.forceRefill)
+
+    @pyqtSlot(int)
+    def forceRefill(self, row):
+        self.refill()
 
     @property
     def search(self):
@@ -87,6 +94,9 @@ class SequenceColumnModel(SearchModel):
         return self._parentModel
 
     def setParentModel(self, parentModel):
+        if parentModel is None:
+            return
+
         self._parentModel = parentModel
         self._inspector = Inspector(self._parentModel)
         self._search.setParentModel(parentModel)
