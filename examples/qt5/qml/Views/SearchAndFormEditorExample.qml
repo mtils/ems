@@ -28,6 +28,10 @@ SearchAndFormEditor {
 
     onDeleteRequested: view.deleteSelected()
 
+    onSaveRequested: form.accept()
+
+    onCancelRequested: form.cancel()
+
     view: ManagedTableView {
         id: view
 
@@ -61,14 +65,14 @@ SearchAndFormEditor {
 
         delegate: FormViewDelegate {
 
-            anchors.horizontalCenter: parent.horizontalCenter
-            width: parent.width - 80
-            height: 300
-            anchors.top: parent.top
+            anchors.fill: parent
 
             GridLayout {
 
-                anchors.fill: parent
+                anchors.top: parent.top
+                anchors.topMargin: 12
+                anchors.horizontalCenter: parent.horizontalCenter
+                width: parent.width - 80
                 columnSpacing: 8
                 rowSpacing: 8
                 columns: 6
@@ -176,22 +180,7 @@ SearchAndFormEditor {
                         }
                     }
                 }
-
-                Button {
-                    text: qsTr("Save")
-                    Layout.columnSpan: 1
-                    onClicked: form.accept()
-                }
-
-                Button {
-                    text: qsTr("Cancel")
-                    Layout.columnSpan: 1
-                    onClicked: {
-                        form.cancel()
-                    }
-                }
             }
-
         }
     }
 

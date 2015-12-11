@@ -1,6 +1,6 @@
 
-from PyQt5.QtCore import QModelIndex, Qt, QAbstractProxyModel, pyqtSlot, pyqtProperty
-
+from PyQt5.QtCore import QModelIndex, Qt, QAbstractProxyModel, pyqtSlot
+from PyQt5.QtCore import pyqtProperty, QAbstractItemModel
 
 
 class FullProxyModel(QAbstractProxyModel):
@@ -22,13 +22,12 @@ class FullProxyModel(QAbstractProxyModel):
 
     def setSourceModel(self, sourceModel):
 
-        #sourceModel.rowsAboutToBeInserted.connect(self._onSourceModelRowsAboutToBeInserted)
-        #sourceModel.rowsAboutToBeInserted.connect(self.onSourceModelRowsInserted)
-        #sourceModel.rowsAboutToBeRemoved.connect(self.onSourceModelRowsDeleted)
-        
+        if not isinstance(sourceModel, QAbstractItemModel):
+            raise TypeError("setSourceModel only accepts QAbstractItemModel")
+
         sourceModel.rowsInserted.connect(self.onSourceModelRowsInserted)
         sourceModel.rowsRemoved.connect(self.onSourceModelRowsDeleted)
-        
+
         sourceModel.dataChanged.connect(self.onDataChanged)
         sourceModel.modelReset.connect(self.modelReset)
         sourceModel.layoutChanged.connect(self.layoutChanged)

@@ -99,6 +99,8 @@ class CurrentRowProxyModel(FullProxyModel):
         return True
 
     def setSourceModel(self, sourceModel):
+        if sourceModel is None:
+            return
         result = super().setSourceModel(sourceModel)
 
         if self.currentRow >= 0:

@@ -22,6 +22,14 @@ Item {
 
     property alias deleteButtonEnabled: deleteButton.enabled
 
+    property string saveButtonText: qsTr("Save")
+
+    property string cancelButtonText: qsTr("Cancel")
+
+    property alias saveButtonEnabled: saveButton.enabled
+
+    property alias cancelButtonEnabled: cancelButton.enabled
+
     property var modelDefaults: {}
 
     signal searchRequested(string text);
@@ -29,6 +37,10 @@ Item {
     signal createRequested();
 
     signal deleteRequested();
+
+    signal saveRequested();
+
+    signal cancelRequested();
 
     property int currentRow: -1;
 
@@ -83,10 +95,34 @@ Item {
 
         }
 
-        Item {
-            id: formPlaceholder
-            Layout.minimumWidth: 480
+        Rectangle {
+
             Layout.fillWidth: true
+
+            Item {
+                id: formPlaceholder
+                width: parent.width
+                height: parent.height - buttonBox.height
+            }
+
+            Row {
+                id: buttonBox
+                anchors.right: parent.right
+                anchors.bottom: parent.bottom
+                spacing: 10
+                visible: currentRow != -1
+                Button {
+                    id: saveButton
+                    text: saveButtonText
+                    onClicked: root.saveRequested()
+                }
+
+                Button {
+                    id: cancelButton
+                    text: cancelButtonText
+                    onClicked: root.cancelRequested()
+                }
+            }
         }
 
     }
