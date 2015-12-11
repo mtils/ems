@@ -9,7 +9,7 @@ import EMS.Editors 1.0
 import EMS.Views 1.0
 import EMS.Inputs 1.0
 
-IndexTableEditor {
+SearchAndFormEditor {
 
     id: root
 
@@ -20,23 +20,34 @@ IndexTableEditor {
         filterKey: "surname"
     }
 
+    modelDefaults: {"company":""}
+
     onSearchRequested: model.setFilterWildcard(text)
 
-    tableView {
-        resources: [
-            TableViewColumn {
-                role: "surname"
-                title: "Surname"
-            },
-            TableViewColumn {
-                role: "forename"
-                title: "Forename"
-            },
-            TableViewColumn {
-                role: "company"
-                title: "Company"
-            }
-        ]
+    onCreateRequested: view.append(root.modelDefaults)
+
+    onDeleteRequested: view.deleteSelected()
+
+    view: ManagedTableView {
+        id: view
+
+        anchors.fill: parent
+        model: root.model
+
+        onCurrentRowChanged: root.currentRow = view.currentRow
+
+        TableViewColumn {
+            role: "surname"
+            title: "Surname"
+        }
+        TableViewColumn {
+            role: "forename"
+            title: "Forename"
+        }
+        TableViewColumn {
+            role: "company"
+            title: "Company"
+        }
     }
 
     FormView {
@@ -49,10 +60,6 @@ IndexTableEditor {
 
 
         delegate: FormViewDelegate {
-
-            function setContactType(contactType) {
-                contact_typeInput.currentId = contactType;
-            }
 
             anchors.horizontalCenter: parent.horizontalCenter
             width: parent.width - 80
@@ -72,7 +79,7 @@ IndexTableEditor {
                 }
 
                 Label {
-                    text: qsTr("Company") + " " + contact_type
+                    text: qsTr("Company")
                     Layout.columnSpan: 3
                 }
 

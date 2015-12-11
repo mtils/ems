@@ -40,7 +40,7 @@ app().shareInstance('contacts.model', model)
 
 app("events").fire("auth.loggedIn")
 
-qmlFile = os.path.join(app_path(), "examples", "qt5", "qml", "Views", "IndexTableEditorExample.qml")
+qmlFile = os.path.join(app_path(), "examples", "qt5", "qml", "Views", "SearchAndFormEditorExample.qml")
 
 app("events").fire("qml.apply-url", QUrl.fromLocalFile(qmlFile))
 
