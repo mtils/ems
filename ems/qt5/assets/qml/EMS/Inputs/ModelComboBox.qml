@@ -10,7 +10,9 @@ ComboBox {
 
     property string currentId: ""
 
-    property bool __isWriting: false
+    property string bindId: "";
+
+    property bool __isSelfWriting: false
 
     function findId(modelId) {
 
@@ -40,63 +42,64 @@ ComboBox {
     }
 
     function _setCurrentIdByIndex(idx) {
-
-        if (root.__isWriting) {
+        if (root.__isSelfWriting) {
             return;
         }
 
         if (!root.model) {
-            return
-        }
-
-        if (idx === -1) {
-            root.__isWriting = true;
-            root.currentId = '';
-            root.__isWriting = false;
             return;
         }
 
-        console.log("onCurrentIndexChanged", idx)
+        if (idx === -1) {
+            root.__isSelfWriting = true;
+            root.currentId = '';
+            root.__isSelfWriting = false;
+            return;
+        }
+
 
         var rowData = root.model.get(idx);
 
-        root.__isWriting = true;
+        root.__isSelfWriting = true;
         root.currentId = rowData[root.idRole].toString();
-        root.__isWriting = false;
+        root.__isSelfWriting = false;
 
     }
 
     onActivated: {
         _setCurrentIdByIndex(index)
-        console.log("inner.activated", currentIndex, index, root.currentId)
     }
 
-    onCurrentIndexChanged: _setCurrentIdByIndex(root.currentIndex)
+    onCurrentIndexChanged: {
+        _setCurrentIdByIndex(root.currentIndex)
+    }
 
     onCurrentIdChanged: {
-        console.log("currentId changed to", root.currentId)
-        if (root.__isWriting) {
-            return;
+        if (!root.__isSelfWriting) {
+            throw "Only write to bindId, otherwise the binding gets lost";
         }
+        return;
+    }
 
-        var idIndex = root.findId(root.currentId);
+    onBindIdChanged: {
+
+        var idIndex = root.findId(root.bindId);
 
         if (idIndex !== root.currentIndex) {
-            root.__isWriting = true;
+            root.__isSelfWriting = true;
             root.currentIndex = idIndex;
-            root.__isWriting = false;
+            root.__isSelfWriting = false;
         }
     }
 
     onModelChanged: {
-
         if (!root.currentId) {
             return;
         }
 
         var idIndex = root.findId(root.currentId);
-        root.__isWriting = true;
+        root.__isSelfWriting = true;
         root.currentIndex = idIndex;
-        root.__isWriting = false;
+        root.__isSelfWriting = false;
     }
 }

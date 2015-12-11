@@ -36,15 +36,11 @@ Item {
 
     function setModelProperty(row, property, value) {
 
-//         console.log("setModelProperty", root.model, row, property, value)
         var targetRow = view.model.currentRow;
-
-        console.log("setModelProperty", root.model, row, property, value)
 
         var rowData = root.model.get(targetRow)
 
         if (rowData[property] === value) {
-            console.log("returning cause equals")
             return;
         }
 

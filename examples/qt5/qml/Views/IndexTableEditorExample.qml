@@ -82,7 +82,7 @@ IndexTableEditor {
 
                     Layout.fillWidth: true
                     Layout.columnSpan: 3
-                    currentId: contact_type
+                    bindId: contact_type
                     textRole: 'name'
                     model: ListModel {
                         ListElement {
@@ -180,9 +180,7 @@ IndexTableEditor {
                     text: qsTr("Cancel")
                     Layout.columnSpan: 1
                     onClicked: {
-//                         form.cancel()
-//                         form.setModelProperty(0, "contact_type", "PERSON")
-                            form.itemAt(0).setContactType("PERSON");
+                        form.cancel()
                     }
                 }
             }

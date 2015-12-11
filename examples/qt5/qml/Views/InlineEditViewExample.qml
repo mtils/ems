@@ -67,7 +67,7 @@ Item {
                 width: 200
                 model: productsModel
                 textRole: "name"
-                currentId: product_id
+                bindId: product_id
                 onCurrentIdChanged: write("product_id", parseInt(currentId))
             }
             SpinBox {
