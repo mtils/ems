@@ -1,28 +1,77 @@
 
-from PyQt5.QtCore import QObject, pyqtProperty, pyqtSlot
+from PyQt5.QtCore import QObject, pyqtProperty, pyqtSlot, pyqtSignal
 
 
-from ems.auth import Authentication, User, AuthGroup
+from ems.auth import Authentication, User, AuthGroup, AuthenticatedUser
 
-class QAuth(QObject):
+
+class QUserProxy(QObject):
+
+    idChanged = pyqtSignal(int)
+    nameChanged = pyqtSignal(str)
+    passwordChanged = pyqtSignal(str)
+
+    def __init__(self, baseUser=None):
+        super().__init__()
+        self._baseUser = baseUser
+        self._id = -1
+        self._name = ''
+        self._password = ''
+
+    def getId(self):
+        return self._id
+
+    def _setId(self, id_):
+        if self._id == id_:
+            return
+        self._id = id_
+        self.idChanged.emit(self._id)
+
+    id = pyqtProperty(int, getId, notify=idChanged)
+
+    def getPassword(self):
+        return self._password
+
+    def _setPassword(self, password):
+        if self._password == password:
+            return
+        self._password = password
+        self.passwordChanged.emit(self._password)
+
+    password = pyqtProperty(str, getPassword, notify=passwordChanged)
+
+    def getName(self):
+        return self._name
+
+    def _setName(self, name):
+        if self._name == name:
+            return
+        self._name = name
+        self.nameChanged.emit(self._name)
+
+    name = pyqtProperty(str, getName, notify=nameChanged)
+
+    def _getBaseUser(self):
+        return self._baseUser
+
+    def _setBaseUser(self, baseUser):
+        self._baseUser = baseUser
+        self._setId(self._baseUser.id)
+        self._setName(self._baseUser.name)
+        self._setPassword(self._baseUser.password)
+
+class QAuthentication(QObject):
 
     def __init__(self, baseAuth):
-        self._baseAuth = baseAuth
-        self._qUser = None
         super().__init__()
+        self._baseAuth = None
+        self._qUser = QUserProxy(self)
+        self._setBaseAuth(baseAuth)
 
     def getUser(self):
-
-        baseUser = self._baseAuth.user
-
-        if self._qUser is not None and self._qUser.id == baseUser.user.id:
-            return self._qUser
-
-        self._qUser = QUser(baseUser)
-
         return self._qUser
 
-    user = pyqtProperty(QUser, getUser)
+    user = pyqtProperty(QObject, getUser)
 
     @pyqtSlot(bool)
     def isAuthenticated(self):
@@ -36,24 +85,12 @@ class QAuth(QObject):
     def logout(self):
         self._baseAuth.logout()
 
+    def _setBaseUser(self, baseUser):
+        self._qUser._setBaseUser(baseUser)
 
-class QUser(QObject):
+    def _setBaseAuth(self, baseAuth):
+        self._baseAuth = baseAuth
+        if self._baseAuth.isAuthenticated():
+            self._setBaseUser(self._baseAuth.user)
 
-    def __init__(self, baseUser):
-        super().__init__()
-        self._baseUser = baseUser
-
-    def getId(self):
-        return self._baseUser.id
-
-    id = pyqtProperty(int, getId)
-
-    def getPassword(self):
-        return self._baseUser.password
-
-    password = pyqtProperty(str, getPassword)
-
-    def getName(self):
-        return self._baseUser.name
-
-    name = pyqtProperty(str, getName)
+        self._baseAuth.loggedIn += self._setBaseUser
