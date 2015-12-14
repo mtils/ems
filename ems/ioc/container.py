@@ -101,6 +101,8 @@ class Container(Factory):
             creator = self._bindings[abstract]['creator']
         except KeyError:
             creator = abstract
+            if not callable(creator):
+                raise LookupError("No factory for abstract '{0}' registered".format(creator))
 
         if creator is abstract and self.hasTypeHint(abstract) and not args:
             args = self._buildDependencies(abstract)
