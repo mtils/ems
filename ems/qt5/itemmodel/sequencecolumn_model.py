@@ -162,6 +162,8 @@ class SequenceColumnModel(SearchModel):
         if not self._inspector or not key:
             return
         column = self._inspector.columnOfName(key)
+        if column == -1:
+            print("Column for key '{0}' not found".format(key))
         self.setSourceColumn(column)
 
     @pyqtSlot()
