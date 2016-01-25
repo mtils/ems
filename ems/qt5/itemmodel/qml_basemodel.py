@@ -89,6 +89,10 @@ class QmlTableModel(QAbstractTableModel):
     def count(self):
         return self.rowCount()
 
+    @pyqtSlot(int, result="QVariant")
+    def obj(self, row):
+        return self.index(row,0).data(ItemData.RowObjectRole)
+
     def _roleOfName(self, name):
         roleNames = self.roleNames()
         try:

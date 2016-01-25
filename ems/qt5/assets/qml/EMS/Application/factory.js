@@ -75,3 +75,12 @@ function view(name, parent) {
 function model(name, parent) {
     return make("models", name, parent);
 }
+
+function float() {
+//     for (var i = 0; i < arguments.length; i++) {
+//         console.log(arguments[i]);
+//     }
+    if (qmlApp !== undefined) {
+        return qmlApp.getFloat.apply(null, arguments);
+    }
+}
