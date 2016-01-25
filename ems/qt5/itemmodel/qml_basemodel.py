@@ -1,5 +1,6 @@
 
 from PyQt5.QtCore import QObject, pyqtSlot, pyqtProperty, QAbstractTableModel
+from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtQml import QJSValue
 #from PyQt5.QtCore import QString, QVariant
 
@@ -7,9 +8,15 @@ from ems.qt.identifiers import ItemData, RoleOffset
 
 class QmlTableModel(QAbstractTableModel):
 
+    countChanged = pyqtSignal(int)
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self._roleNames = None
+        self.layoutChanged.connect(self._emitCount)
+        self.modelReset.connect(self._emitCount)
+        self.rowsInserted.connect(self._emitCount)
+        self.rowsRemoved.connect(self._emitCount)
 
     def roleNames(self):
 
@@ -85,13 +92,16 @@ class QmlTableModel(QAbstractTableModel):
     def remove(self, row, count):
         self.removeRows(row, count)
 
-    @pyqtProperty(int)
+    @pyqtProperty(int, notify=countChanged)
     def count(self):
         return self.rowCount()
 
     @pyqtSlot(int, result="QVariant")
     def obj(self, row):
         return self.index(row,0).data(ItemData.RowObjectRole)
+
+    def _emitCount(self, *args):
+        self.countChanged.emit(self.rowCount())
 
     def _roleOfName(self, name):
         roleNames = self.roleNames()
