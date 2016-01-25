@@ -12,6 +12,8 @@ Item {
 
     property alias delegate: view.delegate
 
+    property alias count: view.count
+
     property QtObject model
 
     signal modelPropertyChanged(int row, string property, variant value);
