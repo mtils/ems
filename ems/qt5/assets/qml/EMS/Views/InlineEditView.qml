@@ -28,7 +28,14 @@ Item {
     signal appended();
     signal removed(int row);
     signal modelPropertyChanged(int row, string property, variant value);
+    signal submitting();
     signal submitted();
+
+    function submit() {
+        submitting();
+        itemView.model.submit();
+        submitted();
+    }
 
     Row {
         id: headerRow
@@ -62,8 +69,10 @@ Item {
             itemView.model.remove(row, 1);
             removed(row);
             if (root.submitOnChanged) {
-                itemView.model.submit();
-                submitted();
+                root.submit()
+//                 submitting();
+//                 itemView.model.submit();
+//                 submitted();
             }
         }
 
@@ -78,8 +87,10 @@ Item {
             itemView.model.setProperty(row, property, value);
             modelPropertyChanged(row, property, value);
             if (root.submitOnChanged) {
-                itemView.model.submit();
-                submitted();
+                root.submit()
+//                 submitting();
+//                 itemView.model.submit();
+//                 submitted();
             }
         }
 
