@@ -1,6 +1,6 @@
 
 from PyQt5.QtCore import QModelIndex, Qt, pyqtSignal, pyqtProperty, pyqtSlot
-
+from PyQt5.QtCore import QAbstractItemModel
 from ems.qt5.itemmodel.full_proxymodel import FullProxyModel
 
 class CurrentRowProxyModel(FullProxyModel):
@@ -10,6 +10,8 @@ class CurrentRowProxyModel(FullProxyModel):
 
     hasPreviousChanged = pyqtSignal(bool)
     hasNextChanged = pyqtSignal(bool)
+
+    parentModelChanged = pyqtSignal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -21,12 +23,12 @@ class CurrentRowProxyModel(FullProxyModel):
         self.currentRowChanged.connect(self._emitRowChangeSignals)
         self.currentRowChanged.connect(self._updatePreviousAndNextStates)
         self.currentRowChanged.connect(self._checkValid)
+        self.sourceModelChanged.connect(self.parentModelChanged)
 
     def getCurrentRow(self):
         return self._currentRow
 
     def setCurrentRow(self, currentRow):
-
         if not self._isRowValid(currentRow):
             currentRow = -1
 
@@ -99,8 +101,10 @@ class CurrentRowProxyModel(FullProxyModel):
         return True
 
     def setSourceModel(self, sourceModel):
+
         if sourceModel is None:
             return
+
         result = super().setSourceModel(sourceModel)
 
         if self.currentRow >= 0:
@@ -112,8 +116,12 @@ class CurrentRowProxyModel(FullProxyModel):
 
         return result
 
-    def rowCount(self, parentIndex=QModelIndex()):
+    def getParentModel(self):
+        return self.sourceModel()
 
+    parentModel = pyqtProperty(QAbstractItemModel, getParentModel, setSourceModel, notify=parentModelChanged)
+
+    def rowCount(self, parentIndex=QModelIndex()):
         if self._currentRow < 0 or not self.sourceModel():
             return 0
 

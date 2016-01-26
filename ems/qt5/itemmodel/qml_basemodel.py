@@ -8,11 +8,12 @@ from ems.qt.identifiers import ItemData, RoleOffset
 
 class QmlTableModel(QAbstractTableModel):
 
-    countChanged = pyqtSignal(int)
+    countChanged = pyqtSignal(int, arguments=('length'))
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self._roleNames = None
+        self.__lastEmittedCount = -1
         self.layoutChanged.connect(self._emitCount)
         self.modelReset.connect(self._emitCount)
         self.rowsInserted.connect(self._emitCount)
@@ -72,7 +73,6 @@ class QmlTableModel(QAbstractTableModel):
 
     @pyqtSlot(int, "QJSValue")
     def insert(self, row, jsValue):
-
         data = jsValue if isinstance(jsValue, dict) else jsValue.toVariant()
         roleNames = self.roleNames()
 
@@ -101,7 +101,11 @@ class QmlTableModel(QAbstractTableModel):
         return self.index(row,0).data(ItemData.RowObjectRole)
 
     def _emitCount(self, *args):
-        self.countChanged.emit(self.rowCount())
+        count = self.rowCount()
+        if count == self.__lastEmittedCount:
+            return
+        self.countChanged.emit(count)
+        self.__lastEmittedCount = count
 
     def _roleOfName(self, name):
         roleNames = self.roleNames()

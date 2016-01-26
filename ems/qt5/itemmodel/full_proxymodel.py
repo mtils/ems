@@ -21,7 +21,7 @@ class FullProxyModel(QAbstractProxyModel):
         return {}
 
     def setSourceModel(self, sourceModel):
-
+        self.beginResetModel()
         if not isinstance(sourceModel, QAbstractItemModel):
             raise TypeError("setSourceModel only accepts QAbstractItemModel")
 
@@ -32,7 +32,9 @@ class FullProxyModel(QAbstractProxyModel):
         sourceModel.modelReset.connect(self.modelReset)
         sourceModel.layoutChanged.connect(self.layoutChanged)
         sourceModel.headerDataChanged.connect(self.headerDataChanged)
-        return super().setSourceModel(sourceModel)
+        result = super().setSourceModel(sourceModel)
+        self.endResetModel()
+        return result
 
     def _onSourceModelRowsAboutToBeInserted(self, parentIndex, start, end):
         self._insertQueue = {

@@ -6,13 +6,15 @@ Item {
 
     id: root
 
-    property int currentRow: -1
+    property alias currentRow: currentRowModel.currentRow
 
     property bool submitOnChanged: false
 
     property alias delegate: view.delegate
 
     property alias count: view.count
+
+    property alias repeater: view
 
     property QtObject model
 
@@ -60,9 +62,10 @@ Item {
         anchors.fill: parent
 
         model: CurrentRowModel {
-            currentRow: root.currentRow
-            sourceModel: root.model
+            id: currentRowModel
+            objectName: "FormView.view.model"
+            parentModel: root.model
         }
-
     }
+
 }

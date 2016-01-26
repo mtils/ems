@@ -47,7 +47,7 @@ class SequenceColumnModel(SearchModel):
     no hard dependencies to the outer world.
 
     The same is with validation. Validate an array of data, not the models after
-    setting their state. This is to late.
+    setting their state. This is too late.
     """
 
     currentRowChanged = pyqtSignal(int)

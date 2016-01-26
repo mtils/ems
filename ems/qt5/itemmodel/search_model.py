@@ -2,7 +2,7 @@
 from datetime import datetime
 from decimal import Decimal
 
-from PyQt5.QtCore import QAbstractTableModel, Qt, QModelIndex, pyqtSlot, QByteArray
+from PyQt5.QtCore import Qt, QModelIndex, pyqtSlot, QByteArray
 from PyQt5.QtCore import pyqtSignal, QDateTime, QDate, pyqtProperty
 
 from ems.typehint import accepts
