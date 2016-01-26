@@ -3,6 +3,7 @@ from PyQt5.QtCore import QAbstractItemModel, Qt, QModelIndex, pyqtSlot, QByteArr
 from PyQt5.QtCore import pyqtSignal, QDateTime, QDate, pyqtProperty, QTimer
 from PyQt5.QtQml import QQmlListProperty
 
+from ems.qt5.util import QError
 from ems.typehint import accepts
 from ems.event.hook import EventHook
 from ems.qt5.itemmodel.search_model import SearchModel
@@ -177,7 +178,7 @@ class SequenceColumnModel(SearchModel):
                 self._silentlyRefill()
             return result
         except Exception as e:
-            self.error.emit(e)
+            self.error.emit(QError(e))
             return False
 
     def _silentlyRefill(self):

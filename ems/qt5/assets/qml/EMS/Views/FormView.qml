@@ -18,6 +18,8 @@ Item {
 
     property QtObject model
 
+    clip: true
+
     signal modelPropertyChanged(int row, string property, variant value);
 
     signal accepted();
@@ -36,6 +38,13 @@ Item {
 
     function itemAt(index) {
         return view.itemAt(index);
+    }
+
+    function showError(error, msecs) {
+        errorText.text = error.message
+        errorNotifier.state = 'shown'
+        timer.interval = msecs
+        timer.running = true
     }
 
     function setModelProperty(row, property, value) {
@@ -58,6 +67,22 @@ Item {
         }
     }
 
+    Connections {
+        target: model
+        onError: {
+            showError(error, 4000)
+        }
+        ignoreUnknownSignals: true
+    }
+
+    Timer {
+        id: timer
+        interval: 1000
+        running: false
+        repeat: false
+        onTriggered: errorNotifier.state = ""
+    }
+
     Repeater {
         id: view
         anchors.fill: parent
@@ -66,6 +91,36 @@ Item {
             id: currentRowModel
             objectName: "FormView.view.model"
             parentModel: root.model
+        }
+    }
+
+    Rectangle {
+        id: errorNotifier
+        property int bottomMargin: 0
+        width: parent.width
+        anchors.bottom: parent.top
+        height: 120
+        anchors.bottomMargin: errorNotifier.bottomMargin
+        color: '#f2dede'
+        Text {
+            id: errorText
+            color: '#a94442'
+            wrapMode: Text.WordWrap
+            anchors.left: parent.left
+            anchors.top: parent.top
+            anchors.margins: 20
+//             anchors.leftMargin: 20
+        }
+
+        states: [
+            State {
+                name: "shown"
+                PropertyChanges { target: errorNotifier; anchors.bottomMargin: 0-errorNotifier.height }
+            }
+        ]
+
+        Behavior on anchors.bottomMargin {
+            NumberAnimation { duration: 500; easing.type: Easing.InOutQuart }
         }
     }
 

@@ -5,6 +5,7 @@ from decimal import Decimal
 from PyQt5.QtCore import Qt, QModelIndex, pyqtSlot, QByteArray
 from PyQt5.QtCore import pyqtSignal, QDateTime, QDate, pyqtProperty
 
+from ems.qt5.util import QError
 from ems.typehint import accepts
 from ems.search.base import Search
 from ems.qt.identifiers import ItemData, RoleOffset
@@ -15,7 +16,7 @@ class SearchModel(QmlTableModel):
 
     dirtyStateChanged = pyqtSignal(bool)
 
-    error = pyqtSignal(Exception)
+    error = pyqtSignal(QError, arguments=('error',))
 
     @accepts(Search, Repository)
     def __init__(self, search, repository=None, namer=None, readOnlyKeys=None, parent=None):
@@ -220,7 +221,7 @@ class SearchModel(QmlTableModel):
             return False
 
         if not self._repository:
-            self.error.emit(AttributeError("No repository setted"))
+            self.error.emit(QError(AttributeError("No repository setted")))
             return False
 
         self._isInSubmit = True
@@ -251,7 +252,7 @@ class SearchModel(QmlTableModel):
                 self._repository.store(data, self._objectById(objectId))
                 changedIds.add(objectId)
             except Exception as e:
-                self.error.emit(e)
+                self.error.emit(QError(e))
                 self._isInSubmit = False
                 return False
             createdRows.add(objectId)
