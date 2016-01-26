@@ -44,6 +44,7 @@ Item {
 
         var rowData = root.model.get(targetRow)
 
+        console.log('writing', row, property, value, 'old:', rowData[property])
         if (rowData[property] === value) {
             return;
         }

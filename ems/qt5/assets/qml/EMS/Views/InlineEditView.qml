@@ -36,7 +36,6 @@ Item {
 
     onSubmitting: {
         if (positionRole) {
-            console.log("writing positions")
             writePositions(positionRole)
         }
     }
@@ -88,9 +87,6 @@ Item {
             removed(row);
             if (root.submitOnChanged) {
                 root.submit()
-//                 submitting();
-//                 itemView.model.submit();
-//                 submitted();
             }
         }
 
@@ -101,14 +97,11 @@ Item {
             if (rowData[property] === value) {
                 return;
             }
-
+//             console.log("setting property", row, property, value)
             itemView.model.setProperty(row, property, value);
             modelPropertyChanged(row, property, value);
             if (root.submitOnChanged) {
                 root.submit()
-//                 submitting();
-//                 itemView.model.submit();
-//                 submitted();
             }
         }
 
