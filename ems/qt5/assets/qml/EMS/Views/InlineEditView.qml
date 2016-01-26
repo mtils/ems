@@ -22,6 +22,9 @@ Item {
     property alias delegate: itemView.delegate
     property alias header: itemView.header
     property alias model: itemView.model
+    property alias count: itemView.count
+
+    property string positionRole: ""
 
     default property alias labels: headerRow.children
 
@@ -30,6 +33,19 @@ Item {
     signal modelPropertyChanged(int row, string property, variant value);
     signal submitting();
     signal submitted();
+
+    onSubmitting: {
+        if (positionRole) {
+            console.log("writing positions")
+            writePositions(positionRole)
+        }
+    }
+
+    function writePositions(role) {
+        for (var i=0; i < root.count; i++) {
+            itemView.model.setProperty(i, role, i+1);
+        }
+    }
 
     function submit() {
         submitting();
@@ -55,7 +71,9 @@ Item {
         spacing: 1
         property int delegateHeight: 30
 
-        onCountChanged: buttonView.syncModel()
+        onCountChanged: {
+            buttonView.syncModel()
+        }
         onModelChanged: {
             buttonView.syncModel()
         }
