@@ -25,12 +25,9 @@ ComboBox {
         }
 
         for (var i=0; i < root.model.count; i++) {
-            var rowData = root.model.get(i);
-            var rowValue = rowData[idRole];
 
-            if (typeof rowValue !== 'string') {
-                rowValue = rowValue.toString();
-            }
+            var rowData = root.model.get(i);
+            var rowValue = _castIdToString(rowData[idRole]);
 
             if (rowValue === modelId) {
                 return i;
@@ -61,8 +58,22 @@ ComboBox {
         var rowData = root.model.get(idx);
 
         root.__isSelfWriting = true;
-        root.currentId = rowData[root.idRole].toString();
+        root.currentId = _castIdToString(rowData[root.idRole]);
         root.__isSelfWriting = false;
+
+    }
+
+    function _castIdToString(ID) {
+
+        if (typeof ID === 'string') {
+            return ID;
+        }
+
+        if (typeof ID === 'undefined') {
+            return "-1";
+        }
+
+        return ID.toString();
 
     }
 
