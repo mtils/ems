@@ -43,8 +43,8 @@ Item {
     function showError(error, msecs) {
         errorText.text = error.message
         errorNotifier.state = 'shown'
-        timer.interval = msecs
-        timer.running = true
+//         timer.interval = msecs
+//         timer.running = true
     }
 
     function setModelProperty(row, property, value) {
@@ -102,6 +102,10 @@ Item {
         height: 120
         anchors.bottomMargin: errorNotifier.bottomMargin
         color: '#f2dede'
+        border.width: 1
+        border.color: '#ebccd1'
+        radius: 4
+
         Text {
             id: errorText
             color: '#a94442'
@@ -109,7 +113,25 @@ Item {
             anchors.left: parent.left
             anchors.top: parent.top
             anchors.margins: 20
-//             anchors.leftMargin: 20
+            width: parent.width - anchors.margins
+        }
+
+        Text {
+            id: errorCloser
+            color: '#000'
+            text: 'x'
+            opacity: errorCloserTrigger.containsMouse ? 1 : 0.4
+            font.pixelSize: 20
+            font.bold: true
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.rightMargin: 20
+            MouseArea {
+                id: errorCloserTrigger
+                anchors.fill: parent
+                hoverEnabled: true
+                onClicked: errorNotifier.state = ""
+            }
         }
 
         states: [
