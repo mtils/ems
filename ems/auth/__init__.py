@@ -5,7 +5,6 @@ Created on 23.09.2011
 '''
 from abc import ABCMeta, abstractmethod
 
-from ems.pluginemitter import PluginEmitter
 from ems.singletonmixin import Singleton
 from ems.event.hook import EventHook
 from ems.typehint import accepts
@@ -244,7 +243,6 @@ class Authentication(object):
         self._currentAdapter = None
         self.__isAuthenticated = False
         self.__permissions = []
-        self.pluginEmitter = None
 
         self.authStateChanged = EventHook()
         self.authenticated = EventHook()
@@ -261,11 +259,6 @@ class Authentication(object):
             self.__isAuthenticated = value
 
             self.authStateChanged.fire(value)
-
-            if isinstance(self.pluginEmitter, PluginEmitter):
-                self.pluginEmitter.notify(self,
-                                          "authenticationStateChanged",
-                                          value)
 
     def login(self, **credentials):
 
