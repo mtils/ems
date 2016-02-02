@@ -21,14 +21,13 @@ class ListFormContainer(QWidget):
         self.contentsWidget.setViewMode(QListView.IconMode)
         self.setIconSize(QSize(64,64))
         self.contentsWidget.setMovement(QListView.Static)
-        
         self.contentsWidget.setFlow(QListView.TopToBottom)
         self.contentsWidget.setUniformItemSizes(True)
         self.contentsWidget.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.contentsWidget.setWrapping(True)
-        
+        self.contentsWidget.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.contentsWidget.setWrapping(False)
         self.contentsWidget.setSpacing(0)
-        
+
         #pagesWidget
         self.pagesWidget = QStackedWidget()
 
@@ -64,27 +63,24 @@ class ListFormContainer(QWidget):
     
     def addPage(self, pageWidget, item=None):
         self.pagesWidget.addWidget(pageWidget)
-#        self.contentsWidget.
         if item is None:
             item = QListWidgetItem(self.contentsWidget)
             item.setIcon(pageWidget.windowIcon())
             item.setText(pageWidget.windowTitle())
-        elif isinstance(item, QListWidgetItem):
-            self.contentsWidget.addItem(item)
         elif isinstance(item, QIcon):
             icon = item
             item = QListWidgetItem(self.contentsWidget)
             item.setText(pageWidget.windowTitle())
             item.setIcon(icon)
-#        item.setTextAlignment(Qt.AlignHCenter)
-        
+
         item.setTextAlignment(Qt.AlignHCenter | Qt.AlignTop)
         item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
+        self.contentsWidget.addItem(item)
         itemWidth = self.contentsWidget.contentsRect().width()
         fm = QFontMetricsF(item.font())
         itemHeight = fm.boundingRect("9").height() + 4
         item.setSizeHint(QSize(itemWidth,self._iconSize.height() + itemHeight))
-    
+
     @pyqtSlot()
     def accept(self):
         for idx in range(self.pagesWidget.count()):
