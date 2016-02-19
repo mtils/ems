@@ -166,11 +166,17 @@ class QmlProxyModel(EditableProxyModel):
 
         imageCol = self._roleSrcColumns[Qt.DecorationRole]
 
-        if imageCol not in range(topLeft.column(), bottomRight.column()+1):
+        # Try to fix nasty MemoryError under PyQt 4.7.11/Win
+        topLeftColumn = topLeft.column()
+        bottomRightColumn = bottomRight.column()
+        topLeftRow = topLeft.row()
+        bottomtRightRow = bottomRight.row()
+
+        if imageCol not in range(topLeftColumn, bottomRightColumn+1):
             return
 
         self._imageUpdateCount += 1
-        for row in range(topLeft.row(), bottomRight.row()+1):
+        for row in range(topLeftRow, bottomtRightRow+1):
             self.dataChanged.emit(self.index(row,0), self.index(row,0))
 
     def _onSourceModelReset(self):
