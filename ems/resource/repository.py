@@ -24,6 +24,23 @@ class Repository():
         """
         pass
 
+    def getOrNew(self, id_):
+        """
+        Return an object by its id or create one with the passed id_
+        The datastore has to support manual setting of ids  to make this
+        work
+        :returns: object
+        """
+        model = self.get(id_)
+
+        if model:
+            return model
+
+        model = self.new()
+
+        model.id = id_
+        return model
+
     @abstractmethod
     def store(self, attributes, obj=None):
         """
