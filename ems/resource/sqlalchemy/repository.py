@@ -1,6 +1,7 @@
 
 from sqlalchemy.orm.session import object_session
 
+from ems.event.hook import EventHook
 from ems.resource.repository import Repository
 
 class OrmRepository(Repository):
