@@ -209,3 +209,19 @@ class EventProperty(object):
                 listener(value)
         except KeyError:
             return
+
+
+class EventHookProperty(object):
+
+    def __init__(self):
+        self._hooksByInstance = {}
+
+    def __get__(self, instance, owner):
+
+        if instance is None:
+            return self
+
+        if instance not in self._hooksByInstance:
+            self._hooksByInstance[instance] = EventHook()
+
+        return self._hooksByInstance[instance]

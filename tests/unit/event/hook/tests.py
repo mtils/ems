@@ -1,6 +1,6 @@
 
 import unittest
-from ems.event.hook import EventProperty, EventHook
+from ems.event.hook import EventProperty, EventHook, EventHookProperty
 
 class HookTest(unittest.TestCase):
 
@@ -24,9 +24,9 @@ class HookTest(unittest.TestCase):
 
         test = EventUser()
         listener = Listener()
-        
+
         EventUser.loaded += listener
-        
+
         test.loaded = True
 
         self.assertIs(test, listener.params[1])
@@ -45,6 +45,43 @@ class HookTest(unittest.TestCase):
         self.assertIs(True, listener.params[0])
         self.assertEquals(1, listener.callCount)
 
+    def test_event_hook_fires(self):
+
+        emitter = EventHookPropertyEmitter()
+        listener = Listener()
+
+        emitter.triggered += listener
+
+        self.assertEquals(0, listener.callCount)
+        emitter.trigger('someVar')
+        self.assertEquals(1, listener.callCount)
+        self.assertEquals(('someVar',), listener.params)
+
+    def test_event_hook_works_with_multiple_instances(self):
+
+        emitter = EventHookPropertyEmitter()
+        emitter2 = EventHookPropertyEmitter()
+
+        listener = Listener()
+        listener2 = Listener()
+
+        emitter.triggered += listener
+        emitter2.triggered += listener2
+
+        self.assertEquals(0, listener.callCount)
+        self.assertEquals(0, listener2.callCount)
+        emitter.trigger('someVar')
+        self.assertEquals(1, listener.callCount)
+        self.assertEquals(('someVar',), listener.params)
+        self.assertEquals(0, listener2.callCount)
+        self.assertEquals([], listener2.params)
+
+        emitter2.trigger('someOtherVar')
+
+        self.assertEquals(1, listener.callCount)
+        self.assertEquals(('someVar',), listener.params)
+        self.assertEquals(1, listener2.callCount)
+        self.assertEquals(('someOtherVar',), listener2.params)
 
 class Listener(object):
 
@@ -60,6 +97,13 @@ class Listener(object):
 class EventUser(object):
 
     loaded = EventProperty()
+
+class EventHookPropertyEmitter(object):
+
+    triggered = EventHookProperty()
+
+    def trigger(self, *params):
+        self.triggered.fire(*params)
 
 if __name__ == '__main__':
     unittest.main()
