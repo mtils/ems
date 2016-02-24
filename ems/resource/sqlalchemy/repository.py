@@ -11,47 +11,52 @@ class OrmRepository(Repository):
         self._session = session
 
     def get(self, id_):
-        return self._session.query(self.ormClass).get(id_)
+        self.getting.fire(id_)
+        model = self._session.query(self.ormClass).get(id_)
+        self.got.fire(model)
+        return model
 
     def all(self):
         return self._session.query(self.ormClass).all()
 
     def new(self, attributes=None):
+        self.instantiating.fire(attributes)
         instance = self.ormClass()
         attributes = attributes if attributes is not None else {}
-        self._fill(instance, attributes)
+        self.fill(instance, attributes)
+        self.instantiated.fire(instance)
         return instance
 
     def store(self, attributes, obj=None):
-        instance = self._fill(obj, attributes) if obj else self.new(attributes)
+        self.storing.fire(attributes, obj)
+        instance = self.fill(obj, attributes) if obj else self.new(attributes)
         self._session.add(instance)
         self._session.commit()
+        self.stored.fire(instance)
         return instance
 
     def update(self, model, changedAttributes):
-
-        self._fill(model, changedAttributes)
+        self.updating.fire(model, changedAttributes)
+        self.fill(model, changedAttributes)
 
         session = self._modelSession(model)
         session.add(model)
         session.commit()
 
+        self.updated.fire(model)
         return model
 
     def delete(self, model):
+        self.deleting.fire(model)
         session = self._modelSession(model)
         session.delete(model)
         session.commit()
+        self.deleted.fire(model)
         return model
 
     def _modelSession(self, model):
         objectSession = object_session(model)
         return objectSession if objectSession else self._session
-
-    def _fill(self, ormObject, attributes):
-        for key in attributes:
-            setattr(ormObject, key, attributes[key])
-        return ormObject
 
 if __name__ == '__main__':
     r = OrmRepository('A','S')

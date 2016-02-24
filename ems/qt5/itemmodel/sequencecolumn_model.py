@@ -276,6 +276,8 @@ class SequenceColumnRepository(Repository, CurrentRowColumnMixin):
     so all methods here apply to one item inside the list of a property
     new() would create an item in that list
     store() stores one item in that list
+
+    This repository is completely internal and doesnt fire any events
     """
     def __init__(self, parentModel, idKey):
         super().__init__(parentModel)
