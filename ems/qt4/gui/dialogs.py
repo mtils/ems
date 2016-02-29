@@ -7,15 +7,12 @@ from ems.gui.interfaces.dialogs import AbstractFileDialog
 
 class Qt4FileDialog(AbstractFileDialog):
 
-    def __init__(self, parent=None):
-        self.qfileDialog = QFileDialog(parent)
-
     def openFileName(self, parent, windowTitle, filter, directory=None):
         """
         Ask the user for a filename of an existing file
         :returns: The filename as a string or None if no one was selected
         """
-        fileName = QFileDialog.getOpenFileName(parent, windowTitle, filter, directory)
+        fileName = QFileDialog.getOpenFileName(parent, windowTitle, directory, filter)
 
         if fileName:
             return u(fileName)
@@ -25,7 +22,7 @@ class Qt4FileDialog(AbstractFileDialog):
         Ask the user for one or many filenames
         :returns: The filenames as a tuple, set or list and an empty if no file selected
         """
-        fileNames = QFileDialog.getOpenFileNames(parent, windowTitle, filter, directory)
+        fileNames = QFileDialog.getOpenFileNames(parent, windowTitle, directory, filter)
         if not fileNames:
             return ()
         names = []
@@ -39,7 +36,7 @@ class Qt4FileDialog(AbstractFileDialog):
         Ask the user for a filename to save a file
         :returns: The filename as a string or None if no one was selected
         """
-        fileName = QFileDialog.getSaveFileName(parent, windowTitle, filter, directory)
+        fileName = QFileDialog.getSaveFileName(parent, windowTitle, directory, filter)
         if fileName:
             return u(fileName)
 
