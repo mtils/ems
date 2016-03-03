@@ -161,22 +161,26 @@ class QmlProxyModel(EditableProxyModel):
         self._connectedToSourceModel = True
 
     def _onSourceModelDataChanged(self, topLeft, bottomRight):
+
         if Qt.DecorationRole not in self._roleSrcColumns:
             return False
 
         imageCol = self._roleSrcColumns[Qt.DecorationRole]
 
-        # Try to fix nasty MemoryError under PyQt 4.7.11/Win
-        topLeftColumn = topLeft.column()
-        bottomRightColumn = bottomRight.column()
-        topLeftRow = topLeft.row()
-        bottomtRightRow = bottomRight.row()
+        # I got some bottomRight.column() values from QSortFilterProxyModel
+        # Sometimes the values are below zero, sometimes they are the max
+        # integer on the system.
+        # The sourceModel of it didnt emit these values. But the changed
+        # behaviour here should fix the Memory Error caused by
+        # bottomRight.row()+1
+        if not topLeft.isValid() or not bottomRight.isValid():
+            return
 
-        if imageCol not in range(topLeftColumn, bottomRightColumn+1):
+        if imageCol < topLeft.column() or imageCol > bottomRight.column():
             return
 
         self._imageUpdateCount += 1
-        for row in range(topLeftRow, bottomtRightRow+1):
+        for row in range(topLeft.row(), bottomRight.row()+1):
             self.dataChanged.emit(self.index(row,0), self.index(row,0))
 
     def _onSourceModelReset(self):
