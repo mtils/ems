@@ -294,6 +294,7 @@ class Authentication(object):
 
         if user is None:
             self.loggedOut.fire()
+            return
 
         self.loggedIn.fire(user)
 
