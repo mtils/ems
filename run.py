@@ -19,6 +19,9 @@ import argparse
 def runModule(module):
     __import__(module)
 
+def replacePathSeparator(path):
+    return path.replace(os.path.sep, '.')
+
 def create_needed_app(runThisModule, argv, appPath, env):
 
     if ".qt4." in runThisModule:
@@ -56,7 +59,7 @@ def main(argv):
 
     env = parser.parse_args().env
 
-    runThisModule = parser.parse_args().module
+    runThisModule = replacePathSeparator(parser.parse_args().module)
 
     app = create_needed_app(runThisModule, argv, appPath, env)
 
