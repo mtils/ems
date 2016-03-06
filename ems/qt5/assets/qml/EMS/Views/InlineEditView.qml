@@ -41,13 +41,18 @@ Item {
     }
 
     function writePositions(role) {
+        var position = -1;
         for (var i=0; i < root.count; i++) {
-            itemView.model.setProperty(i, role, i+1);
+            position = i+1;
+            if (itemView.model.get(i)[role] !== position) {
+                itemView.model.setProperty(i, role, position);
+            }
         }
     }
 
     function submit() {
         submitting();
+        console.log("performing submit")
         itemView.model.submit();
         submitted();
     }
@@ -97,7 +102,7 @@ Item {
             if (rowData[property] === value) {
                 return;
             }
-//             console.log("setting property", row, property, value)
+            console.log("setting property", row, property, value)
             itemView.model.setProperty(row, property, value);
             modelPropertyChanged(row, property, value);
             if (root.submitOnChanged) {

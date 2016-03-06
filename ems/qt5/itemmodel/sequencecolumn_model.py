@@ -171,7 +171,6 @@ class SequenceColumnModel(SearchModel):
     def submit(self):
         if self._isInRefill or self._isInSubmit:
             return False
-
         try:
             result = super().submit()
             if result:
@@ -312,10 +311,12 @@ class SequenceColumnRepository(Repository, CurrentRowColumnMixin):
 
     def update(self, model, changedAttributes):
 
-        objId = id(model)
+        objId = self._modelId(model)
+
         items = self._getItemsFromModel()
         modelDict = self._findModelEntry(model, items)
-
+        print("updating", model.__class__.__name__, objId, model, id(model), 'with', changedAttributes)
+        print("modelDict", modelDict, modelDict.modelId)
         for key, val in changedAttributes.items():
             modelDict[key] = val
 
@@ -326,11 +327,6 @@ class SequenceColumnRepository(Repository, CurrentRowColumnMixin):
         items = self._getItemsFromModel()
         items.remove(self._findModelEntry(model, items))
         self._writeItemsToModel(items)
-
-    def _findItemByModelId(self, modelId):
-        for item in self._getItemsFromModel():
-            if getattr(item, self._idKey) == modelId:
-                return item
 
     def _findItemByModelId(self, modelId):
         for item in self._getItemsFromModel():
@@ -372,10 +368,14 @@ class SequenceColumnRepository(Repository, CurrentRowColumnMixin):
 
     def _findModelEntry(self, model, modelAsDicts):
 
-        modelId = model.modelId if isinstance(model, ModelBuffer) else id(model)
+        modelId = self._modelId(model)
+        print("searching for", modelId)
         for modelDict in modelAsDicts:
             if modelDict.modelId == modelId:
                 return modelDict
+
+    def _modelId(self, model):
+        return model.modelId if isinstance(model, ModelBuffer) else id(model)
 
 class ModelBuffer(dict):
     def __init__(self, *args, **kwargs):

@@ -95,7 +95,7 @@ class SearchModel(QmlTableModel):
         return None
 
     def setData(self, index, value, role=Qt.EditRole):
-
+        originalRole = int(role)
         if self._isInRefill:
             return False
 
@@ -107,6 +107,11 @@ class SearchModel(QmlTableModel):
         if role >= RoleOffset:
             column = role - RoleOffset
             role = Qt.EditRole
+
+        try:
+            print('{}.setData({},{},{}) -> {}'.format(self.__class__.__name__, row, column,self._roleNames[originalRole], value))
+        except KeyError:
+            pass
 
         if role != Qt.EditRole:
             return False
@@ -132,6 +137,7 @@ class SearchModel(QmlTableModel):
         if originalValue == value and not isinstance(value, list):
             return False
 
+        print("self._editBuffer.[{}][{}] = {} (row:{})".format(objectId, key, value, row))
         buffer = self._editBuffer.setdefault(objectId, {})
         buffer[key] = value
 
@@ -273,7 +279,7 @@ class SearchModel(QmlTableModel):
 
             for key in self._editBuffer[objectId]:
                 data[key] = self._castToPython(self._editBuffer[objectId][key])
-
+            print("self._repository.update", objectId)
             self._repository.update(obj, data)
             changedIds.add(objectId)
 
