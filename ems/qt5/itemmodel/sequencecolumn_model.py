@@ -277,6 +277,8 @@ class SequenceColumnRepository(Repository, CurrentRowColumnMixin):
     store() stores one item in that list
 
     This repository is completely internal and doesnt fire any events
+    
+    parentModel is not SequenceColumnModel! Its SequenceColumnModel.parentModel()
     """
     def __init__(self, parentModel, idKey):
         super().__init__(parentModel)
@@ -315,11 +317,15 @@ class SequenceColumnRepository(Repository, CurrentRowColumnMixin):
 
         items = self._getItemsFromModel()
         modelDict = self._findModelEntry(model, items)
-        print("updating", model.__class__.__name__, objId, model, id(model), 'with', changedAttributes)
-        print("modelDict", modelDict, modelDict.modelId)
+        print("updating", model.__class__.__name__, '(', model.__dict__['note'], ')', objId, model, id(model), 'with', changedAttributes) # richtiges
+        print("modelDict", modelDict, modelDict.modelId) # richtig
         for key, val in changedAttributes.items():
             modelDict[key] = val
 
+        print('Items:-----------------------')
+        for item in items:
+            print(item)
+            
         self._writeItemsToModel(items)
 
     def delete(self, model):
@@ -356,6 +362,7 @@ class SequenceColumnRepository(Repository, CurrentRowColumnMixin):
 
         dictItems = []
         for obj in items:
+            print(obj)
             if isinstance(obj, ModelBuffer):
                 dictItems.append(obj)
                 continue

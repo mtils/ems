@@ -77,6 +77,7 @@ class SearchModel(QmlTableModel):
         key = self._nameOfColumn(column)
 
         if self._isInBuffer(objectId, key):
+            print("Return from buffer", row, key, self._getFromBuffer(objectId, key))
             return self._getFromBuffer(objectId, key)
 
         try:
@@ -97,7 +98,7 @@ class SearchModel(QmlTableModel):
     def setData(self, index, value, role=Qt.EditRole):
         originalRole = int(role)
         if self._isInRefill:
-            return False
+            print(self.__class__.__name__, "Returning false 101"); return False
 
         self.refillIfNeeded()
 
@@ -112,13 +113,17 @@ class SearchModel(QmlTableModel):
             print('{}.setData({},{},{}) -> {}'.format(self.__class__.__name__, row, column,self._roleNames[originalRole], value))
         except KeyError:
             pass
+        except TypeError:
+            pass
 
         if role != Qt.EditRole:
+            print(self.__class__.__name__, "Returning false 120")
             return False
 
         try:
             obj = self._objectCache[row]
         except IndexError:
+            print(self.__class__.__name__, "Returning false 126")
             return False
 
         #value = self._castToPython(value)
@@ -135,6 +140,7 @@ class SearchModel(QmlTableModel):
         # Comparing lists is tricky with a few item types, if one item in the list
         # was changed 
         if originalValue == value and not isinstance(value, list):
+            print(self.__class__.__name__, "Returning false 143")
             return False
 
         print("self._editBuffer.[{}][{}] = {} (row:{})".format(objectId, key, value, row))
@@ -143,6 +149,8 @@ class SearchModel(QmlTableModel):
 
         self.dataChanged.emit(index, index)
         self._setDirty(True)
+
+        print(self.__class__.__name__, "Returning true 153")
 
         return True
 
