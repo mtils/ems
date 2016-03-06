@@ -45,7 +45,7 @@ def seed_contacts(session):
             'fax'  : '0049 721 12345679',
             'email': 'mtils@web-utils.de',
             'email2': 'mtils@web-utils.de',
-            'street': 'Straße 10',
+            'street': 'Strasse 10',
             'postcode': '76000',
             'location': 'Karlsruhe',
             'address_addition': '',
