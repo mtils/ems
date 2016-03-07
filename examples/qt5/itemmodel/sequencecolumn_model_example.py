@@ -1,6 +1,6 @@
 
-from PyQt5.QtCore import Qt, QObject
-from PyQt5.QtWidgets import QWidget, QVBoxLayout
+from PyQt5.QtCore import Qt, QObject, pyqtSignal
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QPushButton
 
 from examples.bootstrap.seeding.orm import Contact, Base, ContactNote
 from examples.qt5.helpers.table_manager import TableManager
@@ -70,7 +70,35 @@ repository = ContactRepository(Contact, session)
 
 model = SearchModel(search, repository)
 
-win = QWidget()
+class TestWindow(QWidget):
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._autoCommitEnabled = False
+        self._detailWin = None
+
+    def enableAutoCommit(self, enabled):
+        self._autoCommitEnabled = enabled
+
+    def getDetailWin(self):
+        return self._detailWin
+
+    def setDetailWin(self, detailWin):
+        self._detailWin = detailWin
+
+    detailWin = property(getDetailWin, setDetailWin)
+
+    def setDetailModel(self, model):
+        self._detailModel = model
+        self._detailModel.dataChanged.connect(self._onDataChanged)
+
+    def _onDataChanged(self, topLeft, bottomRight):
+        if self._autoCommitEnabled:
+            self._detailModel.submit()
+            print("dataChanged", topLeft, bottomRight)
+
+
+win = TestWindow()
 win.setWindowFlags(Qt.Dialog)
 win.setLayout(QVBoxLayout())
 win.setMinimumWidth(800)
@@ -81,6 +109,11 @@ modelManager.setModel(model)
 win.layout().addWidget(modelManager)
 
 win.detailWin = TableManager(win)
+win.autoSubmitButton = QPushButton("Commit on Changed", win.detailWin)
+win.autoSubmitButton.toggled.connect(win.enableAutoCommit)
+win.detailWin.buttonContainer.layout().addWidget(win.autoSubmitButton)
+win.autoSubmitButton.setCheckable(True)
+win.detailWin.view.setEditTriggers(win.detailWin.view.AllEditTriggers)
 
 #noteRepository = OrmRepository(ContactNote, session)
 
@@ -91,6 +124,7 @@ detailModel.setParentModel(model)
 
 modelManager.selectedRowChanged.connect(detailModel.setCurrentRow)
 win.detailWin.setModel(detailModel)
+win.setDetailModel(detailModel)
 
 win.layout().addWidget(win.detailWin)
 
