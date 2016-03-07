@@ -77,7 +77,6 @@ class SearchModel(QmlTableModel):
         key = self._nameOfColumn(column)
 
         if self._isInBuffer(objectId, key):
-            print("Return from buffer", row, key, self._getFromBuffer(objectId, key))
             return self._getFromBuffer(objectId, key)
 
         try:
