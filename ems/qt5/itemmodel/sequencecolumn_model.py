@@ -74,6 +74,7 @@ class SequenceColumnModel(SearchModel):
         self._repository = repository
 
         super().__init__(search, repository)
+
         self._parentModel = None
         self._inspector = None
         self.storeEmptyObjects = True
