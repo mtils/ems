@@ -1,4 +1,6 @@
 
+import sys, os, traceback
+
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QMainWindow, QTableView, QWidget, QHBoxLayout
 from PyQt5.QtWidgets import QVBoxLayout, QPushButton, QSpacerItem, QSizePolicy
@@ -110,4 +112,7 @@ class TableManager(QWidget):
 
 
     def _printError(self, exc):
-        print(exc)
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        print("TableManager ERROR: {}:{} {} Traceback:".format(fname, exc_tb.tb_lineno, exc))
+        traceback.print_exc()

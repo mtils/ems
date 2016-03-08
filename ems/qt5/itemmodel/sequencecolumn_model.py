@@ -76,6 +76,7 @@ class SequenceColumnModel(SearchModel):
         super().__init__(search, repository)
         self._parentModel = None
         self._inspector = None
+        self.storeEmptyObjects = True
         if parentModel:
             self.setParentModel(parentModel)
 
@@ -171,14 +172,22 @@ class SequenceColumnModel(SearchModel):
     def submit(self):
         if self._isInRefill or self._isInSubmit:
             return False
+
         try:
-            result = super().submit()
-            if result:
-                self._silentlyRefill()
-            return result
+            return super().submit()
         except Exception as e:
             self.error.emit(QError(e))
             return False
+
+    def _emitDataChangedForObjectIdsAfterSubmit(self, objectIds):
+        """
+        super().submit() will lead to dataChanged() Signals on every changed
+        index.
+        At this point, the old data is in self._objectCache etc.
+        So we have to assure invalidate the cache before the signals are emitted
+        """
+        self._silentlyRefill()
+        super()._emitDataChangedForObjectIdsAfterSubmit(objectIds)
 
     def _silentlyRefill(self):
         self._isInRefill = True
@@ -266,7 +275,10 @@ class SequenceColumnSearch(Search, CurrentRowColumnMixin):
         return [] if items is None else items
 
 class AnonymousObject(object):
-    pass
+    def __str__(self):
+        return "<{} id:{}>".format(self.__class__.__name__, id(self))
+    def __repr__(self):
+        return self.__str__()
 
 class SequenceColumnRepository(Repository, CurrentRowColumnMixin):
     """
@@ -292,17 +304,18 @@ class SequenceColumnRepository(Repository, CurrentRowColumnMixin):
         return self._findItemByModelId(id_)
 
     def new(self, attributes=None):
-        return self.appending.fire(attributes)
+        obj = AnonymousObject()
+        if attributes:
+            self._fill(obj, attributes)
+        self.appending.fire(obj)
+        return obj
 
     def store(self, attributes, obj=None):
 
         if obj is None:
             obj = self.new(attributes)
-
-        if obj is None:
-            obj = AnonymousObject()
-
-        self._fill(obj, attributes)
+        else:
+            self._fill(obj, attributes)
 
         objData = self._modelToDict(obj)
 
@@ -317,15 +330,10 @@ class SequenceColumnRepository(Repository, CurrentRowColumnMixin):
 
         items = self._getItemsFromModel()
         modelDict = self._findModelEntry(model, items)
-        print("updating", model.__class__.__name__, '(', model.__dict__['note'], ')', objId, model, id(model), 'with', changedAttributes) # richtiges
-        print("modelDict", modelDict, modelDict.modelId) # richtig
+
         for key, val in changedAttributes.items():
             modelDict[key] = val
 
-        print('Items:-----------------------')
-        for item in items:
-            print(item)
-            
         self._writeItemsToModel(items)
 
     def delete(self, model):
@@ -344,7 +352,9 @@ class SequenceColumnRepository(Repository, CurrentRowColumnMixin):
         modelData = ModelBuffer()
         modelData.modelId = id(model)
 
-        for key, value in model.__dict__.items():
+        items = model.items() if isinstance(model, ModelBuffer) else model.__dict__.items()
+
+        for key, value in items:
             if key[0] == '_':
                 continue
             modelData[key] = value
@@ -362,7 +372,6 @@ class SequenceColumnRepository(Repository, CurrentRowColumnMixin):
 
         dictItems = []
         for obj in items:
-            print(obj)
             if isinstance(obj, ModelBuffer):
                 dictItems.append(obj)
                 continue
@@ -371,12 +380,13 @@ class SequenceColumnRepository(Repository, CurrentRowColumnMixin):
         return dictItems
 
     def _writeItemsToModel(self, items):
+        itemsIndex = self._itemsIndex()
         self._parentModel.setData(self._itemsIndex(), items)
 
     def _findModelEntry(self, model, modelAsDicts):
 
         modelId = self._modelId(model)
-        print("searching for", modelId)
+
         for modelDict in modelAsDicts:
             if modelDict.modelId == modelId:
                 return modelDict
@@ -385,6 +395,11 @@ class SequenceColumnRepository(Repository, CurrentRowColumnMixin):
         return model.modelId if isinstance(model, ModelBuffer) else id(model)
 
 class ModelBuffer(dict):
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.modelId = None
+
+    def __str__(self):
+        parentString = super().__str__()
+        return "ModelBuffer({}):{}".format(self.modelId, parentString)

@@ -36,6 +36,7 @@ class SearchModel(QmlTableModel):
         self._isDirty = False
         self._isInSubmit = False
         self._isInRefill = False
+        self.storeEmptyObjects = False
 
         # Needs to ne done first, even if no one asks because qml asks rowCount
         # before its ready
@@ -89,15 +90,16 @@ class SearchModel(QmlTableModel):
 
             objCache = self._valueCache.setdefault(objectId, {})
             objCache[key] = self._castToQt(self._extractValue(obj, key))
-
             return objCache[key]
 
         return None
 
     def setData(self, index, value, role=Qt.EditRole):
+
         originalRole = int(role)
+
         if self._isInRefill:
-            print(self.__class__.__name__, "Returning false 101"); return False
+            return False
 
         self.refillIfNeeded()
 
@@ -108,21 +110,12 @@ class SearchModel(QmlTableModel):
             column = role - RoleOffset
             role = Qt.EditRole
 
-        try:
-            print('{}.setData({},{},{}) -> {}'.format(self.__class__.__name__, row, column,self._roleNames[originalRole], value))
-        except KeyError:
-            pass
-        except TypeError:
-            pass
-
         if role != Qt.EditRole:
-            print(self.__class__.__name__, "Returning false 120")
             return False
 
         try:
             obj = self._objectCache[row]
         except IndexError:
-            print(self.__class__.__name__, "Returning false 126")
             return False
 
         #value = self._castToPython(value)
@@ -139,17 +132,16 @@ class SearchModel(QmlTableModel):
         # Comparing lists is tricky with a few item types, if one item in the list
         # was changed 
         if originalValue == value and not isinstance(value, list):
-            print(self.__class__.__name__, "Returning false 143")
             return False
 
-        print("self._editBuffer.[{}][{}] = {} (row:{})".format(objectId, key, value, row))
         buffer = self._editBuffer.setdefault(objectId, {})
         buffer[key] = value
 
-        self.dataChanged.emit(index, index)
         self._setDirty(True)
 
-        print(self.__class__.__name__, "Returning true 153")
+        # QML creates indexes with column 0. We have to create the right index
+        emitIndex = self.createIndex(row, column)
+        self.dataChanged.emit(emitIndex, emitIndex)
 
         return True
 
@@ -209,7 +201,6 @@ class SearchModel(QmlTableModel):
         self._needsRefill = False
 
         self.beginResetModel()
-
         self._objectCache = []
         self._valueCache.clear()
         self._editBuffer.clear()
@@ -247,18 +238,23 @@ class SearchModel(QmlTableModel):
 
             data = {}
 
-            if objectId not in self._editBuffer:
+            if not self.storeEmptyObjects and objectId not in self._editBuffer:
                 continue
 
-            for key in self._editBuffer[objectId]:
-                value = self._castToPython(self._editBuffer[objectId][key])
+            try:
+                for key in self._editBuffer[objectId]:
+                    value = self._castToPython(self._editBuffer[objectId][key])
 
-                if value is None:
-                    continue
+                    if value is None:
+                        continue
 
-                data[key] = value
+                    data[key] = value
+            except KeyError as e:
+                if not self.storeEmptyObjects:
+                    self._isInSubmit = False
+                    raise e
 
-            if not len(data):
+            if not len(data) and not self.storeEmptyObjects:
                 continue
 
             try:
@@ -273,7 +269,10 @@ class SearchModel(QmlTableModel):
         self._unsubmittedObjectIds.clear()
 
         for objectId in createdRows:
-            del self._editBuffer[objectId]
+            try:
+                del self._editBuffer[objectId]
+            except KeyError:
+                pass
 
         for objectId in self._editBuffer:
 
@@ -286,7 +285,7 @@ class SearchModel(QmlTableModel):
 
             for key in self._editBuffer[objectId]:
                 data[key] = self._castToPython(self._editBuffer[objectId][key])
-            print("self._repository.update", objectId)
+
             self._repository.update(obj, data)
             changedIds.add(objectId)
 
@@ -294,7 +293,7 @@ class SearchModel(QmlTableModel):
         self._valueCache.clear()
         self._setDirty(False)
 
-        self._emitDataChangedForObjectIds(changedIds)
+        self._emitDataChangedForObjectIdsAfterSubmit(changedIds)
         self._isInSubmit = False
 
         return True
@@ -311,8 +310,9 @@ class SearchModel(QmlTableModel):
         self.beginInsertRows(parent, row, row+count-1)
 
         for i in range(count):
+            insertAt = row + i
             newObj = self._repository.new()
-            self._objectCache.insert(row, newObj)
+            self._objectCache.insert(insertAt, newObj)
             self._unsubmittedObjectIds.add(self._objectId(newObj))
 
         self.endInsertRows()
@@ -331,6 +331,7 @@ class SearchModel(QmlTableModel):
         for obj in objects:
             objectId = self._objectId(obj)
             if objectId in self._unsubmittedObjectIds:
+
                 self._objectCache.remove(obj)
                 self._unsubmittedObjectIds.remove(objectId)
                 continue
@@ -437,7 +438,10 @@ class SearchModel(QmlTableModel):
             return float(value)
         return value
 
-    def _emitDataChangedForObjectIds(self, objectIds):
+    def _emitDataChangedForObjectIdsAfterSubmit(self, objectIds):
+
+        lastColumn = self.columnCount()-1
+
         for objectId in objectIds:
 
             try:
@@ -446,5 +450,8 @@ class SearchModel(QmlTableModel):
                 continue
 
             topLeft = self.index(row, 0)
-            bottomRight = self.index(row, self.columnCount()-1)
+            bottomRight = self.index(row, lastColumn)
             self.dataChanged.emit(topLeft, bottomRight)
+
+    def _invalidateValueCaches(self):
+        pass
