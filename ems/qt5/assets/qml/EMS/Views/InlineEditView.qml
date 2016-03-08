@@ -52,7 +52,6 @@ Item {
 
     function submit() {
         submitting();
-        console.log("performing submit")
         itemView.model.submit();
         submitted();
     }
@@ -102,7 +101,7 @@ Item {
             if (rowData[property] === value) {
                 return;
             }
-            console.log("setting property", row, property, value)
+
             itemView.model.setProperty(row, property, value);
             modelPropertyChanged(row, property, value);
             if (root.submitOnChanged) {
