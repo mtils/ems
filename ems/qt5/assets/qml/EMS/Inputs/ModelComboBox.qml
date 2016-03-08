@@ -8,9 +8,9 @@ ComboBox {
 
     property string idRole: 'ID'
 
-    property string currentId: ""
+    property var currentId: ""
 
-    property string bindId: "";
+    property var bindId: "";
 
     property bool __isSelfWriting: false
 
@@ -20,18 +20,14 @@ ComboBox {
             return -1;
         }
 
-        if (typeof modelId !== 'string') {
-            modelId = modelId.toString()
-        }
-
         for (var i=0; i < root.model.count; i++) {
 
             var rowData = root.model.get(i);
-            var rowValue = _castIdToString(rowData[idRole]);
 
-            if (rowValue === modelId) {
-                return i;
+            if (rowData[idRole] === modelId) {
+                return i
             }
+
         }
 
         return -1;
@@ -58,22 +54,8 @@ ComboBox {
         var rowData = root.model.get(idx);
 
         root.__isSelfWriting = true;
-        root.currentId = _castIdToString(rowData[root.idRole]);
+        root.currentId = rowData[root.idRole];
         root.__isSelfWriting = false;
-
-    }
-
-    function _castIdToString(ID) {
-
-        if (typeof ID === 'string') {
-            return ID;
-        }
-
-        if (typeof ID === 'undefined') {
-            return "-1";
-        }
-
-        return ID.toString();
 
     }
 

@@ -20,7 +20,14 @@ SearchAndFormEditor {
         filterKey: "surname"
     }
 
-    modelDefaults: {"company":""}
+    modelDefaults: {
+        "company":"",
+        "forename":"",
+        "surname":"",
+        "phone":"",
+        "fax":"",
+        "memo":""
+    }
 
     onSearchRequested: model.setFilterWildcard(text)
 
