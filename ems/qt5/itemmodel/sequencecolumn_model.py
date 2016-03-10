@@ -277,7 +277,7 @@ class SequenceColumnSearch(Search, CurrentRowColumnMixin):
 
 class AnonymousObject(object):
     def __str__(self):
-        return "<{} id:{}>".format(self.__class__.__name__, id(self))
+        return "<{} id:{} {}>".format(self.__class__.__name__, id(self), self.__dict__)
     def __repr__(self):
         return self.__str__()
 
