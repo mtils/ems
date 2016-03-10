@@ -84,10 +84,15 @@ class SequenceColumnModel(SearchModel):
         self.appending += repository.appending
 
         self.currentRowChanged.connect(self.forceRefill)
+        self.rowsRemoved.connect(self._silentlyRefill)
+        #self.rowsRemoved.connect(self.doRefill)
 
     @pyqtSlot(int)
     def forceRefill(self, row):
         self.refill()
+
+    #def doRefill(self, *args):
+        #self.refill()
 
     @property
     def search(self):
@@ -171,7 +176,7 @@ class SequenceColumnModel(SearchModel):
 
     @pyqtSlot()
     def submit(self):
-        if self._isInRefill or self._isInSubmit:
+        if self._isInRefill or self._isInSubmit or not self._isDirty:
             return False
 
         try:
@@ -190,7 +195,8 @@ class SequenceColumnModel(SearchModel):
         self._silentlyRefill()
         super()._emitDataChangedForObjectIdsAfterSubmit(objectIds)
 
-    def _silentlyRefill(self):
+    def _silentlyRefill(self, *args):
+
         self._isInRefill = True
         self._valueCache.clear()
         self._editBuffer.clear()
@@ -220,6 +226,9 @@ class SequenceColumnModel(SearchModel):
             return currentObj[key]
 
         return None
+
+    def _objectId(self, model):
+        return model.modelId if isinstance(model, ModelBuffer) else id(model)
 
 class CurrentRowColumnMixin(object):
 
@@ -261,6 +270,7 @@ class CurrentRowColumnMixin(object):
     def setParentModel(self, model):
         self._parentModel = model
 
+
 class SequenceColumnSearch(Search, CurrentRowColumnMixin):
 
     def __init__(self, parentModel):
@@ -271,7 +281,6 @@ class SequenceColumnSearch(Search, CurrentRowColumnMixin):
         if not self._parentModel:
             return []
 
-        index = self._itemsIndex()
         items = self._itemsIndex().data(Qt.EditRole)
         return [] if items is None else items
 
@@ -322,7 +331,6 @@ class SequenceColumnRepository(Repository, CurrentRowColumnMixin):
 
         items = self._getItemsFromModel()
         items.append(objData)
-
         self._writeItemsToModel(items)
 
     def update(self, model, changedAttributes):
@@ -334,13 +342,13 @@ class SequenceColumnRepository(Repository, CurrentRowColumnMixin):
 
         for key, val in changedAttributes.items():
             modelDict[key] = val
-
         self._writeItemsToModel(items)
 
     def delete(self, model):
 
         items = self._getItemsFromModel()
         items.remove(self._findModelEntry(model, items))
+
         self._writeItemsToModel(items)
 
     def _findItemByModelId(self, modelId):
@@ -382,6 +390,7 @@ class SequenceColumnRepository(Repository, CurrentRowColumnMixin):
 
     def _writeItemsToModel(self, items):
         itemsIndex = self._itemsIndex()
+
         self._parentModel.setData(self._itemsIndex(), items)
 
     def _findModelEntry(self, model, modelAsDicts):
@@ -402,5 +411,8 @@ class ModelBuffer(dict):
         self.modelId = None
 
     def __str__(self):
-        parentString = super().__str__()
+        return self.__repr__()
+
+    def __repr__(self):
+        parentString = super().__repr__()
         return "ModelBuffer({}):{}".format(self.modelId, parentString)

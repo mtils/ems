@@ -329,14 +329,18 @@ class SearchModel(QmlTableModel):
             obj = self._objectCache[i]
             objects.append(obj)
 
+
         for obj in objects:
             objectId = self._objectId(obj)
+
             if objectId in self._unsubmittedObjectIds:
+
                 self._objectCache.remove(obj)
                 self._unsubmittedObjectIds.remove(objectId)
                 continue
 
             self._repository.delete(obj)
+
 
         for obj in objects:
             try:
