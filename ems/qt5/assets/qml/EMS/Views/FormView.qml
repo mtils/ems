@@ -22,16 +22,22 @@ Item {
 
     signal modelPropertyChanged(int row, string property, variant value);
 
+    signal accepting();
+
     signal accepted();
+
+    signal cancelling();
 
     signal cancelled();
 
     function accept() {
+        accepting();
         root.model.submit();
         accepted();
     }
 
     function cancel() {
+        cancelling();
         root.model.revert()
         cancelled();
     }
