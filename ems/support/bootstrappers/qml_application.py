@@ -51,7 +51,7 @@ class QmlApplicationBootstrapper(Bootstrapper):
         qmlRegisterType(SortFilterProxyModel, 'org.ems', 1, 0, 'FilterModel')
         qmlRegisterType(SequenceColumnModel, 'org.ems', 1, 0, 'SequenceColumnModel')
         qmlRegisterType(CurrentRowProxyModel, 'org.ems', 1, 0, 'CurrentRowModel')
-        #print("qmlApp", qmlapp)
+
         self.win.engine().rootContext().setContextProperty("qmlApp", qmlapp)
 
         qmlFileUrl = self.mainQmlFileUrl()

@@ -64,7 +64,13 @@ app().bind('bools', BoolGenerator)
 app().bind('dicts', DictGenerator)
 app().bind('lists', ListGenerator)
 
+def changeFloatArguments(args):
+    print("calling FloatGenerator.multiply({0}, {1})".format(*args))
+    args[0] = 7.0
+    print("Changing to ({0}, {1})...".format(*args))
+
 app("events").fire("auth.loggedIn")
+app("events").listen("qml-factory.calling:floats.multiply", changeFloatArguments)
 
 qmlFile = os.path.join(app_path(), "examples", "qt5", "qml", "Views", "PythonBridgeExample.qml")
 

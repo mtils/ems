@@ -12,6 +12,7 @@ class Factory(QObject):
         super().__init__()
         self._engine = engine
         self._scriptEngine = scriptEngine
+        self._events = app('events')
 
     @pyqtSlot("QString", result=QObject)
     @pyqtSlot("QString", QObject, result=QObject)
@@ -29,7 +30,7 @@ class Factory(QObject):
         abstract, method = self._splitAbstractMethod(abstractMethod)
 
         obj = app(abstract)
-        result = getattr(obj, method)(*self._argsToPython(*(arg1, arg2, arg3)))
+        result = getattr(obj, method)(*self._argsToPython(abstractMethod, *(arg1, arg2, arg3)))
 
         if isinstance(result, float):
             return result
@@ -46,7 +47,7 @@ class Factory(QObject):
         abstract, method = self._splitAbstractMethod(abstractMethod)
 
         obj = app(abstract)
-        result = getattr(obj, method)(*self._argsToPython(*(arg1, arg2, arg3)))
+        result = getattr(obj, method)(*self._argsToPython(abstractMethod,*(arg1, arg2, arg3)))
 
         if isinstance(result, float):
             return int(result)
@@ -63,7 +64,7 @@ class Factory(QObject):
         abstract, method = self._splitAbstractMethod(abstractMethod)
 
         obj = app(abstract)
-        result = getattr(obj, method)(*self._argsToPython(*(arg1, arg2, arg3)))
+        result = getattr(obj, method)(*self._argsToPython(abstractMethod,*(arg1, arg2, arg3)))
 
         if isinstance(result, str):
             return result
@@ -79,7 +80,7 @@ class Factory(QObject):
         abstract, method = self._splitAbstractMethod(abstractMethod)
 
         obj = app(abstract)
-        result = getattr(obj, method)(*self._argsToPython(*(arg1, arg2, arg3)))
+        result = getattr(obj, method)(*self._argsToPython(abstractMethod,*(arg1, arg2, arg3)))
 
         if isinstance(result, bool):
             return result
@@ -95,7 +96,7 @@ class Factory(QObject):
         abstract, method = self._splitAbstractMethod(abstractMethod)
 
         obj = app(abstract)
-        result = getattr(obj, method)(*self._argsToPython(*(arg1, arg2, arg3)))
+        result = getattr(obj, method)(*self._argsToPython(abstractMethod,*(arg1, arg2, arg3)))
 
         if isinstance(result, dict) or result is None:
             return result
@@ -111,7 +112,7 @@ class Factory(QObject):
         abstract, method = self._splitAbstractMethod(abstractMethod)
 
         obj = app(abstract)
-        result = getattr(obj, method)(*self._argsToPython(*(arg1, arg2, arg3)))
+        result = getattr(obj, method)(*self._argsToPython(abstractMethod,*(arg1, arg2, arg3)))
 
         if isinstance(result, list) or result is None:
             return result
@@ -127,12 +128,16 @@ class Factory(QObject):
         engine.setObjectOwnership(factory, engine.CppOwnership)
         return factory
 
-    def _argsToPython(self, *args):
+    def _argsToPython(self, abstractMethod, *args):
         parsed = []
         for arg in args:
             # A passed arg would be a QJSValue
             if arg is not None:
                 parsed.append(self._toPython(arg))
+
+        event = "qml-factory.calling:{}".format(abstractMethod)
+
+        self._events.fire(event, parsed)
 
         return parsed
 
