@@ -76,11 +76,38 @@ function model(name, parent) {
     return make("models", name, parent);
 }
 
-function float() {
-//     for (var i = 0; i < arguments.length; i++) {
-//         console.log(arguments[i]);
-//     }
+function pyFloat() {
     if (qmlApp !== undefined) {
         return qmlApp.getFloat.apply(null, arguments);
+    }
+}
+
+function pyInt() {
+    if (qmlApp !== undefined) {
+        return qmlApp.getInt.apply(null, arguments);
+    }
+}
+
+function pyString() {
+    if (qmlApp !== undefined) {
+        return qmlApp.getString.apply(null, arguments);
+    }
+}
+
+function pyBool() {
+    if (qmlApp !== undefined) {
+        return qmlApp.getBool.apply(null, arguments);
+    }
+}
+
+function pyDict() {
+    if (qmlApp !== undefined) {
+        return qmlApp.getDict.apply(null, arguments);
+    }
+}
+
+function pyList() {
+    if (qmlApp !== undefined) {
+        return qmlApp.getList.apply(null, arguments);
     }
 }
