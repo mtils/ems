@@ -3,6 +3,7 @@ from PyQt5.QtCore import QSortFilterProxyModel
 from PyQt5.QtCore import Qt, QModelIndex, pyqtSlot, QByteArray, pyqtProperty
 
 from ems.qt.util import Inspector
+from ems.qt.identifiers import ItemData
 
 class SortFilterProxyModel(QSortFilterProxyModel):
 
@@ -94,6 +95,14 @@ class SortFilterProxyModel(QSortFilterProxyModel):
     @pyqtProperty(int)
     def count(self):
         return self.rowCount()
+
+    @pyqtSlot()
+    def clear(self):
+        self.removeRows(0, self.rowCount())
+
+    @pyqtSlot(int, result="QVariant")
+    def obj(self, row):
+        return self.index(row,0).data(ItemData.RowObjectRole)
 
     def getFilterKey(self):
         return self._filterKey
