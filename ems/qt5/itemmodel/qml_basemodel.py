@@ -100,6 +100,10 @@ class QmlTableModel(QAbstractTableModel):
     def obj(self, row):
         return self.index(row,0).data(ItemData.RowObjectRole)
 
+    @pyqtSlot()
+    def clear(self):
+        self.removeRows(0, self.rowCount())
+
     def _emitCount(self, *args):
         count = self.rowCount()
         if count == self.__lastEmittedCount:
