@@ -98,10 +98,16 @@ class Factory(QObject):
         obj = app(abstract)
         result = getattr(obj, method)(*self._argsToPython(abstractMethod,*(arg1, arg2, arg3)))
 
-        if isinstance(result, dict) or result is None:
-            return result
+        if result is None:
+            return None
 
-        return dict(result)
+        if not isinstance(result, dict):
+            result = dict(result)
+
+        for key in result:
+            result[key] = self._toQml(result[key])
+
+        return result
 
     @pyqtSlot("QString", result='QVariantList')
     @pyqtSlot("QString", "QJSValue", result='QVariantList')
@@ -114,10 +120,14 @@ class Factory(QObject):
         obj = app(abstract)
         result = getattr(obj, method)(*self._argsToPython(abstractMethod,*(arg1, arg2, arg3)))
 
-        if isinstance(result, list) or result is None:
-            return result
+        if result is None:
+            return None
 
-        return list(result)
+        items = []
+        for item in result:
+            items.append(self._toQml(item))
+
+        return items
 
     def _splitAbstractMethod(self, abstractMethod):
         return abstractMethod.split('.', 1)
@@ -173,4 +183,28 @@ class Factory(QObject):
         elif qJsValue.isVariant():
             #print("Returning variant")
             return qJsValue.toVariant()
-        #print("Nothing matching found")
+        elif qJsValue.isObject():
+            #print("Returning variant from object")
+            return qJsValue.toVariant()
+        raise TypeError("Nothing matching type found")
+
+    def _toQml(self, pyValue):
+
+        if isinstance(pyValue, dict):
+            return pyValue
+        if self._isInstanceOfClass(pyValue):
+            return self._instanceToDict(pyValue)
+
+        return pyValue
+
+    def _isInstanceOfClass(self, value):
+        return hasattr(value, '__dict__')
+
+    def _instanceToDict(self, value):
+        result = {}
+        for key in value.__dict__:
+            if not key[0] == '_':
+                result[key] = value.__dict__[key]
+
+        result['__class'] = str(value.__module__) + '.' + (value.__class__.__name__)
+        return result

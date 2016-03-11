@@ -98,6 +98,19 @@ Item {
             text: ""
         }
 
+        Button {
+            id: objectsButton
+            text: "Push for some objects"
+            onClicked: {
+                objectsLabel.text = JSON.stringify(Application.pyList("objects.samples"))
+            }
+        }
+
+        Label {
+            id: objectsLabel
+            text: ""
+        }
+
     }
 
 

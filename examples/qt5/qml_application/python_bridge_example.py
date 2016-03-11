@@ -7,6 +7,10 @@ from ems.app import app, app_path
 
 from examples.bootstrap.seeding.orm import Contact, Base, ContactNote
 
+class Person:
+    def __init__(self, **kwargs):
+        for key in kwargs:
+            setattr(self, key, kwargs[key])
 
 class FloatGenerator:
 
@@ -57,12 +61,20 @@ class ListGenerator:
             }
         ]
 
+class ObjectGenerator:
+    def samples(self):
+        return [
+            Person(name='Gelb',firstname='Olaf'),
+            Person(name='Orange',firstname='Gandalf')
+        ]
+
 app().bind('floats', FloatGenerator)
 app().bind('ints', IntGenerator)
 app().bind('strings', StringGenerator)
 app().bind('bools', BoolGenerator)
 app().bind('dicts', DictGenerator)
 app().bind('lists', ListGenerator)
+app().bind('objects', ObjectGenerator)
 
 def changeFloatArguments(args):
     print("calling FloatGenerator.multiply({0}, {1})".format(*args))
