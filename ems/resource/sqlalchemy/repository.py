@@ -32,7 +32,7 @@ class OrmRepository(Repository):
         instance = self.fill(obj, attributes) if obj else self.new(attributes)
         self._session.add(instance)
         self._session.commit()
-        self.stored.fire(instance)
+        self.stored.fire(instance, attributes)
         return instance
 
     def update(self, model, changedAttributes):
@@ -43,7 +43,7 @@ class OrmRepository(Repository):
         session.add(model)
         session.commit()
 
-        self.updated.fire(model)
+        self.updated.fire(model, changedAttributes)
         return model
 
     def delete(self, model):

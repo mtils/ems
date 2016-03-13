@@ -53,7 +53,7 @@ class Repository(object):
     stored = EventHookProperty()
     """
     This event is fired after a model was stored
-    signature: stored(model)
+    signature: stored(model, attributes)
     """
 
     updating = EventHookProperty()
@@ -65,7 +65,7 @@ class Repository(object):
     updated = EventHookProperty()
     """
     This event is fired after a model gets updated
-    signature: updated(model)
+    signature: updated(model, changedAttributes)
     """
 
     deleting = EventHookProperty()
@@ -149,7 +149,10 @@ class Repository(object):
         :returns: the filled model
         """
         self.filling.fire(model, attributes)
-        for key in attributes:
+        for key in self._cleanAttributes(attributes):
             setattr(model, key, attributes[key])
         self.filled.fire(model, attributes)
         return model
+
+    def _cleanAttributes(self, attributes):
+        return attributes

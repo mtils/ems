@@ -10,4 +10,16 @@ class OrmSearch(Search):
         super().__init__(criteria)
 
     def all(self):
-        return self._session.query(self.modelClass).all()
+
+        self.searching.fire(self)
+        query = self._session.query(self.modelClass)
+        otherQuery = self.querying.fire(self, query)
+
+        if otherQuery:
+            result = otherQuery.all()
+        else:
+            result = query.all()
+
+        self.searched.fire(self, result)
+
+        return result

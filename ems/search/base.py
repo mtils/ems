@@ -1,6 +1,7 @@
 
 from collections import OrderedDict
 from abc import ABCMeta, abstractmethod
+from ems.event.hook import EventHookProperty
 
 AND = 'and'
 OR = 'or'
@@ -152,6 +153,27 @@ class Criteria(Queryable, Sortable):
         return self
 
 class Search(Queryable, HoldsKeys, metaclass=ABCMeta):
+
+    searching = EventHookProperty()
+    '''
+    This event is fired before a search will be performed. The signature
+    is: searching(self)
+    Subscribers than can modify the Search object
+    '''
+
+    searched = EventHookProperty()
+    '''
+    This event is fired after a search was performed. Signature is:
+    searched(self, result)
+    '''
+
+    querying = EventHookProperty()
+    '''
+    This will be fired with the backend dependent native query object.
+    For example a sqlalchemy query object. Signature is:
+    querying(self, query).
+    First searching is fired, after that querying
+    '''
 
     def __init__(self, criteria=None):
         self._criteria = criteria if criteria else Criteria()
