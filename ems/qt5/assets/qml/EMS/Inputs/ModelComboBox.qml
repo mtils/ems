@@ -39,7 +39,7 @@ ComboBox {
             return;
         }
 
-        if (!root.model) {
+        if (!root.model || typeof root.model.get !== 'function') {
             return;
         }
 
