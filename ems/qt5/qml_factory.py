@@ -101,8 +101,8 @@ class Factory(QObject):
         if result is None:
             return None
 
-        if not isinstance(result, dict):
-            result = dict(result)
+        if self._isInstanceOfClass(result):
+            return self._instanceToDict(result)
 
         for key in result:
             result[key] = self._toQml(result[key])
