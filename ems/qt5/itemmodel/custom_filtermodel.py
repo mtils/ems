@@ -1,11 +1,14 @@
 
-from PyQt5.QtCore import QSortFilterProxyModel
+from PyQt5.QtCore import QSortFilterProxyModel, pyqtSignal
 from PyQt5.QtCore import Qt, QModelIndex, pyqtSlot, QByteArray, pyqtProperty
 
 from ems.qt.util import Inspector
 from ems.qt.identifiers import ItemData
+from ems.qt5.util import QError
 
 class SortFilterProxyModel(QSortFilterProxyModel):
+
+    error = pyqtSignal(QError, arguments=('error',))
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -123,6 +126,9 @@ class SortFilterProxyModel(QSortFilterProxyModel):
 
         if self._filterKey:
             self._refreshFilterKey(self._filterKey)
+
+        if hasattr(model, 'error'):
+            model.error.connect(self.error)
 
     def _refreshFilterKey(self, key):
         column = self._inspector.columnOfName(key)
