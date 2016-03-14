@@ -75,12 +75,12 @@ ComboBox {
     }
 
     onBindIdChanged: {
-
         var idIndex = root.findId(root.bindId);
 
         if (idIndex !== root.currentIndex) {
             root.__isSelfWriting = true;
             root.currentIndex = idIndex;
+            root.currentId = root.bindId;
             root.__isSelfWriting = false;
         }
     }
