@@ -12,7 +12,7 @@ Row {
     }
 
     function bootListView(view) {
-        console.log("booting listview");
+//         console.log("booting listview");
     }
 
     Component.onCompleted: {
