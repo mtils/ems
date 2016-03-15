@@ -107,6 +107,14 @@ class SortFilterProxyModel(QSortFilterProxyModel):
     def obj(self, row):
         return self.index(row,0).data(ItemData.RowObjectRole)
 
+    @pyqtSlot(int)
+    @pyqtSlot(int, int)
+    @pyqtSlot(str, int)
+    def sort(self, column, order=Qt.AscendingOrder):
+        if isinstance(column, str):
+            column = column = self._inspector.columnOfName(column)
+        return super().sort(column, order)
+
     def getFilterKey(self):
         return self._filterKey
 
