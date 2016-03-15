@@ -112,7 +112,7 @@ class SortFilterProxyModel(QSortFilterProxyModel):
     @pyqtSlot(str, int)
     def sort(self, column, order=Qt.AscendingOrder):
         if isinstance(column, str):
-            column = column = self._inspector.columnOfName(column)
+            column = column = self._inspector.columnOfName(column.replace('__', '.'))
         return super().sort(column, order)
 
     def getFilterKey(self):
