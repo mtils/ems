@@ -12,7 +12,7 @@ class OrmSearch(Search):
     def all(self):
 
         self.searching.fire(self)
-        query = self._session.query(self.modelClass)
+        query = self._newQuery()
         otherQuery = self.querying.fire(self, query)
 
         if otherQuery:
@@ -23,3 +23,15 @@ class OrmSearch(Search):
         self.searched.fire(self, result)
 
         return result
+
+    def _newQuery(self):
+        return self._session.query(self.modelClass)
+
+    @staticmethod
+    def _collectColumns(ormClass, prefix=''):
+        keys = [str(c).split('.')[1] for c in ormClass.__table__.columns]
+
+        if not prefix:
+            return keys
+
+        return ["{}.{}".format(prefix,c) for c in keys]
