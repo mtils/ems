@@ -30,6 +30,7 @@ class QmlTableModel(QAbstractTableModel):
             targetRole = RoleOffset + column
             columnName = self._nameOfColumn(column)
             columnName = columnName if columnName != 'id' else 'ID'
+            columnName = columnName.replace('.','__')
             self._roleNames[targetRole] = bytearray(columnName, encoding='ascii')
 
         return self._roleNames
