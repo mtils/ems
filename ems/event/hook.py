@@ -225,3 +225,16 @@ class EventHookProperty(object):
             self._hooksByInstance[instance] = EventHook()
 
         return self._hooksByInstance[instance]
+
+class TestListener(object):
+
+    def __init__(self, printOnCalls=False):
+        self.params = []
+        self.callCount = 0
+        self.printOnCalls = printOnCalls
+
+    def __call__(self, *args):
+        self.params = args
+        self.callCount += 1
+        if self.printOnCalls:
+            sys.stdout.write("TestListener.called: count:{} params:{}".format(self.callCount, self.params))
