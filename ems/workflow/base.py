@@ -51,6 +51,17 @@ class Workflow(AbstractWorkflow):
         step = self.next()
         return step.isFinalStep() and step.isFinished()
 
+    def restore(self, state):
+        '''
+        Restores the current state by a WorkflowState object
+        '''
+        self._started = True
+        for transition in self._transitionsByCode.values():
+            if transition.nextStep.code != code:
+                continue
+            self._currentStep = self._createOccurence(transition.nextStep)
+
+
     def _createOccurence(self, step):
         self._bootStep(step)
         return step
@@ -103,6 +114,54 @@ class Workflow(AbstractWorkflow):
                 return
 
         raise LookupError('No transitions point to a finalstep')
+
+class WorkflowProvider(object):
+    '''
+    The WorkflowProvider deceides which workflow has to be created for order
+    '''
+    def new(self, order):
+        return Workflow()
+
+class WorkflowState(object):
+    '''
+    A WorkflowState represents the state of a workflow. The state contains the
+    workstep code which was the current code the user worked on and arbitrary
+    params of the workstep
+    '''
+    def __init__(self):
+        self.orderId = 0
+        self.workflowId = ''
+        self.stepCode = ''
+        self.params = ''
+
+class WorkflowManager(AbstractWorkflowManager):
+
+    def __init__(self, provider, repository):
+        self._provider = provider
+        self._repository
+
+    def workflow(self, order):
+        workflow = self._provider.new(order)
+        existingWorkflowState = self._repo.getState(workflow)
+        if existingWorkflowState:
+            workflow.restore(existingWorkflowState)
+        return workflow
+
+    def saveState(self, workflow):
+        state = self._repo.new()
+        state.workflowId = workflow.id
+        state.orderId = workflow.order.id
+        step = workflow.next()
+        state.stepCode = step.code
+        self._repo.saveState(state)
+
+    def clearState(self, workflow):
+        existingWorkflowState = self._repo.getState(workflow)
+        self._repo.delete(existingWorkflowState)
+
+    def hasState(self, workflow):
+        existingWorkflowState = self._repo.getState(workflow)
+        return bool(existingWorkflowState)
 
 if __name__ == '__main__':
     workflow = Workflow()
