@@ -138,29 +138,29 @@ class WorkflowManager(AbstractWorkflowManager):
 
     def __init__(self, provider, repository):
         self._provider = provider
-        self._repository
+        self._repository = repository
 
     def workflow(self, order):
         workflow = self._provider.new(order)
-        existingWorkflowState = self._repo.getState(workflow)
+        existingWorkflowState = self._repository.getState(workflow)
         if existingWorkflowState:
             workflow.restore(existingWorkflowState)
         return workflow
 
     def saveState(self, workflow):
-        state = self._repo.new()
+        state = self._repository.new()
         state.workflowId = workflow.id
         state.orderId = workflow.order.id
         step = workflow.next()
         state.stepCode = step.code
-        self._repo.saveState(state)
+        self._repository.saveState(state)
 
     def clearState(self, workflow):
-        existingWorkflowState = self._repo.getState(workflow)
-        self._repo.delete(existingWorkflowState)
+        existingWorkflowState = self._repository.getState(workflow)
+        self._repository.delete(existingWorkflowState)
 
     def hasState(self, workflow):
-        existingWorkflowState = self._repo.getState(workflow)
+        existingWorkflowState = self._repository.getState(workflow)
         return bool(existingWorkflowState)
 
 if __name__ == '__main__':

@@ -61,11 +61,11 @@ class WorkStep(object):
     
     """
 
-    def __init__(self, code='', name='', description='', job=None, due_days=0):
+    def __init__(self, code='', name='', description='', job=None, dueDays=0):
         self.code = code
         self.name = name
         self.description = description
-        self.due_days = 0
+        self.dueDays = 0
         self.job = job
         self.parent = None
         self.children = []
@@ -228,13 +228,12 @@ class Workflow(object):
 
         self.starting = EventHook()
         self.started = EventHook()
-        self.ending = EventHook()
-        self.ended = EventHook()
 
         self.entering = EventHook()
         self.entered = EventHook()
         self.leaving = EventHook()
         self.leaved = EventHook()
+
         self.finishing = EventHook()
         self.finished = EventHook()
         self.transitioning = EventHook()
