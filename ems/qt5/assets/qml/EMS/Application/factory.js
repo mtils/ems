@@ -35,13 +35,6 @@ function makeComponent(type, name, parent) {
 
     return component
 
-    var object = component.createObject(parent);
-
-    if (object === null) {
-        console.log("Could not create " + name + ":\n" + component.errorString());
-    }
-
-    return object;
 }
 
 function make(type, name, parent) {
@@ -66,6 +59,44 @@ function viewComponent(name, parent) {
 
 function modelComponent(name, parent) {
     return make("models", name, parent);
+}
+
+function parseResourceUri(uri) {
+
+    var linkParts = uri.split('/');
+
+    if(linkParts.length == 3) {
+        return {
+            'resource': linkParts[0],
+            'resourceId': linkParts[1],
+            'action': linkParts[2]
+        }
+    }
+
+    if(linkParts.length == 2) {
+        return {
+            'resource': linkParts[0],
+            'resourceId': 0,
+            'action': linkParts[1]
+        }
+    }
+
+    if(linkParts.length == 1) {
+        return {
+            'resource': linkParts[0],
+            'resourceId': 0,
+            'action': 'index'
+        }
+    }
+}
+
+function toResourceRoute(parsed) {
+    return parsed['resource'] + '.' + parsed['action'];
+}
+
+function dispatch(link, parent) {
+    var parsed = parseResourceUri(link);
+    return viewComponent(toResourceRoute(parsed));
 }
 
 function view(name, parent) {
@@ -109,5 +140,11 @@ function pyDict() {
 function pyList() {
     if (qmlApp !== undefined) {
         return qmlApp.getList.apply(null, arguments);
+    }
+}
+
+function pyObject() {
+    if (qmlApp !== undefined) {
+        return qmlApp.getNativeObject.apply(null, arguments);
     }
 }

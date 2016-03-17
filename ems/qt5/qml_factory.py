@@ -129,6 +129,20 @@ class Factory(QObject):
 
         return items
 
+    @pyqtSlot("QString", result='QVariant')
+    @pyqtSlot("QString", "QJSValue", result='QVariant')
+    @pyqtSlot("QString", "QJSValue", "QJSValue", result='QVariant')
+    @pyqtSlot("QString", "QJSValue", "QJSValue", "QJSValue", result='QVariant')
+    def getNativeObject(self, abstractMethod, arg1=None, arg2=None, arg3=None):
+
+        try:
+            abstract, method = self._splitAbstractMethod(abstractMethod)
+        except ValueError:
+            return app(abstractMethod)
+
+        obj = app(abstract)
+        return getattr(obj, method)(*self._argsToPython(abstractMethod,*(arg1, arg2, arg3)))
+
     def _splitAbstractMethod(self, abstractMethod):
         return abstractMethod.split('.', 1)
 
