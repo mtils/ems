@@ -156,6 +156,28 @@ class WorkStep(object):
     def newResult(self, *args, **kwargs):
         return WorkStepResult(*args, **kwargs)
 
+    def notifyReturn(self):
+        '''
+        This method is called before the last WorkStep in history is selected.
+        User presses back button, than this method is called, than the last
+        workstep will be the current
+        '''
+        pass
+
+    def toOccurrence(self):
+        '''
+        This method copies the workflow for each occurence inside the history
+        The original workstep never gets touched. It works as a template for
+        the real occuring worksteps
+        '''
+        copy = self.__class__(self.code, self.name, self.description, self.job, self.dueDays)
+        for result in self.possibleResults:
+            copy.possibleResults.append(result)
+
+        copy.first = self.first
+        copy.final = self.final
+        return copy
+
 
 class WorkStepTransition(object):
     """
@@ -250,6 +272,12 @@ class Workflow(object):
         If it is not started it returns the first step
         '''
         pass
+
+    @abstractmethod
+    def back(self):
+        '''
+        Cancels the current workstep and 
+        '''
 
     @abstractmethod
     def startWith(self, workStep):

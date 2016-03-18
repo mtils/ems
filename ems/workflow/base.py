@@ -18,7 +18,7 @@ class Workflow(AbstractWorkflow):
 
         if self._currentStep is None:
             self._checkIntegrity()
-            self._currentStep = self._createOccurence(self._startStep)
+            self._currentStep = self._createOccurrence(self._startStep)
             self._currentStep.entering += self._onFirstStepEntering
             self._currentStep.entered += self._onFirstStepEntered
             return self._currentStep
@@ -28,9 +28,12 @@ class Workflow(AbstractWorkflow):
 
         # not isFinalStep() and isFinished()
         result = self._currentStep.result
-        self._currentStep = self._createOccurence(self._findNextStep(result))
+        self._currentStep = self._createOccurrence(self._findNextStep(result))
 
         return self._currentStep
+
+    def back(self):
+        pass
 
     def startWith(self, workStep):
         self._startStep = workStep
@@ -59,12 +62,15 @@ class Workflow(AbstractWorkflow):
         for transition in self._transitionsByCode.values():
             if transition.nextStep.code != code:
                 continue
-            self._currentStep = self._createOccurence(transition.nextStep)
+            self._currentStep = self._createOccurrence(transition.nextStep)
 
 
-    def _createOccurence(self, step):
-        self._bootStep(step)
-        return step
+    def _createOccurrence(self, step):
+        #self._bootStep(step)
+        #return step
+        occurrence = step.toOccurrence()
+        self._bootStep(occurrence)
+        return occurrence
 
     def _findNextStep(self, lastStepResult):
         transition = self.transition(lastStepResult)
