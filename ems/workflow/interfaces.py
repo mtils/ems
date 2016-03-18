@@ -81,6 +81,8 @@ class WorkStep(object):
         self.entered = EventHook()
         self.finishing = EventHook()
         self.finished = EventHook()
+        self.leaving = EventHook()
+        self.returning = EventHook()
         self._isFirstStep = False
         self._isFinalStep= False
 
@@ -103,6 +105,7 @@ class WorkStep(object):
         if self._isFinished:
             return
         result = self.createResultFor(resultCode)
+        print(self.code, 'finishing', resultCode)
         self.finishing.fire(result)
         self._isFinished = True
         self._isEntered = False
@@ -156,13 +159,22 @@ class WorkStep(object):
     def newResult(self, *args, **kwargs):
         return WorkStepResult(*args, **kwargs)
 
-    def notifyReturn(self):
+    def notifyLeave(self):
         '''
         This method is called before the last WorkStep in history is selected.
         User presses back button, than this method is called, than the last
         workstep will be the current
         '''
-        pass
+        self.leaving.fire()
+
+    def notifyReturn(self):
+        '''
+        This method is called after switching back to the last WorkStep. The
+        method is called on the WorkStep which will then be the current
+        '''
+        self._isFinished = False
+        self._result = None
+        self.returning.fire()
 
     def toOccurrence(self):
         '''
@@ -258,8 +270,9 @@ class Workflow(object):
 
         self.entering = EventHook()
         self.entered = EventHook()
-        self.leaving = EventHook()
-        self.leaved = EventHook()
+        self.completing = EventHook()
+        self.completed = EventHook()
+        self.returned = EventHook()
 
         self.finishing = EventHook()
         self.finished = EventHook()
@@ -276,7 +289,8 @@ class Workflow(object):
     @abstractmethod
     def back(self):
         '''
-        Cancels the current workstep and 
+        Cancels the current workstep and return to the last in history. Returns
+        true if it was successful, false if not. You cant back from a startStep
         '''
 
     @abstractmethod

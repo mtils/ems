@@ -50,6 +50,7 @@ class ProxyWorkStep(Proxy):
     entered = pyqtSignal()
     finishing = pyqtSignal(ProxyWorkStepResult)
     finished = pyqtSignal(ProxyWorkStepResult)
+    leaving = pyqtSignal()
 
     def __init__(self, source):
         super().__init__(source)
@@ -57,6 +58,7 @@ class ProxyWorkStep(Proxy):
         source.entered += self.entered.emit
         source.finishing += self._onSourceFinishing
         source.finished += self._onSourceFinished
+        source.leaving += self.leaving.emit
 
     def getDueDays(self):
         return self._source.dueDays
@@ -97,11 +99,12 @@ class ProxyWorkflow(Proxy):
     started = pyqtSignal()
     finishing = pyqtSignal()
     finished = pyqtSignal()
+    returned = pyqtSignal()
 
     entering = pyqtSignal(ProxyWorkStep)
     entered = pyqtSignal(ProxyWorkStep)
-    leaving = pyqtSignal(ProxyWorkStep)
-    leaved = pyqtSignal(ProxyWorkStep)
+    completing = pyqtSignal(ProxyWorkStep)
+    completed = pyqtSignal(ProxyWorkStep)
 
     def __init__(self, source):
         super().__init__(source)
@@ -111,14 +114,19 @@ class ProxyWorkflow(Proxy):
         source.finished += self.finished.emit
         source.entering += self._onSourceEntering
         source.entered += self._onSourceEntered
-        source.leaving += self._onSourceLeaving
-        source.leaved += self._onSourceLeaved
+        source.completing += self._onSourceLeaving
+        source.completed += self._onSourceLeaved
+        source.returned += self.returned.emit
 
     @pyqtSlot(result=ProxyWorkStep)
     def next(self):
         step = self._source.next()
         if step:
             return ProxyWorkStep(step)
+
+    @pyqtSlot(result=bool)
+    def back(self):
+        return self._source.back()
 
     @pyqtSlot(result=bool)
     def isStarted(self):
@@ -136,14 +144,13 @@ class ProxyWorkflow(Proxy):
         self.entering.emit(ProxyWorkStep(step))
 
     def _onSourceEntered(self, step):
-        print(self, '_onSourceEntered', step)
         self.entered.emit(ProxyWorkStep(step))
 
     def _onSourceLeaving(self, step):
-        self.leaving.emit(ProxyWorkStep(step))
+        self.completing.emit(ProxyWorkStep(step))
 
     def _onSourceLeaved(self, step):
-        self.leaved.emit(ProxyWorkStep(step))
+        self.completed.emit(ProxyWorkStep(step))
 
 
 class ProxyWorkflowManager(QObject):

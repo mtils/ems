@@ -98,8 +98,8 @@ class WorkflowTest(unittest.TestCase):
         startedListener = TestListener()
         enteringListener = TestListener()
         enteredListener = TestListener()
-        leavingListener = TestListener()
-        leavedListener = TestListener()
+        completingListener = TestListener()
+        completedListener = TestListener()
         finishingListener = TestListener()
         finishedListener = TestListener()
 
@@ -107,8 +107,8 @@ class WorkflowTest(unittest.TestCase):
         workflow.started += startedListener
         workflow.entering += enteringListener
         workflow.entered += enteredListener
-        workflow.leaving += leavingListener
-        workflow.leaved += leavedListener
+        workflow.completing += completingListener
+        workflow.completed += completedListener
         workflow.finishing += finishingListener
         workflow.finished += finishedListener
 
@@ -124,10 +124,10 @@ class WorkflowTest(unittest.TestCase):
 
         step.finish('success')
 
-        self.assertEqual(1, leavingListener.callCount)
-        self.assertEqual(1, leavedListener.callCount)
-        self.assertIs(step, leavingListener.params[0])
-        self.assertIs(step, leavedListener.params[0])
+        self.assertEqual(1, completingListener.callCount)
+        self.assertEqual(1, completedListener.callCount)
+        self.assertIs(step, completingListener.params[0])
+        self.assertIs(step, completedListener.params[0])
 
         self.assertEqual(1, enteringListener.callCount)
         self.assertIs(step, enteringListener.params[0])
@@ -147,10 +147,10 @@ class WorkflowTest(unittest.TestCase):
 
         lastStep.finish('final')
 
-        self.assertEqual(2, leavingListener.callCount)
-        self.assertEqual(2, leavedListener.callCount)
-        self.assertIs(lastStep, leavingListener.params[0])
-        self.assertIs(lastStep, leavedListener.params[0])
+        self.assertEqual(2, completingListener.callCount)
+        self.assertEqual(2, completedListener.callCount)
+        self.assertIs(lastStep, completingListener.params[0])
+        self.assertIs(lastStep, completedListener.params[0])
 
         self.assertIs(lastStep, workflow.next())
 

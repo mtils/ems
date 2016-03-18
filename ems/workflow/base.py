@@ -12,28 +12,42 @@ class Workflow(AbstractWorkflow):
         self._startStep = None
         self._started = False
         self._transitionsByCode = {}
-        self._currentStep = None
+        self._history = []
 
     def next(self):
 
-        if self._currentStep is None:
+        if not len(self._history):
             self._checkIntegrity()
-            self._currentStep = self._createOccurrence(self._startStep)
-            self._currentStep.entering += self._onFirstStepEntering
-            self._currentStep.entered += self._onFirstStepEntered
-            return self._currentStep
+            currentStep = self._createOccurrence(self._startStep)
+            currentStep.entering += self._onFirstStepEntering
+            currentStep.entered += self._onFirstStepEntered
+            self._pushStep(currentStep)
+            return currentStep
 
-        if not self._currentStep.isFinished() or self._currentStep.isFinalStep():
-            return self._currentStep
+        currentStep = self._currentStep
+
+        if not currentStep.isFinished() or currentStep.isFinalStep():
+            return currentStep
 
         # not isFinalStep() and isFinished()
-        result = self._currentStep.result
-        self._currentStep = self._createOccurrence(self._findNextStep(result))
+        result = currentStep.result
+        currentStep = self._createOccurrence(self._findNextStep(result))
+        print("created fresh step", currentStep.code)
 
-        return self._currentStep
+        self._pushStep(currentStep)
+
+        return currentStep
 
     def back(self):
-        pass
+        if len(self._history) < 2:
+            return False
+        currentStep = self._currentStep
+        currentStep.notifyLeave()
+        self._popStep()
+        self._currentStep.notifyReturn()
+        self.returned.fire()
+        print("returning to", self._currentStep, self._currentStep.code)
+        return True
 
     def startWith(self, workStep):
         self._startStep = workStep
@@ -64,6 +78,21 @@ class Workflow(AbstractWorkflow):
                 continue
             self._currentStep = self._createOccurrence(transition.nextStep)
 
+
+    @property
+    def _currentStep(self):
+        try:
+            return self._history[-1]
+        except IndexError:
+            return None
+
+    def _pushStep(self, step):
+        self._history.append(step)
+        return step
+
+    def _popStep(self):
+        step = self._history.pop()
+        return step
 
     def _createOccurrence(self, step):
         #self._bootStep(step)
@@ -101,12 +130,12 @@ class Workflow(AbstractWorkflow):
         self.entered.fire(self._currentStep)
 
     def _onCurrentStepFinishing(self, result):
-        self.leaving.fire(self._currentStep)
+        self.completing.fire(self._currentStep)
         if self._currentStep.isFinalStep():
             self.finishing.fire()
 
     def _onCurrentStepFinished(self, result):
-        self.leaved.fire(self._currentStep)
+        self.completed.fire(self._currentStep)
         if self._currentStep.isFinalStep():
             self.finished.fire()
 
