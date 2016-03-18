@@ -107,8 +107,8 @@ class ProxyWorkflow(Proxy):
         super().__init__(source)
         source.starting += self.starting.emit
         source.started += self.started.emit
-        source.finishing += self.finishing
-        source.finished += self.finished
+        source.finishing += self.finishing.emit
+        source.finished += self.finished.emit
         source.entering += self._onSourceEntering
         source.entered += self._onSourceEntered
         source.leaving += self._onSourceLeaving

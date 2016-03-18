@@ -7,8 +7,8 @@ from ems.workflow.interfaces import WorkflowManager as AbstractWorkflowManager
 
 class Workflow(AbstractWorkflow):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self._startStep = None
         self._started = False
         self._transitionsByCode = {}
@@ -97,12 +97,12 @@ class Workflow(AbstractWorkflow):
     def _onCurrentStepFinishing(self, result):
         self.leaving.fire(self._currentStep)
         if self._currentStep.isFinalStep():
-            self.finishing.fire(self._currentStep)
+            self.finishing.fire()
 
     def _onCurrentStepFinished(self, result):
         self.leaved.fire(self._currentStep)
         if self._currentStep.isFinalStep():
-            self.finished.fire(self._currentStep)
+            self.finished.fire()
 
     def _checkIntegrity(self):
 

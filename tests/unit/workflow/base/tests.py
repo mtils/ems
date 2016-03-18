@@ -1,5 +1,6 @@
 
-import unittest
+import unittest, colour_runner
+from colour_runner.runner import ColourTextTestRunner, ColourTextTestResult
 
 from ems.workflow.interfaces import WorkStep, WorkStepResult
 from ems.workflow.base import Workflow
@@ -156,13 +157,18 @@ class WorkflowTest(unittest.TestCase):
         self.assertTrue(workflow.isFinished())
         self.assertEqual(1, finishingListener.callCount)
         self.assertEqual(1, finishedListener.callCount)
-        self.assertIs(lastStep, finishingListener.params[0])
-        self.assertIs(lastStep, finishedListener.params[0])
-
 
     def newWorkflow(self, *args, **kwargs):
         return Workflow(*args, **kwargs)
 
+def suite():
+    suite = unittest.TestSuite()
+    suite.addTest(WorkflowTest())
+    return suite
 
 if __name__ == '__main__':
+    #suite = unittest.TestSuite()
+    #suite.addTest(WorkflowTest())
+    unittest.registerResult(ColourTextTestResult)
     unittest.main()
+    #unittest.TextTestRunner().run(suite)

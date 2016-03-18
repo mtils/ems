@@ -36,6 +36,10 @@ class Job(Identifiable):
     """
     pass
 
+@add_metaclass(ABCMeta)
+class HumanReadable(object):
+    pass
+
 class WorkStepResult(object):
     """
     A WorkStepResult is the result of a workstep. On basis of the WorkStepResult
@@ -218,8 +222,9 @@ class Workflow(object):
     workflow.next() # returns showBookingSummary
 
     """
-    def __init__(self):
-        self.id = 0
+    def __init__(self, code='', id_=None, name='', description=''):
+        self.id = id_
+        self.code = code
         self.name = ''
         self.description = ''
         self.active = True
