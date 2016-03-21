@@ -1,11 +1,14 @@
 
 from PyQt4.QtCore import QObject, pyqtSlot, pyqtSignal, QString, pyqtProperty
 from PyQt4.QtGui import QTextFormat, QTextCharFormat, QFont, QFontInfo
+from PyQt4.QtGui import QBrush, QColor
 
 class TextFormatSignalProxy(QObject):
     pass
 
 class CharFormatSignalProxy(QObject):
+
+    charFormatChanged = pyqtSignal(QTextCharFormat)
 
     fontChanged = pyqtSignal(QFont)
 
@@ -23,7 +26,15 @@ class CharFormatSignalProxy(QObject):
 
     isAnchorChanged = pyqtSignal(bool)
 
-    anchorChanged = pyqtSignal(QString)
+    anchorHrefChanged = pyqtSignal(QString)
+
+    foregroundChanged = pyqtSignal(QBrush)
+
+    foregroundColorChanged = pyqtSignal(QColor)
+
+    backgroundChanged = pyqtSignal(QBrush)
+
+    backgroundColorChanged = pyqtSignal(QColor)
 
     def __init__(self, parent=None):
         super(CharFormatSignalProxy, self).__init__(parent)
@@ -40,7 +51,13 @@ class CharFormatSignalProxy(QObject):
         if self._charFormatsAreEqual(oldCharFormat, charFormat):
             return
         self._charFormat = charFormat
+        self.charFormatChanged.emit(charFormat)
         self.setFont(charFormat.font())
+
+        if oldCharFormat.anchorHref() != charFormat.anchorHref():
+            self.anchorHrefChanged.emit(charFormat.anchorHref())
+        
+        
 
     charFormat = pyqtProperty(QTextCharFormat, getCharFormat, setCharFormat)
 
@@ -142,6 +159,26 @@ class CharFormatSignalProxy(QObject):
         self.setFont(newFont)
 
     pointSize = pyqtProperty(int, getPointSize, setPointSize)
+
+    def anchorHref(self):
+        return self._charFormat.anchorHref()
+
+    def setAnchorHref(self, href):
+        currentHref = self.anchorHref()
+        if currentHref == href:
+            return
+        self._charFormat.setAnchorHref(href)
+        self.anchorHrefChanged.emit(href)
+        if bool(currentHref) != bool(href):
+            self.isAnchorChanged.emit(bool(href))
+
+    def getForeground(self):
+        return self._charFormat.foreground()
+
+    def setForeground(self, foreground):
+        if self.getForeground() == foreground:
+            pass
+        
 
     def _charFormatsAreEqual(self, left, right):
         if left.font() != right.font():

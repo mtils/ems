@@ -10,8 +10,10 @@ from PyQt4.QtGui import QWidget, QHBoxLayout, QSpacerItem, QSizePolicy
 
 from ems.qt4.gui.widgets.dialogable import DialogableWidget
 from ems.qt4.gui.widgets.completiontextedit import CompletionTextEdit
+from ems.qt4.richtext.format_signalproxies import CharFormatSignalProxy
 
 class BaseEditor(DialogableWidget):
+
     def __init__(self, text=None, parent=None):
         super(BaseEditor, self).__init__(parent)
         self.rsrcPath = ':/textedit'
@@ -20,6 +22,7 @@ class BaseEditor(DialogableWidget):
         self.__currentToolbarIndex = 0
         self.setLayout(QtGui.QVBoxLayout(self))
         self.layout().setSpacing(0)
+        self.signalProxy = CharFormatSignalProxy(self)
         #self.layout().setMargin(0)
         #l = QtGui.QVBoxLayout(self)
         
