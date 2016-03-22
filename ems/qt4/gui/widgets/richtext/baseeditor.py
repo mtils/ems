@@ -10,8 +10,8 @@ from PyQt4.QtGui import QWidget, QHBoxLayout, QSpacerItem, QSizePolicy
 
 from ems.qt4.gui.widgets.dialogable import DialogableWidget
 from ems.qt4.gui.widgets.completiontextedit import CompletionTextEdit
-from ems.qt4.richtext.format_signalproxies import CharFormatSignalProxy
-from ems.qt4.richtext.format_signalproxies import BlockFormatSignalProxy
+from ems.qt4.richtext.block_format_proxy import BlockFormatProxy
+from ems.qt4.richtext.char_format_proxy import CharFormatProxy
 
 class BaseEditor(DialogableWidget):
 
@@ -22,8 +22,8 @@ class BaseEditor(DialogableWidget):
         self.__currentToolbarIndex = 0
         self.setLayout(QtGui.QVBoxLayout(self))
         self.layout().setSpacing(0)
-        self.signalProxy = CharFormatSignalProxy(self)
-        self.blockProxy = BlockFormatSignalProxy(self)
+        self.signalProxy = CharFormatProxy(self)
+        self.blockProxy = BlockFormatProxy(self)
 
         self.toolBarContainers = []
 
