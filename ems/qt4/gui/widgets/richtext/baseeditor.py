@@ -11,6 +11,7 @@ from PyQt4.QtGui import QWidget, QHBoxLayout, QSpacerItem, QSizePolicy
 from ems.qt4.gui.widgets.dialogable import DialogableWidget
 from ems.qt4.gui.widgets.completiontextedit import CompletionTextEdit
 from ems.qt4.richtext.format_signalproxies import CharFormatSignalProxy
+from ems.qt4.richtext.format_signalproxies import BlockFormatSignalProxy
 
 class BaseEditor(DialogableWidget):
 
@@ -22,6 +23,7 @@ class BaseEditor(DialogableWidget):
         self.setLayout(QtGui.QVBoxLayout(self))
         self.layout().setSpacing(0)
         self.signalProxy = CharFormatSignalProxy(self)
+        self.blockProxy = BlockFormatSignalProxy(self)
 
         self.toolBarContainers = []
 
@@ -32,24 +34,26 @@ class BaseEditor(DialogableWidget):
 
         self.setupTextActions()
 
-        #self.textEdit.currentCharFormatChanged.connect(
-                #self.currentCharFormatChanged)
-
-        self.textEdit.currentCharFormatChanged.connect(self.signalProxy.setCharFormat)
+        self.textEdit.currentCharFormatChanged.connect(self.signalProxy.updateCharFormatWithoutDiffs)
 
         self.signalProxy.fontFamilyChanged.connect(self.setFontFamily)
         self.signalProxy.pointSizeChanged.connect(self.setFontPointSize)
         self.signalProxy.boldChanged.connect(self.actionTextBold.setChecked)
         self.signalProxy.italicChanged.connect(self.actionTextItalic.setChecked)
         self.signalProxy.underlineChanged.connect(self.actionTextUnderline.setChecked)
-        
+        self.signalProxy.foregroundColorChanged.connect(self.colorChanged)
+        self.signalProxy.charFormatDiffChanged.connect(self.mergeFormatOnWordOrSelection)
+
+        self.blockProxy.blockFormatModified.connect(self.setBlockFormat)
+
+
         self.textEdit.cursorPositionChanged.connect(self.cursorPositionChanged)
         #self.setCentralWidget(self.textEdit)
         self.textEdit.setFocus()
-        
-        self.fontChanged(self.textEdit.font())
-        self.colorChanged(self.textEdit.textColor())
-        self.alignmentChanged(self.textEdit.alignment())
+
+        self.signalProxy.setCharFormat(self.textEdit.currentCharFormat())
+        self.blockProxy.setBlockFormat(self.textEdit.textCursor().blockFormat())
+
 #        self.textEdit.document().modificationChanged.connect(
 #                self.actionSave.setEnabled)
         self.textEdit.document().modificationChanged.connect(
@@ -81,7 +85,7 @@ class BaseEditor(DialogableWidget):
         self.comboFont.setCurrentIndex(self.comboFont.findText(family))
 
     def setFontPointSize(self, pointSize):
-        self.comboSize.setCurrentIndex(self.comboSize.findText("{}".format(pointSize)))
+        self.comboSize.setCurrentIndex(self.comboSize.findText("{}".format(int(pointSize))))
 
     def addToolBar(self, toolbar):
         if len(self.toolBarContainers) <= self.__currentToolbarIndex:
@@ -97,20 +101,15 @@ class BaseEditor(DialogableWidget):
             self.layout().insertWidget(self.__currentToolbarIndex,
                                        toolBarContainer)
         self.layout().insertWidget(self.layout().count()-1, toolbar)
-        
-#        for i in range(self.layout().count()): 
-#            if self.layout().itemAt(i).widget() is self.textEdit:
-#                self.layout().setStretch(i, 1)
-#            else:
-#                self.layout().setStretch(i, 0)
-        #self.layout().setStretch(self.layout().count(), 1)
-        
+
         layout = self.toolBarContainers[self.__currentToolbarIndex].layout()
         layout.insertWidget(layout.count()-1,toolbar)
-    
+
     def addToolBarBreak(self, area=None):
         self.__currentToolbarIndex += 1
     
+    def setBlockFormat(self, blockFormat):
+        self.textEdit.textCursor().setBlockFormat(blockFormat)
     
     def setupEditActions(self):
         tb = QtGui.QToolBar(self)
@@ -170,7 +169,7 @@ class BaseEditor(DialogableWidget):
                         QtGui.QIcon(self.rsrcPath + '/textbold.png')),
                 "&Bold", self, priority=QtGui.QAction.LowPriority,
                 shortcut=QtCore.Qt.CTRL + QtCore.Qt.Key_B,
-                triggered=self.textBold, checkable=True)
+                triggered=self.signalProxy.setBold, checkable=True)
         bold = QtGui.QFont()
         bold.setBold(True)
         self.actionTextBold.setFont(bold)
@@ -182,7 +181,7 @@ class BaseEditor(DialogableWidget):
                         QtGui.QIcon(self.rsrcPath + '/textitalic.png')),
                 "&Italic", self, priority=QtGui.QAction.LowPriority,
                 shortcut=QtCore.Qt.CTRL + QtCore.Qt.Key_I,
-                triggered=self.textItalic, checkable=True)
+                triggered=self.signalProxy.setItalic, checkable=True)
         italic = QtGui.QFont()
         italic.setItalic(True)
         self.actionTextItalic.setFont(italic)
@@ -194,28 +193,34 @@ class BaseEditor(DialogableWidget):
                         QtGui.QIcon(self.rsrcPath + '/textunder.png')),
                 "&Underline", self, priority=QtGui.QAction.LowPriority,
                 shortcut=QtCore.Qt.CTRL + QtCore.Qt.Key_U,
-                triggered=self.textUnderline, checkable=True)
+                triggered=self.signalProxy.setUnderline, checkable=True)
         underline = QtGui.QFont()
         underline.setUnderline(True)
         self.actionTextUnderline.setFont(underline)
         tb.addAction(self.actionTextUnderline)
         
-        grp = QtGui.QActionGroup(self, triggered=self.textAlign)
+        grp = QtGui.QActionGroup(self)#, triggered=self.textAlign)
 
         # Make sure the alignLeft is always left of the alignRight.
         if QtGui.QApplication.isLeftToRight():
             self.actionAlignLeft = QtGui.QAction(
                     QtGui.QIcon.fromTheme('format-justify-left',
                             QtGui.QIcon(self.rsrcPath + '/textleft.png')),
-                    "&Left", grp)
+                    "&Left", grp, triggered=self.blockProxy.setAlignLeft)
+
+            self.blockProxy.alignLeftChanged.connect(self.actionAlignLeft.setChecked)
+
             self.actionAlignCenter = QtGui.QAction(
                     QtGui.QIcon.fromTheme('format-justify-center',
                             QtGui.QIcon(self.rsrcPath + '/textcenter.png')),
-                    "C&enter", grp)
+                    "C&enter", grp, triggered=self.blockProxy.setAlignCenter)
+            self.blockProxy.alignCenterChanged.connect(self.actionAlignCenter.setChecked)
+
             self.actionAlignRight = QtGui.QAction(
                     QtGui.QIcon.fromTheme('format-justify-right',
                             QtGui.QIcon(self.rsrcPath + '/textright.png')),
-                    "&Right", grp)
+                    "&Right", grp, triggered=self.blockProxy.setAlignRight)
+            self.blockProxy.alignRightChanged.connect(self.actionAlignRight.setChecked)
         else:
             self.actionAlignRight = QtGui.QAction(
                     QtGui.QIcon.fromTheme('format-justify-right',
@@ -233,7 +238,9 @@ class BaseEditor(DialogableWidget):
         self.actionAlignJustify = QtGui.QAction(
                 QtGui.QIcon.fromTheme('format-justify-fill',
                         QtGui.QIcon(self.rsrcPath + '/textjustify.png')),
-                "&Justify", grp)
+                "&Justify", grp, triggered=self.blockProxy.setAlignJustify)
+
+        self.blockProxy.alignJustifyChanged.connect(self.actionAlignJustify.setChecked)
 
         self.actionAlignLeft.setShortcut(QtCore.Qt.CTRL + QtCore.Qt.Key_L)
         self.actionAlignLeft.setCheckable(True)
@@ -283,7 +290,7 @@ class BaseEditor(DialogableWidget):
 
         self.comboFont = QtGui.QFontComboBox(tb)
         tb.addWidget(self.comboFont)
-        self.comboFont.activated[str].connect(self.textFamily)
+        self.comboFont.activated[str].connect(self.signalProxy.setFontFamily)
 
         self.comboSize = QtGui.QComboBox(tb)
         self.comboSize.setObjectName("comboSize")
@@ -321,33 +328,12 @@ class BaseEditor(DialogableWidget):
 
         return True
 
-    
-    def textBold(self):
-        fmt = QtGui.QTextCharFormat()
-        fmt.setFontWeight(self.actionTextBold.isChecked() and QtGui.QFont.Bold or QtGui.QFont.Normal)
-        self.mergeFormatOnWordOrSelection(fmt)
-
-    def textUnderline(self):
-        fmt = QtGui.QTextCharFormat()
-        fmt.setFontUnderline(self.actionTextUnderline.isChecked())
-        self.mergeFormatOnWordOrSelection(fmt)
-
-    def textItalic(self):
-        fmt = QtGui.QTextCharFormat()
-        fmt.setFontItalic(self.actionTextItalic.isChecked())
-        self.mergeFormatOnWordOrSelection(fmt)
-
-    def textFamily(self, family):
-        fmt = QtGui.QTextCharFormat()
-        fmt.setFontFamily(family)
-        self.mergeFormatOnWordOrSelection(fmt)
-
     def textSize(self, pointSize):
         pointSize = float(pointSize)
-        if pointSize > 0:
-            fmt = QtGui.QTextCharFormat()
-            fmt.setFontPointSize(pointSize)
-            self.mergeFormatOnWordOrSelection(fmt)
+        if pointSize < 0:
+            return
+        self.signalProxy.setPointSize(pointSize)
+        return
 
     def textStyle(self, styleIndex):
         cursor = self.textEdit.textCursor()
@@ -388,10 +374,7 @@ class BaseEditor(DialogableWidget):
         if not col.isValid():
             return
 
-        fmt = QtGui.QTextCharFormat()
-        fmt.setForeground(col)
-        self.mergeFormatOnWordOrSelection(fmt)
-        self.colorChanged(col)
+        self.signalProxy.setForegroundColor(col)
 
     def textAlign(self, action):
         if action == self.actionAlignLeft:
@@ -405,12 +388,8 @@ class BaseEditor(DialogableWidget):
         elif action == self.actionAlignJustify:
             self.textEdit.setAlignment(QtCore.Qt.AlignJustify)
 
-    def currentCharFormatChanged(self, format):
-        self.fontChanged(format.font())
-        self.colorChanged(format.foreground().color())
-
     def cursorPositionChanged(self):
-        self.alignmentChanged(self.textEdit.alignment())
+        self.blockProxy.setBlockFormat(self.textEdit.textCursor().blockFormat())
 
     def clipboardDataChanged(self):
         self.actionPaste.setEnabled(
@@ -430,29 +409,10 @@ class BaseEditor(DialogableWidget):
         cursor.mergeCharFormat(format)
         self.textEdit.mergeCurrentCharFormat(format)
 
-    def fontChanged(self, font):
-        self.comboFont.setCurrentIndex(
-                self.comboFont.findText(QtGui.QFontInfo(font).family()))
-        self.comboSize.setCurrentIndex(
-                self.comboSize.findText("%s" % font.pointSize()))
-        self.actionTextBold.setChecked(font.bold())
-        self.actionTextItalic.setChecked(font.italic())
-        self.actionTextUnderline.setChecked(font.underline())
-
     def colorChanged(self, color):
         pix = QtGui.QPixmap(16, 16)
         pix.fill(color)
         self.actionTextColor.setIcon(QtGui.QIcon(pix))
-
-    def alignmentChanged(self, alignment):
-        if alignment & QtCore.Qt.AlignLeft:
-            self.actionAlignLeft.setChecked(True)
-        elif alignment & QtCore.Qt.AlignHCenter:
-            self.actionAlignCenter.setChecked(True)
-        elif alignment & QtCore.Qt.AlignRight:
-            self.actionAlignRight.setChecked(True)
-        elif alignment & QtCore.Qt.AlignJustify:
-            self.actionAlignJustify.setChecked(True)
 
 
 if __name__ == '__main__':
