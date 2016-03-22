@@ -38,9 +38,20 @@ class CharFormatSignalProxy(QObject):
 
     def __init__(self, parent=None):
         super(CharFormatSignalProxy, self).__init__(parent)
-        self._charFormat = None
+        self._charFormat = QTextCharFormat()
+        self._font = self._charFormat.font()
+        self._fontFamily = QFontInfo(self._font).family()
+        self._bold = self._font.bold()
+        self._italic = self._font.italic()
+        self._underline = self._font.underline()
+        self._pixelSize = self._font.pixelSize()
+        self._pointSize = self._font.pointSize()
         self._isAnchor = False
         self._anchor = ''
+        self._foreground = self._charFormat.foreground()
+        self._foregroundColor = self._charFormat.foreground().color()
+        self._background = self._charFormat.background()
+        self._backgroundColor = self._charFormat.background().color()
 
     def getCharFormat(self):
         return self._charFormat
@@ -48,16 +59,25 @@ class CharFormatSignalProxy(QObject):
     @pyqtSlot(QTextCharFormat)
     def setCharFormat(self, charFormat):
         oldCharFormat = self._charFormat
+        print('setCharFormat', charFormat, oldCharFormat)
         if self._charFormatsAreEqual(oldCharFormat, charFormat):
+            print('equal')
             return
         self._charFormat = charFormat
         self.charFormatChanged.emit(charFormat)
-        self.setFont(charFormat.font())
+        self._replaceFont(oldCharFormat.font(), charFormat.font())
 
         if oldCharFormat.anchorHref() != charFormat.anchorHref():
             self.anchorHrefChanged.emit(charFormat.anchorHref())
-        
-        
+
+        if bool(oldCharFormat.anchorHref()) != bool(charFormat.anchorHref()):
+            self.isAnchorChanged.emit(bool(oldCharFormat.anchorHref()))
+
+        if oldCharFormat.foreground() != charFormat.foreground():
+            self.foregroundChanged.emit(charFormat.foreground())
+
+        if oldCharFormat.foreground().color() != charFormat.foreground().color():
+            self.foregroundColorChanged.emit(charFormat.foreground().color())
 
     charFormat = pyqtProperty(QTextCharFormat, getCharFormat, setCharFormat)
 
@@ -66,8 +86,12 @@ class CharFormatSignalProxy(QObject):
 
     @pyqtSlot(QFont)
     def setFont(self, newFont):
-        currentFont = self._charFormat.font()
-        if currentFont == newFont:
+        self._replaceFont(self._charFormat.font(), newFont)
+
+    font = pyqtProperty(QFont, getFont, setFont)
+
+    def _replaceFont(self, oldFont, newFont):
+        if oldFont == newFont:
             return
 
         self._charFormat.setFont(newFont)
@@ -75,22 +99,20 @@ class CharFormatSignalProxy(QObject):
 
         newFontFamily = QFontInfo(newFont).family()
 
-        if newFontFamily != QFontInfo(currentFont).family():
+        if newFontFamily != QFontInfo(oldFont).family():
             self.fontFamilyChanged.emit(newFontFamily)
 
-        if newFont.bold() != currentFont.bold():
+        if newFont.bold() != oldFont.bold():
             self.boldChanged.emit(newFont.bold())
 
-        if newFont.italic() != currentFont.italic():
+        if newFont.italic() != oldFont.italic():
             self.italicChanged.emit(newFont.italic())
 
-        if newFont.underline() != currentFont.underline():
+        if newFont.underline() != oldFont.underline():
             self.underlineChanged.emit(newFont.underline())
 
-        if newFont.pointSize() != currentFont.pointSize():
+        if newFont.pointSize() != oldFont.pointSize():
             self.pointSizeChanged.emit(newFont.pointSize())
-
-    font = pyqtProperty(QFont, getFont, setFont)
 
     def getFontFamily(self):
         return QFontInfo(self.getFont()).family()
@@ -175,10 +197,26 @@ class CharFormatSignalProxy(QObject):
     def getForeground(self):
         return self._charFormat.foreground()
 
+    @pyqtSlot(QBrush)
     def setForeground(self, foreground):
+        oldForeground = self.getForeground()
         if self.getForeground() == foreground:
-            pass
-        
+            return
+        self._charFormat.setForeground(foreground)
+        self.foregroundChanged.emit(foreground)
+        if oldForeground.color() != foreground.color():
+            self.foregroundColorChanged.emit(foreground.color())
+
+    foreground = pyqtProperty(QBrush, getForeground, setForeground)
+
+    def getForegroundColor(self):
+        return self._charFormat.foreground().color()
+
+    def setForegroundColor(self, color):
+        if self.getForegroundColor() == color:
+            return
+        self._charFormat.foreground().setColor(color)
+        self.foregroundColorChanged.emit(color)
 
     def _charFormatsAreEqual(self, left, right):
         if left.font() != right.font():

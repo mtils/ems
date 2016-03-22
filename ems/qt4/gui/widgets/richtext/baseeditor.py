@@ -18,25 +18,31 @@ class BaseEditor(DialogableWidget):
         super(BaseEditor, self).__init__(parent)
         self.rsrcPath = ':/textedit'
         self.setWindowIcon(QtGui.QIcon(':/images/logo.png'))
-        #self.setToolButtonStyle(QtCore.Qt.ToolButtonFollowStyle)
         self.__currentToolbarIndex = 0
         self.setLayout(QtGui.QVBoxLayout(self))
         self.layout().setSpacing(0)
         self.signalProxy = CharFormatSignalProxy(self)
-        #self.layout().setMargin(0)
-        #l = QtGui.QVBoxLayout(self)
-        
+
         self.toolBarContainers = []
-        
+
         self.textEdit = CompletionTextEdit(self)
         self.layout().addWidget(self.textEdit)
-        
+
         self.setupEditActions()
-        
+
         self.setupTextActions()
+
+        #self.textEdit.currentCharFormatChanged.connect(
+                #self.currentCharFormatChanged)
+
+        self.textEdit.currentCharFormatChanged.connect(self.signalProxy.setCharFormat)
+
+        self.signalProxy.fontFamilyChanged.connect(self.setFontFamily)
+        self.signalProxy.pointSizeChanged.connect(self.setFontPointSize)
+        self.signalProxy.boldChanged.connect(self.actionTextBold.setChecked)
+        self.signalProxy.italicChanged.connect(self.actionTextItalic.setChecked)
+        self.signalProxy.underlineChanged.connect(self.actionTextUnderline.setChecked)
         
-        self.textEdit.currentCharFormatChanged.connect(
-                self.currentCharFormatChanged)
         self.textEdit.cursorPositionChanged.connect(self.cursorPositionChanged)
         #self.setCentralWidget(self.textEdit)
         self.textEdit.setFocus()
@@ -67,11 +73,16 @@ class BaseEditor(DialogableWidget):
         self.textEdit.copyAvailable.connect(self.actionCopy.setEnabled)
         QtGui.QApplication.clipboard().dataChanged.connect(
                 self.clipboardDataChanged)
-        
+
         if text:
             self.textEdit.setHtml(text)
 
-    
+    def setFontFamily(self, family):
+        self.comboFont.setCurrentIndex(self.comboFont.findText(family))
+
+    def setFontPointSize(self, pointSize):
+        self.comboSize.setCurrentIndex(self.comboSize.findText("{}".format(pointSize)))
+
     def addToolBar(self, toolbar):
         if len(self.toolBarContainers) <= self.__currentToolbarIndex:
             toolBarContainer = QWidget(self)
