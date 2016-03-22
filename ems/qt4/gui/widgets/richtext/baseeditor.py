@@ -426,3 +426,9 @@ if __name__ == '__main__':
         mainWindows.append(textEdit)
 
     sys.exit(app.exec_())
+
+def testModule(app):
+    print('Hallo')
+    app.textEdit = BaseEditor()
+    textEdit.resize(700, 800)
+    textEdit.show()
