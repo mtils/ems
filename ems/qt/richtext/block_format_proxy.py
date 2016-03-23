@@ -1,8 +1,13 @@
 
-from PyQt4.QtCore import QObject, pyqtSlot, pyqtSignal, QString, pyqtProperty
-from PyQt4.QtCore import Qt
-from PyQt4.QtGui import QTextFormat, QTextCharFormat, QFont, QFontInfo
-from PyQt4.QtGui import QBrush, QColor, QTextBlockFormat
+from ems.qt import QtCore
+from ems.qt import QtGui
+
+QObject = QtCore.QObject
+pyqtSlot = QtCore.pyqtSlot
+pyqtSignal = QtCore.pyqtSignal
+pyqtProperty = QtCore.pyqtProperty
+Qt = QtCore.Qt
+QTextBlockFormat = QtGui.QTextBlockFormat
 
 class BlockFormatProxy(QObject):
     '''

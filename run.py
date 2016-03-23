@@ -25,19 +25,27 @@ def replacePathSeparator(path):
 def create_needed_app(runThisModule, argv, appPath, env):
 
     if ".qt4." in runThisModule:
+        import ems.qt4.qt4_modules
         from examples.qt4.bootstrap.create_app import create_app
         app = create_app(argv, appPath, env=env)
         app.setQuitOnLastWindowClosed(True)
         return app
 
-    if ".qt5." in runThisModule and ".qml_application" in runThisModule:
+    elif ".qt5." in runThisModule and ".qml_application" in runThisModule:
         from examples.qt5.bootstrap.create_qml_app import create_app
         app = create_app(argv, appPath, env=env)
         app.setQuitOnLastWindowClosed(True)
         return app
 
-    if ".qt5." in runThisModule:
+    elif ".qt5." in runThisModule:
         from examples.qt5.bootstrap.create_app import create_app
+        app = create_app(argv, appPath, env=env)
+        app.setQuitOnLastWindowClosed(True)
+        return app
+
+    elif ".qt." in runThisModule:
+        import ems.qt.autoselect_modules
+        from examples.qt.bootstrap.create_app import create_app
         app = create_app(argv, appPath, env=env)
         app.setQuitOnLastWindowClosed(True)
         return app

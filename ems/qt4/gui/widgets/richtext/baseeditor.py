@@ -5,22 +5,44 @@ Created on 27.08.2011
 @author: michi
 '''
 import sys
-from PyQt4 import QtCore, QtGui
-from PyQt4.QtGui import QWidget, QHBoxLayout, QSpacerItem, QSizePolicy
 
-from ems.qt4.gui.widgets.dialogable import DialogableWidget
+from ems.qt import QtCore, QtGui, QtWidgets
+
+Qt = QtCore.Qt
+QWidget = QtWidgets.QWidget
+QHBoxLayout = QtWidgets.QHBoxLayout
+QVBoxLayout = QtWidgets.QVBoxLayout
+QSpacerItem = QtWidgets.QSpacerItem
+QSizePolicy = QtWidgets.QSizePolicy
+QIcon = QtGui.QIcon
+QApplication = QtWidgets.QApplication
+QToolBar = QtWidgets.QToolBar
+QAction = QtWidgets.QAction
+QActionGroup = QtWidgets.QActionGroup
+QKeySequence = QtGui.QKeySequence
+QFont = QtGui.QFont
+QPixmap = QtGui.QPixmap
+QMessageBox = QtWidgets.QMessageBox
+QComboBox = QtWidgets.QComboBox
+QFontComboBox = QtWidgets.QFontComboBox
+QFontDatabase = QtGui.QFontDatabase
+QTextListFormat = QtGui.QTextListFormat
+QTextBlockFormat = QtGui.QTextBlockFormat
+QColorDialog = QtWidgets.QColorDialog
+QTextCursor = QtGui.QTextCursor
+
 from ems.qt4.gui.widgets.completiontextedit import CompletionTextEdit
-from ems.qt4.richtext.block_format_proxy import BlockFormatProxy
-from ems.qt4.richtext.char_format_proxy import CharFormatProxy
+from ems.qt.richtext.block_format_proxy import BlockFormatProxy
+from ems.qt.richtext.char_format_proxy import CharFormatProxy
 
-class BaseEditor(DialogableWidget):
+class BaseEditor(QWidget):
 
     def __init__(self, text=None, parent=None):
         super(BaseEditor, self).__init__(parent)
         self.rsrcPath = ':/textedit'
-        self.setWindowIcon(QtGui.QIcon(':/images/logo.png'))
+        self.setWindowIcon(QIcon(':/images/logo.png'))
         self.__currentToolbarIndex = 0
-        self.setLayout(QtGui.QVBoxLayout(self))
+        self.setLayout(QVBoxLayout(self))
         self.layout().setSpacing(0)
         self.signalProxy = CharFormatProxy(self)
         self.blockProxy = BlockFormatProxy(self)
@@ -75,7 +97,7 @@ class BaseEditor(DialogableWidget):
         self.actionPaste.triggered.connect(self.textEdit.paste)
         self.textEdit.copyAvailable.connect(self.actionCut.setEnabled)
         self.textEdit.copyAvailable.connect(self.actionCopy.setEnabled)
-        QtGui.QApplication.clipboard().dataChanged.connect(
+        QApplication.clipboard().dataChanged.connect(
                 self.clipboardDataChanged)
 
         if text:
@@ -112,51 +134,51 @@ class BaseEditor(DialogableWidget):
         self.textEdit.textCursor().setBlockFormat(blockFormat)
     
     def setupEditActions(self):
-        tb = QtGui.QToolBar(self)
+        tb = QToolBar(self)
         tb.setObjectName("editActions")
         tb.setWindowTitle("Edit Actions")
         self.addToolBar(tb)
 
-        self.actionUndo = QtGui.QAction(
-                QtGui.QIcon.fromTheme('edit-undo',
-                        QtGui.QIcon(self.rsrcPath + '/editundo.png')),
-                "&Undo", self, shortcut=QtGui.QKeySequence.Undo)
+        self.actionUndo = QAction(
+                QIcon.fromTheme('edit-undo',
+                        QIcon(self.rsrcPath + '/editundo.png')),
+                "&Undo", self, shortcut=QKeySequence.Undo)
         tb.addAction(self.actionUndo)
         
-        self.actionRedo = QtGui.QAction(
-                QtGui.QIcon.fromTheme('edit-redo',
-                        QtGui.QIcon(self.rsrcPath + '/editredo.png')),
-                "&Redo", self, priority=QtGui.QAction.LowPriority,
-                shortcut=QtGui.QKeySequence.Redo)
+        self.actionRedo = QAction(
+                QIcon.fromTheme('edit-redo',
+                        QIcon(self.rsrcPath + '/editredo.png')),
+                "&Redo", self, priority=QAction.LowPriority,
+                shortcut=QKeySequence.Redo)
         tb.addAction(self.actionRedo)
         
-        self.actionCut = QtGui.QAction(
-                QtGui.QIcon.fromTheme('edit-cut',
-                        QtGui.QIcon(self.rsrcPath + '/editcut.png')),
-                "Cu&t", self, priority=QtGui.QAction.LowPriority,
-                shortcut=QtGui.QKeySequence.Cut)
+        self.actionCut = QAction(
+                QIcon.fromTheme('edit-cut',
+                        QIcon(self.rsrcPath + '/editcut.png')),
+                "Cu&t", self, priority=QAction.LowPriority,
+                shortcut=QKeySequence.Cut)
         tb.addAction(self.actionCut)
         
 
-        self.actionCopy = QtGui.QAction(
-                QtGui.QIcon.fromTheme('edit-copy',
-                        QtGui.QIcon(self.rsrcPath + '/editcopy.png')),
-                "&Copy", self, priority=QtGui.QAction.LowPriority,
-                shortcut=QtGui.QKeySequence.Copy)
+        self.actionCopy = QAction(
+                QIcon.fromTheme('edit-copy',
+                        QIcon(self.rsrcPath + '/editcopy.png')),
+                "&Copy", self, priority=QAction.LowPriority,
+                shortcut=QKeySequence.Copy)
         tb.addAction(self.actionCopy)
         
 
-        self.actionPaste = QtGui.QAction(
-                QtGui.QIcon.fromTheme('edit-paste',
-                        QtGui.QIcon(self.rsrcPath + '/editpaste.png')),
-                "&Paste", self, priority=QtGui.QAction.LowPriority,
-                shortcut=QtGui.QKeySequence.Paste,
-                enabled=(len(QtGui.QApplication.clipboard().text()) != 0))
+        self.actionPaste = QAction(
+                QIcon.fromTheme('edit-paste',
+                        QIcon(self.rsrcPath + '/editpaste.png')),
+                "&Paste", self, priority=QAction.LowPriority,
+                shortcut=QKeySequence.Paste,
+                enabled=(len(QApplication.clipboard().text()) != 0))
         tb.addAction(self.actionPaste)
         
 
     def setupTextActions(self):
-        tb = QtGui.QToolBar(self)
+        tb = QToolBar(self)
         tb.setWindowTitle("Format Actions")
         tb.setObjectName("fontFormatActions")
         
@@ -164,147 +186,147 @@ class BaseEditor(DialogableWidget):
 
         
 
-        self.actionTextBold = QtGui.QAction(
-                QtGui.QIcon.fromTheme('format-text-bold',
-                        QtGui.QIcon(self.rsrcPath + '/textbold.png')),
-                "&Bold", self, priority=QtGui.QAction.LowPriority,
-                shortcut=QtCore.Qt.CTRL + QtCore.Qt.Key_B,
+        self.actionTextBold = QAction(
+                QIcon.fromTheme('format-text-bold',
+                        QIcon(self.rsrcPath + '/textbold.png')),
+                "&Bold", self, priority=QAction.LowPriority,
+                shortcut=Qt.CTRL + Qt.Key_B,
                 triggered=self.signalProxy.setBold, checkable=True)
-        bold = QtGui.QFont()
+        bold = QFont()
         bold.setBold(True)
         self.actionTextBold.setFont(bold)
         tb.addAction(self.actionTextBold)
         
 
-        self.actionTextItalic = QtGui.QAction(
-                QtGui.QIcon.fromTheme('format-text-italic',
-                        QtGui.QIcon(self.rsrcPath + '/textitalic.png')),
-                "&Italic", self, priority=QtGui.QAction.LowPriority,
-                shortcut=QtCore.Qt.CTRL + QtCore.Qt.Key_I,
+        self.actionTextItalic = QAction(
+                QIcon.fromTheme('format-text-italic',
+                        QIcon(self.rsrcPath + '/textitalic.png')),
+                "&Italic", self, priority=QAction.LowPriority,
+                shortcut=Qt.CTRL + Qt.Key_I,
                 triggered=self.signalProxy.setItalic, checkable=True)
-        italic = QtGui.QFont()
+        italic = QFont()
         italic.setItalic(True)
         self.actionTextItalic.setFont(italic)
         tb.addAction(self.actionTextItalic)
         
 
-        self.actionTextUnderline = QtGui.QAction(
-                QtGui.QIcon.fromTheme('format-text-underline',
-                        QtGui.QIcon(self.rsrcPath + '/textunder.png')),
-                "&Underline", self, priority=QtGui.QAction.LowPriority,
-                shortcut=QtCore.Qt.CTRL + QtCore.Qt.Key_U,
+        self.actionTextUnderline = QAction(
+                QIcon.fromTheme('format-text-underline',
+                        QIcon(self.rsrcPath + '/textunder.png')),
+                "&Underline", self, priority=QAction.LowPriority,
+                shortcut=Qt.CTRL + Qt.Key_U,
                 triggered=self.signalProxy.setUnderline, checkable=True)
-        underline = QtGui.QFont()
+        underline = QFont()
         underline.setUnderline(True)
         self.actionTextUnderline.setFont(underline)
         tb.addAction(self.actionTextUnderline)
         
-        grp = QtGui.QActionGroup(self)#, triggered=self.textAlign)
+        grp = QActionGroup(self)#, triggered=self.textAlign)
 
         # Make sure the alignLeft is always left of the alignRight.
-        if QtGui.QApplication.isLeftToRight():
-            self.actionAlignLeft = QtGui.QAction(
-                    QtGui.QIcon.fromTheme('format-justify-left',
-                            QtGui.QIcon(self.rsrcPath + '/textleft.png')),
+        if QApplication.isLeftToRight():
+            self.actionAlignLeft = QAction(
+                    QIcon.fromTheme('format-justify-left',
+                            QIcon(self.rsrcPath + '/textleft.png')),
                     "&Left", grp, triggered=self.blockProxy.setAlignLeft)
 
             self.blockProxy.alignLeftChanged.connect(self.actionAlignLeft.setChecked)
 
-            self.actionAlignCenter = QtGui.QAction(
-                    QtGui.QIcon.fromTheme('format-justify-center',
-                            QtGui.QIcon(self.rsrcPath + '/textcenter.png')),
+            self.actionAlignCenter = QAction(
+                    QIcon.fromTheme('format-justify-center',
+                            QIcon(self.rsrcPath + '/textcenter.png')),
                     "C&enter", grp, triggered=self.blockProxy.setAlignCenter)
             self.blockProxy.alignCenterChanged.connect(self.actionAlignCenter.setChecked)
 
-            self.actionAlignRight = QtGui.QAction(
-                    QtGui.QIcon.fromTheme('format-justify-right',
-                            QtGui.QIcon(self.rsrcPath + '/textright.png')),
+            self.actionAlignRight = QAction(
+                    QIcon.fromTheme('format-justify-right',
+                            QIcon(self.rsrcPath + '/textright.png')),
                     "&Right", grp, triggered=self.blockProxy.setAlignRight)
             self.blockProxy.alignRightChanged.connect(self.actionAlignRight.setChecked)
         else:
-            self.actionAlignRight = QtGui.QAction(
-                    QtGui.QIcon.fromTheme('format-justify-right',
-                            QtGui.QIcon(self.rsrcPath + '/textright.png')),
+            self.actionAlignRight = QAction(
+                    QIcon.fromTheme('format-justify-right',
+                            QIcon(self.rsrcPath + '/textright.png')),
                     "&Right", grp)
-            self.actionAlignCenter = QtGui.QAction(
-                    QtGui.QIcon.fromTheme('format-justify-center',
-                            QtGui.QIcon(self.rsrcPath + '/textcenter.png')),
+            self.actionAlignCenter = QAction(
+                    QIcon.fromTheme('format-justify-center',
+                            QIcon(self.rsrcPath + '/textcenter.png')),
                     "C&enter", grp)
-            self.actionAlignLeft = QtGui.QAction(
-                    QtGui.QIcon.fromTheme('format-justify-left',
-                            QtGui.QIcon(self.rsrcPath + '/textleft.png')),
+            self.actionAlignLeft = QAction(
+                    QIcon.fromTheme('format-justify-left',
+                            QIcon(self.rsrcPath + '/textleft.png')),
                     "&Left", grp)
  
-        self.actionAlignJustify = QtGui.QAction(
-                QtGui.QIcon.fromTheme('format-justify-fill',
-                        QtGui.QIcon(self.rsrcPath + '/textjustify.png')),
+        self.actionAlignJustify = QAction(
+                QIcon.fromTheme('format-justify-fill',
+                        QIcon(self.rsrcPath + '/textjustify.png')),
                 "&Justify", grp, triggered=self.blockProxy.setAlignJustify)
 
         self.blockProxy.alignJustifyChanged.connect(self.actionAlignJustify.setChecked)
 
-        self.actionAlignLeft.setShortcut(QtCore.Qt.CTRL + QtCore.Qt.Key_L)
+        self.actionAlignLeft.setShortcut(Qt.CTRL + Qt.Key_L)
         self.actionAlignLeft.setCheckable(True)
-        self.actionAlignLeft.setPriority(QtGui.QAction.LowPriority)
+        self.actionAlignLeft.setPriority(QAction.LowPriority)
 
-        self.actionAlignCenter.setShortcut(QtCore.Qt.CTRL + QtCore.Qt.Key_E)
+        self.actionAlignCenter.setShortcut(Qt.CTRL + Qt.Key_E)
         self.actionAlignCenter.setCheckable(True)
-        self.actionAlignCenter.setPriority(QtGui.QAction.LowPriority)
+        self.actionAlignCenter.setPriority(QAction.LowPriority)
 
-        self.actionAlignRight.setShortcut(QtCore.Qt.CTRL + QtCore.Qt.Key_R)
+        self.actionAlignRight.setShortcut(Qt.CTRL + Qt.Key_R)
         self.actionAlignRight.setCheckable(True)
-        self.actionAlignRight.setPriority(QtGui.QAction.LowPriority)
+        self.actionAlignRight.setPriority(QAction.LowPriority)
 
-        self.actionAlignJustify.setShortcut(QtCore.Qt.CTRL + QtCore.Qt.Key_J)
+        self.actionAlignJustify.setShortcut(Qt.CTRL + Qt.Key_J)
         self.actionAlignJustify.setCheckable(True)
-        self.actionAlignJustify.setPriority(QtGui.QAction.LowPriority)
+        self.actionAlignJustify.setPriority(QAction.LowPriority)
 
         tb.addActions(grp.actions())
         
-        pix = QtGui.QPixmap(16, 16)
-        pix.fill(QtCore.Qt.black)
-        self.actionTextColor = QtGui.QAction(QtGui.QIcon(pix), "&Color...",
+        pix = QPixmap(16, 16)
+        pix.fill(Qt.black)
+        self.actionTextColor = QAction(QIcon(pix), "&Color...",
                 self, triggered=self.textColor)
         tb.addAction(self.actionTextColor)
         
-        tb = QtGui.QToolBar(self)
+        tb = QToolBar(self)
         tb.setAllowedAreas(
-                QtCore.Qt.TopToolBarArea | QtCore.Qt.BottomToolBarArea)
+                Qt.TopToolBarArea | Qt.BottomToolBarArea)
         tb.setWindowTitle("Format Actions")
         
-        self.addToolBarBreak(QtCore.Qt.TopToolBarArea)
+        self.addToolBarBreak(Qt.TopToolBarArea)
         
         self.addToolBar(tb)
 
-        comboStyle = QtGui.QComboBox(tb)
+        comboStyle = QComboBox(tb)
         tb.addWidget(comboStyle)
-        comboStyle.addItem(self.trUtf8("Standard"))
-        comboStyle.addItem(self.trUtf8("Ungeordnete Liste (Punkte)"))
-        comboStyle.addItem(self.trUtf8("Ungeordnete Liste (Kreise)"))
-        comboStyle.addItem(self.trUtf8("Ungeordnete Liste (Quadrate)"))
-        comboStyle.addItem(self.trUtf8("Geordnete Liste (Zahlen)"))
-        comboStyle.addItem(self.trUtf8("Geordnete Liste (Alphabetisch klein)"))
-        comboStyle.addItem(self.trUtf8("Geordnete Liste (Alphabetisch groß)"))
-        comboStyle.addItem(self.trUtf8("Geordnete Liste (Römisch klein)"))
-        comboStyle.addItem(self.trUtf8("Geordnete Liste (Römisch groß)"))
+        comboStyle.addItem(self.trUtf8(u"Standard"))
+        comboStyle.addItem(self.trUtf8(u"Ungeordnete Liste (Punkte)"))
+        comboStyle.addItem(self.trUtf8(u"Ungeordnete Liste (Kreise)"))
+        comboStyle.addItem(self.trUtf8(u"Ungeordnete Liste (Quadrate)"))
+        comboStyle.addItem(self.trUtf8(u"Geordnete Liste (Zahlen)"))
+        comboStyle.addItem(self.trUtf8(u"Geordnete Liste (Alphabetisch klein)"))
+        comboStyle.addItem(self.trUtf8(u"Geordnete Liste (Alphabetisch groß)"))
+        comboStyle.addItem(self.trUtf8(u"Geordnete Liste (Römisch klein)"))
+        comboStyle.addItem(self.trUtf8(u"Geordnete Liste (Römisch groß)"))
         comboStyle.activated.connect(self.textStyle)
 
-        self.comboFont = QtGui.QFontComboBox(tb)
+        self.comboFont = QFontComboBox(tb)
         tb.addWidget(self.comboFont)
         self.comboFont.activated[str].connect(self.signalProxy.setFontFamily)
 
-        self.comboSize = QtGui.QComboBox(tb)
+        self.comboSize = QComboBox(tb)
         self.comboSize.setObjectName("comboSize")
         tb.addWidget(self.comboSize)
         self.comboSize.setEditable(True)
 
-        db = QtGui.QFontDatabase()
+        db = QFontDatabase()
         for size in db.standardSizes():
             self.comboSize.addItem("%s" % (size))
 
         self.comboSize.activated[str].connect(self.textSize)
         self.comboSize.setCurrentIndex(
                 self.comboSize.findText(
-                        "%s" % (QtGui.QApplication.font().pointSize())))
+                        "{}".format(QApplication.font().pointSize())))
 
 
     def maybeSave(self):
@@ -314,16 +336,16 @@ class BaseEditor(DialogableWidget):
         if self.fileName.startswith(':/'):
             return True
 
-        ret = QtGui.QMessageBox.warning(self, "Application",
+        ret = QMessageBox.warning(self, "Application",
                 "The document has been modified.\n"
                 "Do you want to save your changes?",
-                QtGui.QMessageBox.Save | QtGui.QMessageBox.Discard |
-                        QtGui.QMessageBox.Cancel)
+                QMessageBox.Save | QMessageBox.Discard |
+                        QMessageBox.Cancel)
 
-        if ret == QtGui.QMessageBox.Save:
+        if ret == QMessageBox.Save:
             return self.fileSave()
 
-        if ret == QtGui.QMessageBox.Cancel:
+        if ret == QMessageBox.Cancel:
             return False
 
         return True
@@ -339,20 +361,20 @@ class BaseEditor(DialogableWidget):
         cursor = self.textEdit.textCursor()
         if styleIndex:
             styleDict = {
-                1: QtGui.QTextListFormat.ListDisc,
-                2: QtGui.QTextListFormat.ListCircle,
-                3: QtGui.QTextListFormat.ListSquare,
-                4: QtGui.QTextListFormat.ListDecimal,
-                5: QtGui.QTextListFormat.ListLowerAlpha,
-                6: QtGui.QTextListFormat.ListUpperAlpha,
-                7: QtGui.QTextListFormat.ListLowerRoman,
-                8: QtGui.QTextListFormat.ListUpperRoman,
+                1: QTextListFormat.ListDisc,
+                2: QTextListFormat.ListCircle,
+                3: QTextListFormat.ListSquare,
+                4: QTextListFormat.ListDecimal,
+                5: QTextListFormat.ListLowerAlpha,
+                6: QTextListFormat.ListUpperAlpha,
+                7: QTextListFormat.ListLowerRoman,
+                8: QTextListFormat.ListUpperRoman,
             }
 
-            style = styleDict.get(styleIndex, QtGui.QTextListFormat.ListDisc)
+            style = styleDict.get(styleIndex, QTextListFormat.ListDisc)
             cursor.beginEditBlock()
             blockFmt = cursor.blockFormat()
-            listFmt = QtGui.QTextListFormat()
+            listFmt = QTextListFormat()
 
             if cursor.currentList():
                 listFmt = cursor.currentList().format()
@@ -365,12 +387,12 @@ class BaseEditor(DialogableWidget):
             cursor.createList(listFmt)
             cursor.endEditBlock()
         else:
-            bfmt = QtGui.QTextBlockFormat()
+            bfmt = QTextBlockFormat()
             bfmt.setObjectIndex(-1)
             cursor.mergeBlockFormat(bfmt)
 
     def textColor(self):
-        col = QtGui.QColorDialog.getColor(self.textEdit.textColor(), self)
+        col = QColorDialog.getColor(self.textEdit.textColor(), self)
         if not col.isValid():
             return
 
@@ -379,24 +401,24 @@ class BaseEditor(DialogableWidget):
     def textAlign(self, action):
         if action == self.actionAlignLeft:
             self.textEdit.setAlignment(
-                    QtCore.Qt.AlignLeft | QtCore.Qt.AlignAbsolute)
+                    Qt.AlignLeft | Qt.AlignAbsolute)
         elif action == self.actionAlignCenter:
-            self.textEdit.setAlignment(QtCore.Qt.AlignHCenter)
+            self.textEdit.setAlignment(Qt.AlignHCenter)
         elif action == self.actionAlignRight:
             self.textEdit.setAlignment(
-                    QtCore.Qt.AlignRight | QtCore.Qt.AlignAbsolute)
+                    Qt.AlignRight | Qt.AlignAbsolute)
         elif action == self.actionAlignJustify:
-            self.textEdit.setAlignment(QtCore.Qt.AlignJustify)
+            self.textEdit.setAlignment(Qt.AlignJustify)
 
     def cursorPositionChanged(self):
         self.blockProxy.setBlockFormat(self.textEdit.textCursor().blockFormat())
 
     def clipboardDataChanged(self):
         self.actionPaste.setEnabled(
-                len(QtGui.QApplication.clipboard().text()) != 0)
+                len(QApplication.clipboard().text()) != 0)
 
     def about(self):
-        QtGui.QMessageBox.about(self, "About", 
+        QMessageBox.about(self, "About", 
                 "This example demonstrates Qt's rich text editing facilities "
                 "in action, providing an example document for you to "
                 "experiment with.")
@@ -404,19 +426,24 @@ class BaseEditor(DialogableWidget):
     def mergeFormatOnWordOrSelection(self, format):
         cursor = self.textEdit.textCursor()
         if not cursor.hasSelection():
-            cursor.select(QtGui.QTextCursor.WordUnderCursor)
+            cursor.select(QTextCursor.WordUnderCursor)
 
         cursor.mergeCharFormat(format)
         self.textEdit.mergeCurrentCharFormat(format)
 
     def colorChanged(self, color):
-        pix = QtGui.QPixmap(16, 16)
+        pix = QPixmap(16, 16)
         pix.fill(color)
-        self.actionTextColor.setIcon(QtGui.QIcon(pix))
+        self.actionTextColor.setIcon(QIcon(pix))
+
+    def trUtf8(self, sourceText):
+        if hasattr(super(BaseEditor, self), 'trUtf8'):
+            return super(BaseEditor, self).trUtf8(sourceText)
+        return self.tr(sourceText)
 
 
 if __name__ == '__main__':
-    app = QtGui.QApplication(sys.argv)
+    app = QApplication(sys.argv)
 
     mainWindows = []
     for fn in sys.argv[1:] or [None]:

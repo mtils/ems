@@ -1,10 +1,19 @@
 #coding=utf-8
-from PyQt4.QtCore import Qt, SIGNAL, QString
-from PyQt4.QtGui import QTextEdit, QTextCursor, QCompleter,QFrame
+
+from six import u, text_type
+
+from ems.qt import QtCore, QtWidgets, QtGui
+
+Qt = QtCore.Qt
+QTextEdit = QtWidgets.QTextEdit
+QTextCursor = QtGui.QTextCursor
+QCompleter = QtWidgets.QCompleter
+QFrame = QtWidgets.QFrame
+
 
 class CompletionTextEdit(QTextEdit):
 
-    END_OF_WORD = QString("~!@#$%^&*()_+{}|:\"<>?,./;'[]\\-= \n\r\t")
+    END_OF_WORD = u("~!@#$%^&*()_+{}|:\"<>?,./;'[]\\-= \n\r\t")
 
     def __init__(self, parent=None):
         super(CompletionTextEdit, self).__init__(parent)
@@ -28,21 +37,19 @@ class CompletionTextEdit(QTextEdit):
         completer.popup().setFrameStyle(QFrame.Plain)
         completer.popup().setFrameShape(QFrame.Box)
         self._completer = completer
-        self.connect(self._completer,
-                     SIGNAL("activated(const QString&)"),
-                     self.insertCompletion)
+        self._completer.activated.connect(self.insertCompletion)
 
     @property
     def completionTrigger(self):
         return self._completionTrigger
-    
+
     @completionTrigger.setter
     def completionTrigger(self, triggerChar):
         if self._completionTrigger == triggerChar:
             return
         if self._completionTrigger:
-            self.END_OF_WORD.append(self._completionTrigger)
-        self.END_OF_WORD.remove(triggerChar)
+            self.END_OF_WORD = self.END_OF_WORD + self._completionTrigger
+        self.END_OF_WORD = self.END_OF_WORD.replace(triggerChar,'')
         self._completionTrigger = triggerChar
 
     def insertCompletion(self, completion):
@@ -62,15 +69,16 @@ class CompletionTextEdit(QTextEdit):
 
         #tc.select(QTextCursor.WordUnderCursor) doesnt respect the END_OF_WORD
         for i in range(currentPos, max(-1, currentPos - 128), -1):
-            char = self.document().characterAt(i)
-            if self.END_OF_WORD.contains(char):
+            char = text_type(self.document().characterAt(i))
+            if char in self.END_OF_WORD:
                 startPos = i+1
                 break;
 
         tc.setPosition(startPos, QTextCursor.KeepAnchor)
 
         text = tc.selectedText()
-        return text
+
+        return text_type(text)
 
     def focusInEvent(self, event):
         if self._completer:
@@ -107,9 +115,11 @@ class CompletionTextEdit(QTextEdit):
 
         completionPrefix = self.textUnderCursor()
 
-        if (not isShortcut and (hasModifier or event.text().isEmpty() or
+        eventText = text_type(event.text())
+
+        if not isShortcut and (hasModifier or not len(eventText) or
         not self._shouldComplete(completionPrefix) or
-        self.END_OF_WORD.contains(event.text().right(1)))):
+        eventText[-1] in self.END_OF_WORD):
             self._completer.popup().hide()
             return
 
@@ -126,10 +136,9 @@ class CompletionTextEdit(QTextEdit):
 
     def _shouldComplete(self, completionPrefix):
         if self.completionTrigger and not \
-            completionPrefix.startsWith(self.completionTrigger):
-
+            completionPrefix.startswith(self.completionTrigger):
             return False
-        return (completionPrefix.length() >= self.minimalCompletionChars)
+        return (len(completionPrefix) >= self.minimalCompletionChars)
 
     def _isShortCut(self, event):
         return (event.modifiers() == Qt.ControlModifier and
@@ -148,7 +157,7 @@ if __name__ == "__main__":
                     words.append(word.strip())
                 f.close()
             except IOError:
-                print "dictionary not in anticipated location"
+                print("dictionary not in anticipated location")
             QCompleter.__init__(self, words, parent)
     completer = DictionaryCompleter()
     te = CompletionTextEdit()

@@ -20,33 +20,31 @@ ETS = dict(pyqt=(QT_API_PYQTv2, 4), pyside=(QT_API_PYSIDE, 4),
 
 QT_API_ENV = os.environ.get('QT_API')
 
+
 try:
+    # First try to get an environment variable
     QT_RC_MAJOR_VERSION = int(QT_API_ENV)
 except (ValueError, TypeError):
-    if constants['qtVersion'] == 5:
+    # No env, look for already imported modules
+    if 'PyQt5' in sys.modules:
         QT_RC_MAJOR_VERSION = 5
-    elif constants['qtVersion'] == 4:
+    elif 'PyQt4' in sys.modules:
         QT_RC_MAJOR_VERSION = 4
     else:
-        # A different backend was specified, but we still got here because a Qt
-        # related file was imported. This is allowed, so lets try and guess
-        # what we should be using.
-        if "PyQt4" in sys.modules or "PySide" in sys.modules:
-            # PyQt4 or PySide is actually used.
-            QT_RC_MAJOR_VERSION = 4
-        else:
-            # This is a fallback: PyQt5
+        # Try an import
+        try:
+            from PyQt5 import QtCore
             QT_RC_MAJOR_VERSION = 5
+        except ImportError:
+            try:
+                from PyQt4 import QtCore
+                QT_RC_MAJOR_VERSION = 4
+            except ImportError:
+                raise ImportError('No PyQt installation found')
+
 
 if QT_RC_MAJOR_VERSION == 4:
-    from PyQt4 import QtCore
-    from PyQt4 import QtGui
-    from PyQt4 import QtDeclarative
-    QtWidgets = QtGui
+    import ems.qt4.qt4_modules
 
 elif QT_RC_MAJOR_VERSION == 5:
-    from PyQt5 import QtCore
-    from PyQt5 import QtGui
-    from PyQt5 import QtWidgets
-
-print(QT_RC_MAJOR_VERSION, QtCore)
+    import ems.qt5.qt5_modules

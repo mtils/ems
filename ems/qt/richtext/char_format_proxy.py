@@ -1,8 +1,20 @@
 
-from PyQt4.QtCore import QObject, pyqtSlot, pyqtSignal, QString, pyqtProperty
-from PyQt4.QtCore import Qt
-from PyQt4.QtGui import QTextCharFormat, QFont, QFontInfo
-from PyQt4.QtGui import QBrush, QColor
+from six import text_type
+
+from ems.qt import QtCore
+from ems.qt import QtGui
+
+QObject = QtCore.QObject
+pyqtSlot = QtCore.pyqtSlot
+pyqtSignal = QtCore.pyqtSignal
+pyqtProperty = QtCore.pyqtProperty
+Qt = QtCore.Qt
+QTextCharFormat = QtGui.QTextCharFormat
+QFont = QtGui.QFont
+QFontInfo = QtGui.QFontInfo
+QBrush = QtGui.QBrush
+QColor = QtGui.QColor
+
 
 class CharFormatProxy(QObject):
 
@@ -29,7 +41,7 @@ class CharFormatProxy(QObject):
     '''
     '''
 
-    fontFamilyChanged = pyqtSignal(QString)
+    fontFamilyChanged = pyqtSignal(text_type)
 
     boldChanged = pyqtSignal(bool)
 
@@ -43,7 +55,7 @@ class CharFormatProxy(QObject):
 
     isAnchorChanged = pyqtSignal(bool)
 
-    anchorHrefChanged = pyqtSignal(QString)
+    anchorHrefChanged = pyqtSignal(text_type)
 
     foregroundColorChanged = pyqtSignal(QColor)
 
@@ -101,7 +113,7 @@ class CharFormatProxy(QObject):
     def getFontFamily(self):
         return self._fontFamily
 
-    @pyqtSlot(QString)
+    @pyqtSlot(text_type)
     def setFontFamily(self, family):
         if self.getFontFamily() == family:
             return
@@ -113,7 +125,7 @@ class CharFormatProxy(QObject):
         diff.setFontFamily(family)
         self._emitDiff(diff)
 
-    fontFamily = pyqtProperty(QString, getFontFamily, setFontFamily)
+    fontFamily = pyqtProperty(text_type, getFontFamily, setFontFamily)
 
     def getBold(self):
         return self._bold
