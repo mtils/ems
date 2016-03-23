@@ -34,9 +34,10 @@ dialog.layout().addWidget(view)
 scene = QGraphicsScene()
 scene.setSceneRect(0, 0, PageSize[0], PageSize[1])
 view.setScene(scene)
-print(view.scene())
 
 textItem = TextItem('Hallo', QPointF(15.0,15.0), view.scene() )
 
+textItem.currentCharFormatChanged.connect(dialog.charFormatActions.signals.updateCharFormatWithoutDiffs)
+dialog.charFormatActions.signals.charFormatDiffChanged.connect(textItem.mergeFormatOnWordOrSelection)
 
 dialog.show()

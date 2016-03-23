@@ -2,17 +2,26 @@
 from ems.qt import QtCore, QtGui, QtWidgets
 
 Qt = QtCore.Qt
+pyqtSignal = QtCore.pyqtSignal
 QGraphicsItem = QtWidgets.QGraphicsItem
 QGraphicsTextItem = QtWidgets.QGraphicsTextItem
 QFont = QtGui.QFont
 QTransform = QtGui.QTransform
+QTextCursor = QtGui.QTextCursor
+QTextCharFormat = QtGui.QTextCharFormat
 
 class TextItem(QGraphicsTextItem):
 
+    cursorPositionChanged = pyqtSignal([QTextCursor],[int])
+
+    currentCharFormatChanged = pyqtSignal(QTextCharFormat)
+
     def __init__(self, text, position, scene,
                  font=None, transform=QTransform()):
-        font = font if font is not None else QFont("Times", 10)
+        font = font if font is not None else QFont("Arial", 12)
         super(TextItem, self).__init__(text)
+        self._lastCursorPosition = -1
+        self._lastCharFormat = None
         self.setFlags(QGraphicsItem.ItemIsSelectable|
                       QGraphicsItem.ItemIsMovable)
         self.setFont(font)
@@ -23,6 +32,7 @@ class TextItem(QGraphicsTextItem):
         self.setSelected(True)
         Dirty = True
         self.setTextInteractionFlags(Qt.TextEditable | Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
+        self.cursorPositionChanged[QTextCursor].connect(self._updateStyle)
 
 
     def parentWidget(self):
@@ -34,19 +44,48 @@ class TextItem(QGraphicsTextItem):
             Dirty = True
         return QGraphicsTextItem.itemChange(self, change, variant)
 
+    def mergeFormatOnWordOrSelection(self, format):
+        cursor = self.textCursor()
+        if not cursor.hasSelection():
+            cursor.select(QTextCursor.WordUnderCursor)
 
-    def mouseDoubleClickEvent(self, event):
+        cursor.mergeCharFormat(format)
+        #self.textEdit.mergeCurrentCharFormat(format)
+
+    def mouseDoubleClickEvent_(self, event):
         dialog = TextItemDlg(self, self.parentWidget())
         dialog.exec_()
-       
+
     def hoverEnterEvent(self, event):
-        print "HoverEnter"
-        print event.pos()
-        print self.boundingRect()
+        #print "HoverEnter"
+        #print event.pos()
+        #print self.boundingRect()
         self.setCursor(Qt.IBeamCursor)
         QGraphicsTextItem.hoverEnterEvent(self, event)
-    
+
     def hoverLeaveEvent(self, event):
-        print "HoverLeave"
-        
+        #print "HoverLeave"
         QGraphicsTextItem.hoverLeaveEvent(self, event)
+
+    def mouseReleaseEvent(self, event):
+        super(TextItem, self).mouseReleaseEvent(event)
+        self._updateCursorPosition(self.textCursor())
+
+    def keyReleaseEvent(self, event):
+        super(TextItem, self).keyReleaseEvent(event)
+        self._updateCursorPosition(self.textCursor())
+
+    def _updateStyle(self, cursor):
+        currentCharFormat = cursor.charFormat()
+        if self._lastCharFormat == currentCharFormat:
+            return
+        self._lastCharFormat = currentCharFormat
+        self.currentCharFormatChanged.emit(currentCharFormat)
+
+
+    def _updateCursorPosition(self, cursor):
+        if self._lastCursorPosition == cursor.position():
+            return
+        self._lastCursorPosition = cursor.position()
+        self.cursorPositionChanged[QTextCursor].emit(cursor)
+        self.cursorPositionChanged[int].emit(self._lastCursorPosition)
