@@ -1,20 +1,26 @@
 
-from ems.qt import QtCore, QtGui
+from ems.qt import QtCore, QtGui, QtWidgets
+
+Qt = QtCore.Qt
+QGraphicsItem = QtWidgets.QGraphicsItem
+QGraphicsTextItem = QtWidgets.QGraphicsTextItem
+QFont = QtGui.QFont
+QTransform = QtGui.QTransform
 
 class TextItem(QGraphicsTextItem):
 
     def __init__(self, text, position, scene,
-                 font=QFont("Times", PointSize), matrix=QMatrix()):
+                 font=None, transform=QTransform()):
+        font = font if font is not None else QFont("Times", 10)
         super(TextItem, self).__init__(text)
         self.setFlags(QGraphicsItem.ItemIsSelectable|
                       QGraphicsItem.ItemIsMovable)
         self.setFont(font)
         self.setPos(position)
-        self.setMatrix(matrix)
+        self.setTransform(transform)
         scene.clearSelection()
         scene.addItem(self)
         self.setSelected(True)
-        global Dirty
         Dirty = True
         self.setTextInteractionFlags(Qt.TextEditable | Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
 
@@ -25,7 +31,6 @@ class TextItem(QGraphicsTextItem):
 
     def itemChange(self, change, variant):
         if change != QGraphicsItem.ItemSelectedChange:
-            global Dirty
             Dirty = True
         return QGraphicsTextItem.itemChange(self, change, variant)
 

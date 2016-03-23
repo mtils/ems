@@ -34,6 +34,9 @@ QTextCursor = QtGui.QTextCursor
 from ems.qt4.gui.widgets.completiontextedit import CompletionTextEdit
 from ems.qt.richtext.block_format_proxy import BlockFormatProxy
 from ems.qt.richtext.char_format_proxy import CharFormatProxy
+from ems.qt.edit_actions import EditActions
+from ems.qt.richtext.char_format_actions import CharFormatActions
+
 
 class BaseEditor(QWidget):
 
@@ -58,12 +61,6 @@ class BaseEditor(QWidget):
 
         self.textEdit.currentCharFormatChanged.connect(self.signalProxy.updateCharFormatWithoutDiffs)
 
-        self.signalProxy.fontFamilyChanged.connect(self.setFontFamily)
-        self.signalProxy.pointSizeChanged.connect(self.setFontPointSize)
-        self.signalProxy.boldChanged.connect(self.actionTextBold.setChecked)
-        self.signalProxy.italicChanged.connect(self.actionTextItalic.setChecked)
-        self.signalProxy.underlineChanged.connect(self.actionTextUnderline.setChecked)
-        self.signalProxy.foregroundColorChanged.connect(self.colorChanged)
         self.signalProxy.charFormatDiffChanged.connect(self.mergeFormatOnWordOrSelection)
 
         self.blockProxy.blockFormatModified.connect(self.setBlockFormat)
@@ -76,38 +73,34 @@ class BaseEditor(QWidget):
         self.signalProxy.setCharFormat(self.textEdit.currentCharFormat())
         self.blockProxy.setBlockFormat(self.textEdit.textCursor().blockFormat())
 
+        self.charFormatActions.setDocument(self.textEdit.document())
+
 #        self.textEdit.document().modificationChanged.connect(
 #                self.actionSave.setEnabled)
         self.textEdit.document().modificationChanged.connect(
                 self.setWindowModified)
-        self.textEdit.document().undoAvailable.connect(
-                self.actionUndo.setEnabled)
+        #self.textEdit.document().undoAvailable.connect(
+                #self.editActions.actionUndo.setEnabled)
         self.textEdit.document().redoAvailable.connect(
-                self.actionRedo.setEnabled)
+                self.editActions.actionRedo.setEnabled)
         self.setWindowModified(self.textEdit.document().isModified())
         
-        self.actionUndo.setEnabled(self.textEdit.document().isUndoAvailable())
-        self.actionRedo.setEnabled(self.textEdit.document().isRedoAvailable())
-        self.actionUndo.triggered.connect(self.textEdit.undo)
-        self.actionRedo.triggered.connect(self.textEdit.redo)
-        self.actionCut.setEnabled(False)
-        self.actionCopy.setEnabled(False)
-        self.actionCut.triggered.connect(self.textEdit.cut)
-        self.actionCopy.triggered.connect(self.textEdit.copy)
-        self.actionPaste.triggered.connect(self.textEdit.paste)
-        self.textEdit.copyAvailable.connect(self.actionCut.setEnabled)
-        self.textEdit.copyAvailable.connect(self.actionCopy.setEnabled)
+        self.editActions.actionUndo.setEnabled(self.textEdit.document().isUndoAvailable())
+        self.editActions.actionRedo.setEnabled(self.textEdit.document().isRedoAvailable())
+        self.editActions.actionUndo.triggered.connect(self.textEdit.undo)
+        self.editActions.actionRedo.triggered.connect(self.textEdit.redo)
+        self.editActions.actionCut.setEnabled(False)
+        self.editActions.actionCopy.setEnabled(False)
+        self.editActions.actionCut.triggered.connect(self.textEdit.cut)
+        self.editActions.actionCopy.triggered.connect(self.textEdit.copy)
+        self.editActions.actionPaste.triggered.connect(self.textEdit.paste)
+        self.textEdit.copyAvailable.connect(self.editActions.actionCut.setEnabled)
+        self.textEdit.copyAvailable.connect(self.editActions.actionCopy.setEnabled)
         QApplication.clipboard().dataChanged.connect(
                 self.clipboardDataChanged)
 
         if text:
             self.textEdit.setHtml(text)
-
-    def setFontFamily(self, family):
-        self.comboFont.setCurrentIndex(self.comboFont.findText(family))
-
-    def setFontPointSize(self, pointSize):
-        self.comboSize.setCurrentIndex(self.comboSize.findText("{}".format(int(pointSize))))
 
     def addToolBar(self, toolbar):
         if len(self.toolBarContainers) <= self.__currentToolbarIndex:
@@ -129,98 +122,31 @@ class BaseEditor(QWidget):
 
     def addToolBarBreak(self, area=None):
         self.__currentToolbarIndex += 1
-    
+
     def setBlockFormat(self, blockFormat):
         self.textEdit.textCursor().setBlockFormat(blockFormat)
-    
+
     def setupEditActions(self):
         tb = QToolBar(self)
         tb.setObjectName("editActions")
         tb.setWindowTitle("Edit Actions")
+
         self.addToolBar(tb)
 
-        self.actionUndo = QAction(
-                QIcon.fromTheme('edit-undo',
-                        QIcon(self.rsrcPath + '/editundo.png')),
-                "&Undo", self, shortcut=QKeySequence.Undo)
-        tb.addAction(self.actionUndo)
-        
-        self.actionRedo = QAction(
-                QIcon.fromTheme('edit-redo',
-                        QIcon(self.rsrcPath + '/editredo.png')),
-                "&Redo", self, priority=QAction.LowPriority,
-                shortcut=QKeySequence.Redo)
-        tb.addAction(self.actionRedo)
-        
-        self.actionCut = QAction(
-                QIcon.fromTheme('edit-cut',
-                        QIcon(self.rsrcPath + '/editcut.png')),
-                "Cu&t", self, priority=QAction.LowPriority,
-                shortcut=QKeySequence.Cut)
-        tb.addAction(self.actionCut)
-        
-
-        self.actionCopy = QAction(
-                QIcon.fromTheme('edit-copy',
-                        QIcon(self.rsrcPath + '/editcopy.png')),
-                "&Copy", self, priority=QAction.LowPriority,
-                shortcut=QKeySequence.Copy)
-        tb.addAction(self.actionCopy)
-        
-
-        self.actionPaste = QAction(
-                QIcon.fromTheme('edit-paste',
-                        QIcon(self.rsrcPath + '/editpaste.png')),
-                "&Paste", self, priority=QAction.LowPriority,
-                shortcut=QKeySequence.Paste,
-                enabled=(len(QApplication.clipboard().text()) != 0))
-        tb.addAction(self.actionPaste)
-        
+        self.editActions = EditActions(self)
+        self.editActions.addToToolbar(tb)
+        return
 
     def setupTextActions(self):
         tb = QToolBar(self)
         tb.setWindowTitle("Format Actions")
         tb.setObjectName("fontFormatActions")
-        
+
         self.addToolBar(tb)
 
-        
+        self.charFormatActions = CharFormatActions(self, signalProxy=self.signalProxy)
+        self.charFormatActions.addToToolbar(tb, addWidgets=False)
 
-        self.actionTextBold = QAction(
-                QIcon.fromTheme('format-text-bold',
-                        QIcon(self.rsrcPath + '/textbold.png')),
-                "&Bold", self, priority=QAction.LowPriority,
-                shortcut=Qt.CTRL + Qt.Key_B,
-                triggered=self.signalProxy.setBold, checkable=True)
-        bold = QFont()
-        bold.setBold(True)
-        self.actionTextBold.setFont(bold)
-        tb.addAction(self.actionTextBold)
-        
-
-        self.actionTextItalic = QAction(
-                QIcon.fromTheme('format-text-italic',
-                        QIcon(self.rsrcPath + '/textitalic.png')),
-                "&Italic", self, priority=QAction.LowPriority,
-                shortcut=Qt.CTRL + Qt.Key_I,
-                triggered=self.signalProxy.setItalic, checkable=True)
-        italic = QFont()
-        italic.setItalic(True)
-        self.actionTextItalic.setFont(italic)
-        tb.addAction(self.actionTextItalic)
-        
-
-        self.actionTextUnderline = QAction(
-                QIcon.fromTheme('format-text-underline',
-                        QIcon(self.rsrcPath + '/textunder.png')),
-                "&Underline", self, priority=QAction.LowPriority,
-                shortcut=Qt.CTRL + Qt.Key_U,
-                triggered=self.signalProxy.setUnderline, checkable=True)
-        underline = QFont()
-        underline.setUnderline(True)
-        self.actionTextUnderline.setFont(underline)
-        tb.addAction(self.actionTextUnderline)
-        
         grp = QActionGroup(self)#, triggered=self.textAlign)
 
         # Make sure the alignLeft is always left of the alignRight.
@@ -281,20 +207,14 @@ class BaseEditor(QWidget):
         self.actionAlignJustify.setPriority(QAction.LowPriority)
 
         tb.addActions(grp.actions())
-        
-        pix = QPixmap(16, 16)
-        pix.fill(Qt.black)
-        self.actionTextColor = QAction(QIcon(pix), "&Color...",
-                self, triggered=self.textColor)
-        tb.addAction(self.actionTextColor)
-        
+
         tb = QToolBar(self)
         tb.setAllowedAreas(
                 Qt.TopToolBarArea | Qt.BottomToolBarArea)
         tb.setWindowTitle("Format Actions")
-        
+
         self.addToolBarBreak(Qt.TopToolBarArea)
-        
+
         self.addToolBar(tb)
 
         comboStyle = QComboBox(tb)
@@ -310,24 +230,7 @@ class BaseEditor(QWidget):
         comboStyle.addItem(self.trUtf8(u"Geordnete Liste (Römisch groß)"))
         comboStyle.activated.connect(self.textStyle)
 
-        self.comboFont = QFontComboBox(tb)
-        tb.addWidget(self.comboFont)
-        self.comboFont.activated[str].connect(self.signalProxy.setFontFamily)
-
-        self.comboSize = QComboBox(tb)
-        self.comboSize.setObjectName("comboSize")
-        tb.addWidget(self.comboSize)
-        self.comboSize.setEditable(True)
-
-        db = QFontDatabase()
-        for size in db.standardSizes():
-            self.comboSize.addItem("%s" % (size))
-
-        self.comboSize.activated[str].connect(self.textSize)
-        self.comboSize.setCurrentIndex(
-                self.comboSize.findText(
-                        "{}".format(QApplication.font().pointSize())))
-
+        self.charFormatActions.addToToolbar(tb, addActions=False)
 
     def maybeSave(self):
         if not self.textEdit.document().isModified():
@@ -414,7 +317,7 @@ class BaseEditor(QWidget):
         self.blockProxy.setBlockFormat(self.textEdit.textCursor().blockFormat())
 
     def clipboardDataChanged(self):
-        self.actionPaste.setEnabled(
+        self.editActions.actionPaste.setEnabled(
                 len(QApplication.clipboard().text()) != 0)
 
     def about(self):
