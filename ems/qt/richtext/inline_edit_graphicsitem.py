@@ -27,10 +27,9 @@ class TextItem(QGraphicsTextItem):
         self.setFont(font)
         self.setPos(position)
         self.setTransform(transform)
-        scene.clearSelection()
-        scene.addItem(self)
-        self.setSelected(True)
-        Dirty = True
+        #scene.clearSelection()
+        #scene.addItem(self)
+        #self.setSelected(True)
         self.setTextInteractionFlags(Qt.TextEditable | Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
         self.cursorPositionChanged[QTextCursor].connect(self._updateStyle)
 
@@ -70,6 +69,7 @@ class TextItem(QGraphicsTextItem):
     def mouseReleaseEvent(self, event):
         super(TextItem, self).mouseReleaseEvent(event)
         self._updateCursorPosition(self.textCursor())
+        self.setSelected(True)
 
     def keyReleaseEvent(self, event):
         super(TextItem, self).keyReleaseEvent(event)
