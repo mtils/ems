@@ -13,6 +13,7 @@ from ems.qt.graphics.text_tool import TextTool
 
 QAction = QtWidgets.QAction
 pyqtSignal = QtCore.pyqtSignal
+Qt = QtCore.Qt
 QGraphicsView = QtWidgets.QGraphicsView
 QGraphicsScene = QtWidgets.QGraphicsScene
 QWidget = QtWidgets.QWidget
@@ -29,11 +30,30 @@ class GraphicsView(QGraphicsView):
         super(GraphicsView, self).mousePressEvent(event)
 
         if self.itemAt(event.pos()):
+            #print(self.scn)
             return
 
         scenePoint = self.mapToScene(event.pos())
         self.emptyAreaClicked.emit(scenePoint)
 
+class GraphicsScene(QGraphicsScene):
+
+    focusItemChanged = pyqtSignal()
+
+    def __init__(self, *args, **kwargs):
+        super(GraphicsScene, self).__init__(*args, **kwargs)
+        self._currentFocusItem = None
+
+    def setFocusItem(self, item, reason=Qt.OtherFocusReason):
+        super(GraphicsScene, self).setFocusItem(item, reason)
+
+    def mouseReleaseEvent(self, event):
+        super(GraphicsScene, self).mouseReleaseEvent(event)
+        focusItem = self.focusItem()
+        if self._currentFocusItem is focusItem:
+            return
+        self._currentFocusItem = focusItem
+        self.focusItemChanged.emit()
 
 PageSize = (595, 842) # A4 in points
 
@@ -65,9 +85,9 @@ dialog.toolBars.addToolBar(dialog.textToolbar)
 
 view = GraphicsView()
 dialog.layout().addWidget(view)
-scene = QGraphicsScene()
+scene = GraphicsScene()
 scene.setSceneRect(0, 0, PageSize[0], PageSize[1])
-scene.selectionChanged.connect(dialog.tools._onSceneSelectionChanged)
+scene.focusItemChanged.connect(dialog.tools.updateFocusItem)
 view.setScene(scene)
 dialog.tools.setScene(scene)
 

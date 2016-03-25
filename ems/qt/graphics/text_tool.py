@@ -30,7 +30,6 @@ class TextTool(GraphicsTool):
 
     def setCurrentItem(self, item):
         self._currentItem = item
-        print('setCurrentItem', item)
         self._currentItem.currentCharFormatChanged.connect(self.currentCharFormatChanged)
 
     def resetCurrentItem(self):

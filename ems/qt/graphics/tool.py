@@ -120,23 +120,18 @@ class GraphicsToolDispatcher(GraphicsTool):
         for tool in self._tools:
             tool.setScene(scene)
 
-    def _onSceneSelectionChanged(self):
-        selectedItems = self.scene.selectedItems()
+    def updateFocusItem(self):
+        focusItem = self.scene.focusItem()
 
-        if not len(selectedItems):
-            for tool in self._tools:
-                tool.resetCurrentItem()
+        for tool in self._tools:
+            tool.resetCurrentItem()
+
+        if focusItem is None:
             return
 
-        for item in selectedItems:
-            #if not item.hasFocus():
-                #continue
-            for tool in self._tools:
-                tool.resetCurrentItem()
-                if tool.canHandle(item):
-                    tool.setCurrentItem(item)
-
-        print("_onSceneSelectionChanged")
+        for tool in self._tools:
+            if tool.canHandle(focusItem):
+                tool.setCurrentItem(focusItem)
 
     def _findSerializer(self, item):
         for tool in self._tools:
