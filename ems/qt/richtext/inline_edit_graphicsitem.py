@@ -75,6 +75,9 @@ class TextItem(QGraphicsTextItem):
         super(TextItem, self).keyReleaseEvent(event)
         self._updateCursorPosition(self.textCursor())
 
+    def currentCharFormat(self):
+        return self.textCursor().charFormat()
+
     def _updateStyle(self, cursor):
         currentCharFormat = cursor.charFormat()
         if self._lastCharFormat == currentCharFormat:

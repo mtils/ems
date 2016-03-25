@@ -31,10 +31,12 @@ class TextTool(GraphicsTool):
     def setCurrentItem(self, item):
         self._currentItem = item
         self._currentItem.currentCharFormatChanged.connect(self.currentCharFormatChanged)
+        self.currentCharFormatChanged.emit(self._currentItem.currentCharFormat())
 
     def resetCurrentItem(self):
         self._disconnectUnselectedItems()
         self._currentItem = None
+        self.currentCharFormatChanged.emit(QTextCharFormat())
 
     def mergeFormatOnWordOrSelection(self, charFormat):
         if not self._currentItem:
