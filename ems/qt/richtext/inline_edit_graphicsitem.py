@@ -9,6 +9,9 @@ QFont = QtGui.QFont
 QTransform = QtGui.QTransform
 QTextCursor = QtGui.QTextCursor
 QTextCharFormat = QtGui.QTextCharFormat
+QStyle = QtWidgets.QStyle
+QBrush = QtGui.QBrush
+QColor = QtGui.QColor
 
 class TextItem(QGraphicsTextItem):
 
@@ -77,6 +80,22 @@ class TextItem(QGraphicsTextItem):
 
     def currentCharFormat(self):
         return self.textCursor().charFormat()
+
+    def paint(self, painter, option, widget=None):
+        super(TextItem, self).paint(painter, option, widget)
+
+        if not (option.state & QStyle.State_Selected):
+            return
+
+        rect = self.boundingRect()
+
+        w = rect.width()
+        h = rect.height()
+        s = 4
+        brush = QBrush(QColor(128,179,255))
+        painter.fillRect(0, 0, s,  s, brush);
+        painter.fillRect(0, 0 + h - s, s, s, brush);
+        painter.fillRect(0 + w - s, 0, s, s, brush);
 
     def _updateStyle(self, cursor):
         currentCharFormat = cursor.charFormat()
