@@ -1,6 +1,8 @@
 
 from __future__ import print_function
 
+import os
+
 #from ems.qt4.gui.widgets.richtext.baseeditor import BaseEditor
 
 from ems.qt import QtWidgets, QtGui, QtCore
@@ -19,6 +21,7 @@ QGraphicsScene = QtWidgets.QGraphicsScene
 QWidget = QtWidgets.QWidget
 QVBoxLayout = QtWidgets.QVBoxLayout
 QToolBar = QtWidgets.QToolBar
+QResource = QtCore.QResource
 
 QPointF = QtCore.QPointF
 
@@ -30,7 +33,6 @@ class GraphicsView(QGraphicsView):
         super(GraphicsView, self).mousePressEvent(event)
 
         if self.itemAt(event.pos()):
-            #print(self.scn)
             return
 
         scenePoint = self.mapToScene(event.pos())
@@ -54,6 +56,11 @@ class GraphicsScene(QGraphicsScene):
             return
         self._currentFocusItem = focusItem
         self.focusItemChanged.emit()
+
+#resource = QResource()
+
+resourcePath = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','..','ems','qt4','gui','widgets','icons.rcc'))
+QResource.registerResource(resourcePath)
 
 PageSize = (595, 842) # A4 in points
 

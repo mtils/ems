@@ -6,17 +6,23 @@ from ems.qt.richtext.inline_edit_graphicsitem import TextItem
 QAction = QtWidgets.QAction
 QTextCharFormat = QtGui.QTextCharFormat
 pyqtSignal = QtCore.pyqtSignal
+QResource = QtCore.QResource
+QIcon = QtGui.QIcon
 
 class TextTool(GraphicsTool):
 
     currentCharFormatChanged = pyqtSignal(QTextCharFormat)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, resourcePath=':/ImageEditor/icons'):
+
         super(TextTool, self).__init__(parent)
-        self.addTextItem = QAction("Add Text Box", self)
+
+        self.resourcePath = resourcePath
+        self.addTextItem = QAction(self.icon('frame_text.png'), "Add Text Box", self)
         self.addTextItem.setCheckable(True)
         self._actions.append(self.addTextItem)
         self._currentItem = None
+
 
     def addItemAt(self, point):
         textItem = TextItem('Neuer Text', point, self.scene )
@@ -43,6 +49,12 @@ class TextTool(GraphicsTool):
         if not self._currentItem:
             return
         self._currentItem.mergeFormatOnWordOrSelection(charFormat)
+
+    def imagePath(self, fileName):
+        return "{}/{}".format(self.resourcePath, fileName)
+
+    def icon(self, fileName):
+        return QIcon(self.imagePath(fileName))
 
     def _disconnectUnselectedItems(self):
         for item in self.scene.items():
