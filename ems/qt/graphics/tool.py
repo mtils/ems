@@ -8,6 +8,8 @@ QGraphicsScene = QtWidgets.QGraphicsScene
 
 class GraphicsTool(QObject):
 
+    itemAdded = pyqtSignal()
+
     def __init__(self, parent=None):
         super(GraphicsTool, self).__init__(parent)
         self._actions = []
@@ -33,7 +35,7 @@ class GraphicsTool(QObject):
     def resetCurrentItem(self):
         pass
 
-    def handleEmptyAreaClick(self, point):
+    def addItemAt(self, point):
         pass
 
     def canSerialize(self, item):
@@ -61,9 +63,11 @@ class GraphicsToolDispatcher(GraphicsTool):
     def __init__(self, parent=None):
         super(GraphicsToolDispatcher, self).__init__(parent)
         self._tools = []
+        self.itemAdded.connect(self._deactivateActionsAfterItemAdded)
 
     def addTool(self, tool):
         tool.setScene(self.getScene())
+        tool.itemAdded.connect(self.itemAdded)
         self._tools.append(tool)
 
     def tools(self):
@@ -90,10 +94,10 @@ class GraphicsToolDispatcher(GraphicsTool):
                 return True
         return False
 
-    def handleEmptyAreaClick(self, point):
+    def addItemAt(self, point):
         for tool in self._tools:
             if tool.isSelected():
-                tool.handleEmptyAreaClick(point)
+                tool.addItemAt(point)
 
     def canSerialize(self, item):
         try:
@@ -144,3 +148,7 @@ class GraphicsToolDispatcher(GraphicsTool):
             if tool.canDeserialize(itemData):
                 return tool
         raise LookupError('No tool found to deserialize {}'.format(itemData))
+
+    def _deactivateActionsAfterItemAdded(self):
+        for action in self.actions:
+            action.setChecked(False)

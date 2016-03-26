@@ -91,7 +91,7 @@ scene.focusItemChanged.connect(dialog.tools.updateFocusItem)
 view.setScene(scene)
 dialog.tools.setScene(scene)
 
-view.emptyAreaClicked.connect(dialog.tools.handleEmptyAreaClick)
+view.emptyAreaClicked.connect(dialog.tools.addItemAt)
 
 #textItem = TextItem('Hallo', QPointF(15.0,15.0), view.scene() )
 

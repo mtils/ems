@@ -18,11 +18,12 @@ class TextTool(GraphicsTool):
         self._actions.append(self.addTextItem)
         self._currentItem = None
 
-    def handleEmptyAreaClick(self, point):
+    def addItemAt(self, point):
         textItem = TextItem('Neuer Text', point, self.scene )
         self.scene.clearSelection()
         self.scene.addItem(textItem)
         textItem.setSelected(True)
+        self.itemAdded.emit()
         #print("emptyAreaClicked", point, self.scene)
 
     def canHandle(self, item):
