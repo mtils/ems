@@ -12,6 +12,7 @@ from ems.qt.richtext.char_format_actions import CharFormatActions
 from ems.qt.layout.toolbararea import ToolBarArea
 from ems.qt.graphics.tool import GraphicsToolDispatcher
 from ems.qt.graphics.text_tool import TextTool
+from ems.qt.graphics.selection_rect import SelectionRect
 
 QAction = QtWidgets.QAction
 pyqtSignal = QtCore.pyqtSignal
@@ -22,12 +23,19 @@ QWidget = QtWidgets.QWidget
 QVBoxLayout = QtWidgets.QVBoxLayout
 QToolBar = QtWidgets.QToolBar
 QResource = QtCore.QResource
+QPainter = QtGui.QPainter
 
 QPointF = QtCore.QPointF
 
 class GraphicsView(QGraphicsView):
 
     emptyAreaClicked = pyqtSignal(QPointF)
+
+    def __init__(self, parent=None):
+        super(GraphicsView, self).__init__(parent)
+        self.setDragMode(QGraphicsView.RubberBandDrag)
+        #self.setRenderHint(QPainter.Antialiasing)
+        self.setRenderHint(QPainter.TextAntialiasing)
 
     def mousePressEvent(self, event):
         super(GraphicsView, self).mousePressEvent(event)
@@ -45,6 +53,8 @@ class GraphicsScene(QGraphicsScene):
     def __init__(self, *args, **kwargs):
         super(GraphicsScene, self).__init__(*args, **kwargs)
         self._currentFocusItem = None
+        #self.selectionChanged.connect(self._onSelectionChanged)
+        self._selectionRect = SelectionRect()
 
     def setFocusItem(self, item, reason=Qt.OtherFocusReason):
         super(GraphicsScene, self).setFocusItem(item, reason)
@@ -56,6 +66,16 @@ class GraphicsScene(QGraphicsScene):
             return
         self._currentFocusItem = focusItem
         self.focusItemChanged.emit()
+
+    def _onSelectionChanged(self):
+        items = self.selectedItems()
+        if len(items) != 1:
+            self._selectionRect.setVisible(False)
+            return
+        self._selectionRect.setTarget(items[0])
+        self._selectionRect.setVisible(True)
+        #self.addItem(self._selectionRect)
+        print('selectionChanged', self.selectedItems())
 
 #resource = QResource()
 

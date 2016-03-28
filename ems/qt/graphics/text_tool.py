@@ -8,6 +8,7 @@ QTextCharFormat = QtGui.QTextCharFormat
 pyqtSignal = QtCore.pyqtSignal
 QResource = QtCore.QResource
 QIcon = QtGui.QIcon
+QSizeF = QtCore.QSizeF
 
 class TextTool(GraphicsTool):
 
@@ -26,6 +27,7 @@ class TextTool(GraphicsTool):
 
     def addItemAt(self, point):
         textItem = TextItem('Neuer Text', point, self.scene )
+        textItem.setFixedBounds(QSizeF(300,200))
         self.scene.clearSelection()
         self.scene.addItem(textItem)
         textItem.setSelected(True)
