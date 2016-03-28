@@ -9,6 +9,7 @@ pyqtProperty = QtCore.pyqtProperty
 QGraphicsItem = QtWidgets.QGraphicsItem
 QGraphicsTextItem = QtWidgets.QGraphicsTextItem
 QFont = QtGui.QFont
+QRegion = QtGui.QRegion
 QTransform = QtGui.QTransform
 QTextCursor = QtGui.QTextCursor
 QTextCharFormat = QtGui.QTextCharFormat
@@ -17,6 +18,7 @@ QBrush = QtGui.QBrush
 QColor = QtGui.QColor
 QStyleOptionGraphicsItem = QtWidgets.QStyleOptionGraphicsItem
 QRectF = QtCore.QRectF
+QRect = QtCore.QRect
 QSizeF = QtCore.QSizeF
 QPointF = QtCore.QPointF
 QPainterPath = QtGui.QPainterPath
@@ -26,11 +28,24 @@ class SelectionRenderer(QObject):
 
     positionChanged = pyqtSignal(QPointF)
 
+    sizeChanged = pyqtSignal(QSizeF)
+
+    MOVE = 'move'
+
+    RESIZE = 'resize'
+
+    RESIZE_HORIZONTAL = 'resize_h'
+
+    RESIZE_VERTICAL = 'resize_v'
+
+    ITEM = 'item'
+
     def __init__(self, parent=None):
         super(SelectionRenderer, self).__init__(parent)
         #self._item = item
         self._margin = 10.0
         self._isMoving = False
+        self._currentMouseOperation = ''
         self._isResizing = False
 
     def paintSelection(self, painter, boundingRect):
@@ -65,32 +80,74 @@ class SelectionRenderer(QObject):
             return False
         return True
 
-    def mousePress(self, event):
+    def mousePress(self, event, itemBoundingRect):
         self._isMoving = True
+        areaType = self.areaType(event.pos(), itemBoundingRect)
+        if areaType == self.ITEM:
+            self._currentMouseOperation = ''
+            return
+        self._currentMouseOperation = areaType
 
-    def mouseMove(self, itemPos, event):
+    def mouseMove(self, itemPos, event, itemBoundingRect):
 
         scenePos = event.scenePos()
         lastScenePos = event.lastScenePos()
         relativeX = scenePos.x() - lastScenePos.x()
         relativeY = scenePos.y() - lastScenePos.y()
 
-        newPos = QPointF(itemPos.x()+relativeX, itemPos.y()+relativeY)
-        self.positionChanged.emit(newPos)
+        if self._currentMouseOperation == self.MOVE:
+            newPos = QPointF(itemPos.x()+relativeX, itemPos.y()+relativeY)
+            self.positionChanged.emit(newPos)
+
+        if self._currentMouseOperation == self.RESIZE_VERTICAL:
+            size = QSizeF(itemBoundingRect.width(), itemBoundingRect.height()+relativeY)
+            self.sizeChanged.emit(size)
+
+        if self._currentMouseOperation == self.RESIZE_HORIZONTAL:
+            size = QSizeF(itemBoundingRect.width()+relativeX, itemBoundingRect.height())
+            self.sizeChanged.emit(size)
+
+        if self._currentMouseOperation == self.RESIZE:
+            size = QSizeF(itemBoundingRect.width()+relativeX, itemBoundingRect.height()+relativeY)
+            self.sizeChanged.emit(size)
 
     def mouseRelease(self):
+        self._currentMouseOperation = ''
         self._isMoving = False
         self._isResizing = False
 
-    def isMoving(self):
-        return self._isMoving
-
-    def isInMoveArea(self, point):
-        if not self.belongsToSelection(point):
-            return False
+    def areaType(self, point, itemBoundingRect):
+        selectionRect = self.boundingRect(itemBoundingRect)
+        if not selectionRect.contains(point):
+            return self.ITEM
+        if itemBoundingRect.contains(point):
+            return self.ITEM
+        if point.x() <= itemBoundingRect.topLeft().x():
+            return self.MOVE # left rect
+        if point.y() <= itemBoundingRect.topLeft().y():
+            return self.MOVE # top rect
+        # x > topLeft.x, y > topLeft.y()
+        if point.y() > itemBoundingRect.bottomRight().y():
+            if point.x() < itemBoundingRect.bottomRight().x():
+                return self.RESIZE_VERTICAL
+            return self.RESIZE
+        if point.x() > itemBoundingRect.bottomRight().x():
+            return self.RESIZE_HORIZONTAL
+        return self.RESIZE
 
     def hasCurrentMouseOperation(self):
-        return self._isMoving
+        return bool(self._currentMouseOperation)
+
+    def getCursorByPosition(self, pos, itemBoundingRect):
+        areaType = self.areaType(pos, itemBoundingRect)
+        if areaType == SelectionRenderer.MOVE:
+            return Qt.DragMoveCursor
+        if areaType == SelectionRenderer.RESIZE:
+            return Qt.SizeFDiagCursor
+        if areaType == SelectionRenderer.RESIZE_HORIZONTAL:
+            return Qt.SizeHorCursor
+        if areaType == SelectionRenderer.RESIZE_VERTICAL:
+            return Qt.SizeVerCursor
 
 class TextItem(QGraphicsTextItem):
 
@@ -116,6 +173,7 @@ class TextItem(QGraphicsTextItem):
         self.positionChanged = EventHook()
         self._selectionRenderer = SelectionRenderer()
         self._selectionRenderer.positionChanged.connect(self.setPos)
+        self._selectionRenderer.sizeChanged.connect(self.setFixedBounds)
         self._fixedBounds = QSizeF()
 
 
@@ -129,6 +187,7 @@ class TextItem(QGraphicsTextItem):
         if not self._fixedBounds.isEmpty():
             self.document().setTextWidth(self._fixedBounds.width())
         self.fixedBoundsChanged.emit(self._fixedBounds)
+        self.prepareGeometryChange()
 
     fixedBounds = pyqtProperty(QSizeF, getFixedBounds, setFixedBounds, notify=fixedBoundsChanged)
 
@@ -137,7 +196,6 @@ class TextItem(QGraphicsTextItem):
 
     def boundingRect(self):
         textBoundingRect = self.textBoundingRect()
-
         if not self.isSelected():
             return textBoundingRect
 
@@ -146,14 +204,16 @@ class TextItem(QGraphicsTextItem):
     def textBoundingRect(self):
         if self._fixedBounds.isEmpty():
             return super(TextItem, self).boundingRect()
-        return QRectF(self.pos(), self._fixedBounds)
+        return QRectF(QPointF(0.0, 0.0), self._fixedBounds)
 
     def shape(self):
-        if not self.isSelected():
-            return super(TextItem, self).shape()
         path = QPainterPath()
-        path.addEllipse(self.boundingRect())
+        path.addRect(self.boundingRect())
         return path
+
+    def textClipRegion(self):
+        textBoundingRect = self.textBoundingRect()
+        return QRegion(textBoundingRect.toRect())
 
     def itemChange(self, change, variant):
 
@@ -171,16 +231,6 @@ class TextItem(QGraphicsTextItem):
 
         return result
 
-        print('itemChange', change)
-        if change != QGraphicsItem.ItemSelectedChange:
-            Dirty = True
-        result = QGraphicsTextItem.itemChange(self, change, variant)
-
-        if change == QGraphicsItem.ItemPositionChange:
-            print('ItemPositionChange', self.pos())
-
-        return result
-
     def mergeFormatOnWordOrSelection(self, format):
         cursor = self.textCursor()
         if not cursor.hasSelection():
@@ -193,13 +243,11 @@ class TextItem(QGraphicsTextItem):
         if not self._selectionRenderer.belongsToSelection(event.pos(), self.textBoundingRect()):
             self.setCursor(Qt.IBeamCursor)
             return
-        self.setCursor(Qt.DragMoveCursor)
 
-        #print "HoverEnter"
-        #print event.pos()
-        #print self.boundingRect()
-        self.setCursor(Qt.IBeamCursor)
-        QGraphicsTextItem.hoverEnterEvent(self, event)
+        cursorType = self._selectionRenderer.getCursorByPosition(event.pos(), self.textBoundingRect())
+
+        if cursorType:
+            self.setCursor(cursorType)
 
     def hoverMoveEvent(self, event):
 
@@ -207,15 +255,10 @@ class TextItem(QGraphicsTextItem):
             self.setCursor(Qt.IBeamCursor)
             return
 
-        self.setCursor(Qt.DragMoveCursor)
-        #print 'HoverMove'
-        #print self.boundingRect()
-        
-        QGraphicsTextItem.hoverMoveEvent(self, event)
+        cursorType = self._selectionRenderer.getCursorByPosition(event.pos(), self.textBoundingRect())
 
-    def hoverLeaveEvent(self, event):
-        print "HoverLeave"
-        QGraphicsTextItem.hoverLeaveEvent(self, event)
+        if cursorType:
+            self.setCursor(cursorType)
 
     def mouseReleaseEvent(self, event):
         self._selectionRenderer.mouseRelease()
@@ -226,33 +269,17 @@ class TextItem(QGraphicsTextItem):
         self.setSelected(True)
 
     def mouseMoveEvent(self, event):
-        #if not self._selectionRenderer.belongsToSelection(event.pos(), self.textBoundingRect()):
-            #super(TextItem, self).mouseMoveEvent(event)
-            #return
-
         if not self._selectionRenderer.hasCurrentMouseOperation():
             return super(TextItem, self).mouseMoveEvent(event)
 
-        self._selectionRenderer.mouseMove(self.pos(), event)
-
-        #scenePos = event.scenePos()
-        #lastScenePos = event.lastScenePos()
-        #relativeX = scenePos.x() - lastScenePos.x()
-        #relativeY = scenePos.y() - lastScenePos.y()
-        #currentPos = self.pos()
-
-        #newPos = QPointF(currentPos.x()+relativeX, currentPos.y()+relativeY)
-        #self.setPos(newPos)
-        #print('mouseMoveEvent', event.scenePos(), event.lastScenePos(), self.pos())
-        #self.positionChanged.fire(self.pos())
+        self._selectionRenderer.mouseMove(self.pos(), event, self.textBoundingRect())
 
     def mousePressEvent(self, event):
         if not self._selectionRenderer.belongsToSelection(event.pos(), self.textBoundingRect()):
             super(TextItem, self).mousePressEvent(event)
             return
-        self._selectionRenderer.mousePress(event)
+        self._selectionRenderer.mousePress(event, self.textBoundingRect())
         super(TextItem, self).mousePressEvent(event)
-        print('mousePressEvent', event.pos())
 
     def keyReleaseEvent(self, event):
         super(TextItem, self).keyReleaseEvent(event)
@@ -263,10 +290,16 @@ class TextItem(QGraphicsTextItem):
 
     def paint(self, painter, option, widget=None):
 
+        originalRect = option.exposedRect
+        smallerRect = self.textBoundingRect()
+        option.exposedRect = smallerRect
+
         newOption = QStyleOptionGraphicsItem(option)
         newOption.state = newOption.state & ~QStyle.State_Selected & ~QStyle.State_HasFocus
 
         super(TextItem, self).paint(painter, newOption, widget)
+
+        option.exposedRect = originalRect
 
         if not (option.state & QStyle.State_Selected):
             return

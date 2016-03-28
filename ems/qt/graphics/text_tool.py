@@ -27,7 +27,7 @@ class TextTool(GraphicsTool):
 
     def addItemAt(self, point):
         textItem = TextItem('Neuer Text', point, self.scene )
-        textItem.setFixedBounds(QSizeF(300,200))
+        textItem.setFixedBounds(QSizeF(300,100))
         self.scene.clearSelection()
         self.scene.addItem(textItem)
         textItem.setSelected(True)
