@@ -36,6 +36,7 @@ from ems.qt.richtext.block_format_proxy import BlockFormatProxy
 from ems.qt.richtext.char_format_proxy import CharFormatProxy
 from ems.qt.edit_actions import EditActions
 from ems.qt.richtext.char_format_actions import CharFormatActions
+from ems.qt.richtext.block_format_actions import BlockFormatActions
 
 
 class BaseEditor(QWidget):
@@ -147,66 +148,8 @@ class BaseEditor(QWidget):
         self.charFormatActions = CharFormatActions(self, signalProxy=self.signalProxy)
         self.charFormatActions.addToToolbar(tb, addWidgets=False)
 
-        grp = QActionGroup(self)#, triggered=self.textAlign)
-
-        # Make sure the alignLeft is always left of the alignRight.
-        if QApplication.isLeftToRight():
-            self.actionAlignLeft = QAction(
-                    QIcon.fromTheme('format-justify-left',
-                            QIcon(self.rsrcPath + '/textleft.png')),
-                    "&Left", grp, triggered=self.blockProxy.setAlignLeft)
-
-            self.blockProxy.alignLeftChanged.connect(self.actionAlignLeft.setChecked)
-
-            self.actionAlignCenter = QAction(
-                    QIcon.fromTheme('format-justify-center',
-                            QIcon(self.rsrcPath + '/textcenter.png')),
-                    "C&enter", grp, triggered=self.blockProxy.setAlignCenter)
-            self.blockProxy.alignCenterChanged.connect(self.actionAlignCenter.setChecked)
-
-            self.actionAlignRight = QAction(
-                    QIcon.fromTheme('format-justify-right',
-                            QIcon(self.rsrcPath + '/textright.png')),
-                    "&Right", grp, triggered=self.blockProxy.setAlignRight)
-            self.blockProxy.alignRightChanged.connect(self.actionAlignRight.setChecked)
-        else:
-            self.actionAlignRight = QAction(
-                    QIcon.fromTheme('format-justify-right',
-                            QIcon(self.rsrcPath + '/textright.png')),
-                    "&Right", grp)
-            self.actionAlignCenter = QAction(
-                    QIcon.fromTheme('format-justify-center',
-                            QIcon(self.rsrcPath + '/textcenter.png')),
-                    "C&enter", grp)
-            self.actionAlignLeft = QAction(
-                    QIcon.fromTheme('format-justify-left',
-                            QIcon(self.rsrcPath + '/textleft.png')),
-                    "&Left", grp)
- 
-        self.actionAlignJustify = QAction(
-                QIcon.fromTheme('format-justify-fill',
-                        QIcon(self.rsrcPath + '/textjustify.png')),
-                "&Justify", grp, triggered=self.blockProxy.setAlignJustify)
-
-        self.blockProxy.alignJustifyChanged.connect(self.actionAlignJustify.setChecked)
-
-        self.actionAlignLeft.setShortcut(Qt.CTRL + Qt.Key_L)
-        self.actionAlignLeft.setCheckable(True)
-        self.actionAlignLeft.setPriority(QAction.LowPriority)
-
-        self.actionAlignCenter.setShortcut(Qt.CTRL + Qt.Key_E)
-        self.actionAlignCenter.setCheckable(True)
-        self.actionAlignCenter.setPriority(QAction.LowPriority)
-
-        self.actionAlignRight.setShortcut(Qt.CTRL + Qt.Key_R)
-        self.actionAlignRight.setCheckable(True)
-        self.actionAlignRight.setPriority(QAction.LowPriority)
-
-        self.actionAlignJustify.setShortcut(Qt.CTRL + Qt.Key_J)
-        self.actionAlignJustify.setCheckable(True)
-        self.actionAlignJustify.setPriority(QAction.LowPriority)
-
-        tb.addActions(grp.actions())
+        self.blockFormatActions = BlockFormatActions(self, signalProxy=self.blockProxy)
+        self.blockFormatActions.addToToolbar(tb, addWidgets=False)
 
         tb = QToolBar(self)
         tb.setAllowedAreas(

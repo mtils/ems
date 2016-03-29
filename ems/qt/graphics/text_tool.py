@@ -3,8 +3,10 @@ from ems.qt import QtCore, QtGui, QtWidgets
 from ems.qt.graphics.tool import GraphicsTool
 from ems.qt.richtext.inline_edit_graphicsitem import TextItem
 
+Qt = QtCore.Qt
 QAction = QtWidgets.QAction
 QTextCharFormat = QtGui.QTextCharFormat
+QTextBlockFormat = QtGui.QTextBlockFormat
 pyqtSignal = QtCore.pyqtSignal
 QResource = QtCore.QResource
 QIcon = QtGui.QIcon
@@ -13,6 +15,7 @@ QSizeF = QtCore.QSizeF
 class TextTool(GraphicsTool):
 
     currentCharFormatChanged = pyqtSignal(QTextCharFormat)
+    currentBlockFormatChanged = pyqtSignal(QTextBlockFormat)
 
     def __init__(self, parent=None, resourcePath=':/ImageEditor/icons'):
 
@@ -32,7 +35,6 @@ class TextTool(GraphicsTool):
         self.scene.addItem(textItem)
         textItem.setSelected(True)
         self.itemAdded.emit()
-        #print("emptyAreaClicked", point, self.scene)
 
     def canHandle(self, item):
         return isinstance(item, TextItem)
@@ -40,17 +42,25 @@ class TextTool(GraphicsTool):
     def setCurrentItem(self, item):
         self._currentItem = item
         self._currentItem.currentCharFormatChanged.connect(self.currentCharFormatChanged)
+        self._currentItem.currentBlockFormatChanged.connect(self.currentBlockFormatChanged)
         self.currentCharFormatChanged.emit(self._currentItem.currentCharFormat())
+        self.currentBlockFormatChanged.emit(self._currentItem.currentBlockFormat())
 
     def resetCurrentItem(self):
         self._disconnectUnselectedItems()
         self._currentItem = None
         self.currentCharFormatChanged.emit(QTextCharFormat())
+        self.currentBlockFormatChanged.emit(QTextBlockFormat())
 
     def mergeFormatOnWordOrSelection(self, charFormat):
         if not self._currentItem:
             return
         self._currentItem.mergeFormatOnWordOrSelection(charFormat)
+
+    def setBlockFormatOnCurrentBlock(self, blockFormat):
+        if not self._currentItem:
+            return
+        self._currentItem.setBlockFormatOnCurrentBlock(blockFormat)
 
     def imagePath(self, fileName):
         return "{}/{}".format(self.resourcePath, fileName)
@@ -64,5 +74,9 @@ class TextTool(GraphicsTool):
                 continue
             try:
                 item.currentCharFormatChanged.disconnect(self.currentCharFormatChanged)
+            except TypeError:
+                pass
+            try:
+                item.currentBlockFormatChanged.disconnect(self.currentBlockFormatChanged)
             except TypeError:
                 pass

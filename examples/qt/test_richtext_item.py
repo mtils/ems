@@ -9,6 +9,7 @@ from ems.qt import QtWidgets, QtGui, QtCore
 
 from ems.qt.richtext.inline_edit_graphicsitem import TextItem
 from ems.qt.richtext.char_format_actions import CharFormatActions
+from ems.qt.richtext.block_format_actions import BlockFormatActions
 from ems.qt.layout.toolbararea import ToolBarArea
 from ems.qt.graphics.tool import GraphicsToolDispatcher
 from ems.qt.graphics.text_tool import TextTool
@@ -108,6 +109,8 @@ textTool = TextTool()
 dialog.tools.addTool(textTool)
 
 dialog.charFormatActions = CharFormatActions(dialog)
+dialog.blockFormatActions = BlockFormatActions(dialog)
+
 dialog.setLayout(QVBoxLayout())
 dialog.toolBars = ToolBarArea(dialog)
 dialog.addToolBar = QToolBar()
@@ -122,6 +125,7 @@ for action in dialog.tools.actions:
 
 dialog.charFormatActions.addToToolbar(dialog.textToolbar, addActions=False)
 dialog.charFormatActions.addToToolbar(dialog.textToolbar, addWidgets=False)
+dialog.blockFormatActions.addToToolbar(dialog.textToolbar, addWidgets=False)
 
 dialog.toolBars.addToolBar(dialog.addToolBar)
 dialog.toolBars.addToolBarBreak()
@@ -156,6 +160,7 @@ scene.addItem(page)
 #textItem = TextItem('Hallo', QPointF(15.0,15.0), view.scene() )
 
 textTool.currentCharFormatChanged.connect(dialog.charFormatActions.signals.updateCharFormatWithoutDiffs)
+textTool.currentBlockFormatChanged.connect(dialog.blockFormatActions.signals.setBlockFormat)
 dialog.charFormatActions.signals.charFormatDiffChanged.connect(textTool.mergeFormatOnWordOrSelection)
-
+dialog.blockFormatActions.signals.blockFormatModified.connect(textTool.setBlockFormatOnCurrentBlock)
 dialog.show()

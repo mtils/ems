@@ -47,37 +47,12 @@ class CharFormatActions(QObject):
         if self._document:
             self._disconnectFromDocument(self._document)
         self._document = document
-        self._connectToDocument(document)
-        self._updateByDocument(document)
         self.documentChanged.emit(self._document)
 
     document = pyqtProperty(QTextDocument, getDocument, setDocument)
 
-    def _updateByDocument(self, document):
-        pass
-
-    def _connectToDocument(self, document):
-        document.cursorPositionChanged.connect(self._onCursorPositionChanged)
-        #document.undoAvailable.connect(self.actionUndo.setEnabled)
-        #document.redoAvailable.connect(self.actionRedo.setEnabled)
-        return
-
-    def _onCursorPositionChanged(self, cursor):
-        return
-        currentCharFormat = cursor.charFormat()
-        if self._lastBlockFormat:
-            print('cursorPositionChanged', cursor.position(), self._lastBlockFormat, currentCharFormat, self._lastBlockFormat.fontItalic(), currentCharFormat.fontItalic())
-        if self._lastBlockFormat == currentCharFormat:
-            return
-        
-        self._lastBlockFormat = currentCharFormat.toCharFormat()
-        print('currentBlockFormatChanged', currentCharFormat, self._lastBlockFormat)
-        self.currentBlockFormatChanged.emit(self._lastBlockFormat)
-        
-
     def _disconnectFromDocument(self, document):
         return
-        self.disconnect(document)
 
     def _addActions(self, parent):
 

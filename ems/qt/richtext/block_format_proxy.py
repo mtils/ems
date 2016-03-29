@@ -51,8 +51,9 @@ class BlockFormatProxy(QObject):
 
     def __init__(self, parent=None):
         super(BlockFormatProxy, self).__init__(parent)
-        self._blockFormat = None
         self._alignment = Qt.AlignLeft | Qt.AlignTop
+        self._blockFormat = QTextBlockFormat()
+        self._blockFormat.setAlignment(self._alignment)
         self._alignLeft = True
         self._alignRight = True
         self._alignCenter = False
@@ -79,10 +80,8 @@ class BlockFormatProxy(QObject):
 
     @pyqtSlot(QTextBlockFormat)
     def updateBlockFormat(self, blockFormat):
-
         horizontalAlign = self._horizontalAlignment(blockFormat.alignment())
         verticalAlign = self._verticalAlignment(blockFormat.alignment())
-
         if horizontalAlign == Qt.AlignLeft:
             self.setAlignLeft()
         elif horizontalAlign == Qt.AlignCenter:

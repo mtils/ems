@@ -11,6 +11,7 @@ QFont = QtGui.QFont
 QTransform = QtGui.QTransform
 QTextCursor = QtGui.QTextCursor
 QTextCharFormat = QtGui.QTextCharFormat
+QTextBlockFormat = QtGui.QTextBlockFormat
 QStyle = QtWidgets.QStyle
 QStyleOptionGraphicsItem = QtWidgets.QStyleOptionGraphicsItem
 QRectF = QtCore.QRectF
@@ -24,6 +25,8 @@ class TextItem(QGraphicsTextItem):
 
     currentCharFormatChanged = pyqtSignal(QTextCharFormat)
 
+    currentBlockFormatChanged = pyqtSignal(QTextBlockFormat)
+
     fixedBoundsChanged = pyqtSignal(QSizeF)
 
     def __init__(self, text, position, scene,
@@ -32,6 +35,7 @@ class TextItem(QGraphicsTextItem):
         super(TextItem, self).__init__(text)
         self._lastCursorPosition = -1
         self._lastCharFormat = None
+        self._lastBlockFormat = None
         self.setFlags(QGraphicsItem.ItemIsSelectable|
                       QGraphicsItem.ItemIsMovable)
         self.setFont(font)
@@ -103,6 +107,9 @@ class TextItem(QGraphicsTextItem):
         cursor.mergeCharFormat(format)
         #self.textEdit.mergeCurrentCharFormat(format)
 
+    def setBlockFormatOnCurrentBlock(self, blockFormat):
+        self.textCursor().setBlockFormat(blockFormat)
+
     def hoverEnterEvent(self, event):
         if not self._boundsEditor.belongsToSelection(event.pos(), self.textBoundingRect()):
             self.setCursor(Qt.IBeamCursor)
@@ -152,6 +159,9 @@ class TextItem(QGraphicsTextItem):
     def currentCharFormat(self):
         return self.textCursor().charFormat()
 
+    def currentBlockFormat(self):
+        return self.textCursor().blockFormat()
+
     def paint(self, painter, option, widget=None):
 
         originalRect = option.exposedRect
@@ -172,10 +182,13 @@ class TextItem(QGraphicsTextItem):
 
     def _updateStyle(self, cursor):
         currentCharFormat = cursor.charFormat()
-        if self._lastCharFormat == currentCharFormat:
-            return
-        self._lastCharFormat = currentCharFormat
-        self.currentCharFormatChanged.emit(currentCharFormat)
+        currentBlockFormat = cursor.blockFormat()
+        if self._lastCharFormat != currentCharFormat:
+            self._lastCharFormat = currentCharFormat
+            self.currentCharFormatChanged.emit(currentCharFormat)
+        if self._lastBlockFormat != currentBlockFormat:
+            self._lastBlockFormat = currentBlockFormat
+            self.currentBlockFormatChanged.emit(currentBlockFormat)
 
 
     def _updateCursorPosition(self, cursor):
