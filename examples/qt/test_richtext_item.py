@@ -112,6 +112,7 @@ dialog.setLayout(QVBoxLayout())
 dialog.toolBars = ToolBarArea(dialog)
 dialog.addToolBar = QToolBar()
 dialog.textToolbar = QToolBar()
+#dialog.textWidgetToolbar = QToolBar()
 
 #dialog.toolbarArea = QToolBar(dialog)
 dialog.layout().addWidget(dialog.toolBars)
@@ -119,11 +120,15 @@ dialog.layout().addWidget(dialog.toolBars)
 for action in dialog.tools.actions:
     dialog.addToolBar.addAction(action)
 
+dialog.charFormatActions.addToToolbar(dialog.textToolbar, addActions=False)
 dialog.charFormatActions.addToToolbar(dialog.textToolbar, addWidgets=False)
 
 dialog.toolBars.addToolBar(dialog.addToolBar)
 dialog.toolBars.addToolBarBreak()
 dialog.toolBars.addToolBar(dialog.textToolbar)
+#dialog.toolBars.addToolBarBreak()
+#dialog.toolBars.addToolBar(dialog.textWidgetToolbar)
+
 
 zoomSteps = (50,75,100,150,200,300,500)
 
