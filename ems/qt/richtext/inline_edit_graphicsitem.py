@@ -18,6 +18,9 @@ QRectF = QtCore.QRectF
 QPointF = QtCore.QPointF
 QSizeF = QtCore.QSizeF
 QPainterPath = QtGui.QPainterPath
+QApplication = QtWidgets.QApplication
+QKeyEvent = QtGui.QKeyEvent
+QEvent = QtCore.QEvent
 
 class TextItem(QGraphicsTextItem):
 
@@ -28,6 +31,11 @@ class TextItem(QGraphicsTextItem):
     currentBlockFormatChanged = pyqtSignal(QTextBlockFormat)
 
     fixedBoundsChanged = pyqtSignal(QSizeF)
+
+    undoAvailable = pyqtSignal(bool)
+
+    redoAvailable = pyqtSignal(bool)
+
 
     def __init__(self, text, position, scene,
                  font=None, transform=QTransform()):
@@ -47,6 +55,8 @@ class TextItem(QGraphicsTextItem):
         self._boundsEditor.positionChanged.connect(self.setPos)
         self._boundsEditor.sizeChanged.connect(self.setFixedBounds)
         self._fixedBounds = QSizeF()
+        self.document().undoAvailable.connect(self.undoAvailable)
+        self.document().redoAvailable.connect(self.redoAvailable)
 
 
     def getFixedBounds(self):
@@ -62,6 +72,26 @@ class TextItem(QGraphicsTextItem):
         self.prepareGeometryChange()
 
     fixedBounds = pyqtProperty(QSizeF, getFixedBounds, setFixedBounds, notify=fixedBoundsChanged)
+
+    def undo(self):
+        self.document().undo()
+
+    def redo(self):
+        self.document().redo()
+
+    def isUndoAvailable(self):
+        return self.document().isUndoAvailable()
+
+    def isRedoAvailable(self):
+        return self.document().isRedoAvailable()
+
+    def copy(self):
+        event = QKeyEvent(QEvent.KeyPress, Qt.Key_C, Qt.ControlModifier)
+        QApplication.sendEvent(self.scene(), event)
+
+    def paste(self):
+        event = QKeyEvent(QEvent.KeyPress, Qt.Key_P, Qt.ControlModifier)
+        QApplication.sendEvent(self.scene(), event)
 
     def _updateSelection(self, selected):
         self.prepareGeometryChange()

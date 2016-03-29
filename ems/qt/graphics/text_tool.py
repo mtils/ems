@@ -15,7 +15,14 @@ QSizeF = QtCore.QSizeF
 class TextTool(GraphicsTool):
 
     currentCharFormatChanged = pyqtSignal(QTextCharFormat)
+
     currentBlockFormatChanged = pyqtSignal(QTextBlockFormat)
+
+    undoAvailable = pyqtSignal(bool)
+
+    redoAvailable = pyqtSignal(bool)
+
+    isCopyAvailable = pyqtSignal(bool)
 
     def __init__(self, parent=None, resourcePath=':/ImageEditor/icons'):
 
@@ -43,14 +50,20 @@ class TextTool(GraphicsTool):
         self._currentItem = item
         self._currentItem.currentCharFormatChanged.connect(self.currentCharFormatChanged)
         self._currentItem.currentBlockFormatChanged.connect(self.currentBlockFormatChanged)
+        self._currentItem.undoAvailable.connect(self.undoAvailable)
+        self._currentItem.redoAvailable.connect(self.redoAvailable)
         self.currentCharFormatChanged.emit(self._currentItem.currentCharFormat())
         self.currentBlockFormatChanged.emit(self._currentItem.currentBlockFormat())
+        self.undoAvailable.emit(self._currentItem.isUndoAvailable())
+        self.redoAvailable.emit(self._currentItem.isRedoAvailable())
 
     def resetCurrentItem(self):
         self._disconnectUnselectedItems()
         self._currentItem = None
         self.currentCharFormatChanged.emit(QTextCharFormat())
         self.currentBlockFormatChanged.emit(QTextBlockFormat())
+        self.undoAvailable.emit(False)
+        self.redoAvailable.emit(False)
 
     def mergeFormatOnWordOrSelection(self, charFormat):
         if not self._currentItem:
@@ -61,6 +74,16 @@ class TextTool(GraphicsTool):
         if not self._currentItem:
             return
         self._currentItem.setBlockFormatOnCurrentBlock(blockFormat)
+
+    def undo(self):
+        if not self._currentItem:
+            return
+        self._currentItem.undo()
+
+    def redo(self):
+        if not self._currentItem:
+            return
+        self._currentItem.redo()
 
     def imagePath(self, fileName):
         return "{}/{}".format(self.resourcePath, fileName)
@@ -78,5 +101,13 @@ class TextTool(GraphicsTool):
                 pass
             try:
                 item.currentBlockFormatChanged.disconnect(self.currentBlockFormatChanged)
+            except TypeError:
+                pass
+            try:
+                item.undoAvailable.disconnect(self.undoAvailable)
+            except TypeError:
+                pass
+            try:
+                item.redoAvailable.disconnect(self.redoAvailable)
             except TypeError:
                 pass

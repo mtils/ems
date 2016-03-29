@@ -16,6 +16,7 @@ from ems.qt.graphics.text_tool import TextTool
 from ems.qt.graphics.selection_rect import SelectionRect
 from ems.qt.graphics.page_item import PageItem
 from ems.qt.tool_widgets.one_of_a_list_slider import OneOfAListSlider
+from ems.qt.edit_actions import EditActions
 
 QAction = QtWidgets.QAction
 pyqtSignal = QtCore.pyqtSignal
@@ -108,6 +109,7 @@ dialog.tools = GraphicsToolDispatcher(dialog)
 textTool = TextTool()
 dialog.tools.addTool(textTool)
 
+dialog.editActions = EditActions(dialog)
 dialog.charFormatActions = CharFormatActions(dialog)
 dialog.blockFormatActions = BlockFormatActions(dialog)
 
@@ -119,6 +121,9 @@ dialog.textToolbar = QToolBar()
 
 #dialog.toolbarArea = QToolBar(dialog)
 dialog.layout().addWidget(dialog.toolBars)
+
+dialog.editActions.addToToolbar(dialog.addToolBar)
+dialog.addToolBar.addSeparator()
 
 for action in dialog.tools.actions:
     dialog.addToolBar.addAction(action)
@@ -161,6 +166,11 @@ scene.addItem(page)
 
 textTool.currentCharFormatChanged.connect(dialog.charFormatActions.signals.updateCharFormatWithoutDiffs)
 textTool.currentBlockFormatChanged.connect(dialog.blockFormatActions.signals.setBlockFormat)
+textTool.undoAvailable.connect(dialog.editActions.actionUndo.setEnabled)
+textTool.redoAvailable.connect(dialog.editActions.actionRedo.setEnabled)
+dialog.editActions.actionUndo.triggered.connect(textTool.undo)
+dialog.editActions.actionRedo.triggered.connect(textTool.redo)
+
 dialog.charFormatActions.signals.charFormatDiffChanged.connect(textTool.mergeFormatOnWordOrSelection)
 dialog.blockFormatActions.signals.blockFormatModified.connect(textTool.setBlockFormatOnCurrentBlock)
 dialog.show()
