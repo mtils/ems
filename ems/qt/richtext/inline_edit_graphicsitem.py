@@ -36,6 +36,8 @@ class TextItem(QGraphicsTextItem):
 
     redoAvailable = pyqtSignal(bool)
 
+    hasSelectionChanged = pyqtSignal(bool)
+
 
     def __init__(self, text, position, scene,
                  font=None, transform=QTransform()):
@@ -55,6 +57,7 @@ class TextItem(QGraphicsTextItem):
         self._boundsEditor.positionChanged.connect(self.setPos)
         self._boundsEditor.sizeChanged.connect(self.setFixedBounds)
         self._fixedBounds = QSizeF()
+        self._hasSelection = False
         self.document().undoAvailable.connect(self.undoAvailable)
         self.document().redoAvailable.connect(self.redoAvailable)
 
@@ -210,6 +213,15 @@ class TextItem(QGraphicsTextItem):
 
         self._boundsEditor.paintSelection(painter, self.textBoundingRect())
 
+    def cursorHasSelection(self):
+        return self._hasSelection
+
+    def _setCursorHasSelection(self, has):
+        if self._hasSelection == has:
+            return
+        self._hasSelection = has
+        self.hasSelectionChanged.emit(has)
+
     def _updateStyle(self, cursor):
         currentCharFormat = cursor.charFormat()
         currentBlockFormat = cursor.blockFormat()
@@ -227,3 +239,4 @@ class TextItem(QGraphicsTextItem):
         self._lastCursorPosition = cursor.position()
         self.cursorPositionChanged[QTextCursor].emit(cursor)
         self.cursorPositionChanged[int].emit(self._lastCursorPosition)
+        self._setCursorHasSelection(cursor.hasSelection())
