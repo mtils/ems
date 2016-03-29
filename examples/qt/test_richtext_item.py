@@ -14,6 +14,7 @@ from ems.qt.graphics.tool import GraphicsToolDispatcher
 from ems.qt.graphics.text_tool import TextTool
 from ems.qt.graphics.selection_rect import SelectionRect
 from ems.qt.graphics.page_item import PageItem
+from ems.qt.tool_widgets.one_of_a_list_slider import OneOfAListSlider
 
 QAction = QtWidgets.QAction
 pyqtSignal = QtCore.pyqtSignal
@@ -26,8 +27,9 @@ QToolBar = QtWidgets.QToolBar
 QResource = QtCore.QResource
 QPainter = QtGui.QPainter
 QColor = QtGui.QColor
-
+QSlider = QtWidgets.QSlider
 QPointF = QtCore.QPointF
+QTransform = QtGui.QTransform
 
 class GraphicsView(QGraphicsView):
 
@@ -49,6 +51,12 @@ class GraphicsView(QGraphicsView):
 
         scenePoint = self.mapToScene(event.pos())
         self.emptyAreaClicked.emit(scenePoint)
+
+    def setZoom(self, percent):
+        transform = QTransform()
+        scale = percent/100.0
+        transform.scale(scale, scale)
+        self.setTransform(transform)
 
 class GraphicsScene(QGraphicsScene):
 
@@ -82,6 +90,9 @@ class GraphicsScene(QGraphicsScene):
         #self.addItem(self._selectionRect)
         print('selectionChanged', self.selectedItems())
 
+class ZoomSlider(QSlider):
+    pass
+
 #resource = QResource()
 
 resourcePath = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','..','ems','qt4','gui','widgets','icons.rcc'))
@@ -114,9 +125,18 @@ dialog.toolBars.addToolBar(dialog.addToolBar)
 dialog.toolBars.addToolBarBreak()
 dialog.toolBars.addToolBar(dialog.textToolbar)
 
+zoomSteps = (50,75,100,150,200,300,500)
 
 view = GraphicsView()
 dialog.layout().addWidget(view)
+dialog.zoomSlider = OneOfAListSlider(dialog)
+dialog.zoomSlider.setValueList(zoomSteps)
+dialog.zoomSlider.setListValue(100)
+dialog.zoomSlider.setOrientation(Qt.Horizontal)
+dialog.zoomSlider.setTickInterval(1)
+dialog.zoomSlider.setTickPosition(QSlider.TicksBothSides)
+dialog.zoomSlider.listValueChanged.connect(view.setZoom)
+dialog.layout().addWidget(dialog.zoomSlider)
 scene = GraphicsScene()
 scene.setSceneRect(0, 0, PageSize[0], PageSize[1])
 scene.focusItemChanged.connect(dialog.tools.updateFocusItem)
