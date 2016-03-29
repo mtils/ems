@@ -1,4 +1,5 @@
 
+from ems.typehint import accepts
 from ems.qt import QtWidgets, QtGui, QtCore
 from ems.qt.graphics.tool import GraphicsToolDispatcher
 from ems.qt.graphics.text_tool import TextTool
@@ -10,12 +11,14 @@ from ems.qt.graphics.graphics_view import GraphicsView
 from ems.qt.graphics.graphics_scene import GraphicsScene
 from ems.qt.tool_widgets.one_of_a_list_slider import OneOfAListSlider
 from ems.qt.graphics.page_item import PageItem
+from ems.qt.graphics.interfaces import SceneRepository
 
 Qt = QtCore.Qt
 QWidget = QtWidgets.QWidget
 QVBoxLayout = QtWidgets.QVBoxLayout
 QToolBar = QtWidgets.QToolBar
 QSlider = QtWidgets.QSlider
+QAction = QtWidgets.QAction
 
 class GraphicsWidget(QWidget):
 
@@ -28,6 +31,23 @@ class GraphicsWidget(QWidget):
         self._addToolsToToolbars()
         self._connectTools()
         self._setupPageFormat()
+        self._repository = None
+        self.saveAction = QAction(self, shortcut = Qt.CTRL + Qt.Key_S)
+        self.saveAction.triggered.connect(self.save)
+        self.addAction(self.saveAction)
+
+    def save(self):
+        if not self._repository:
+            return
+        print('save scene')
+        self._repository.save(self.scene, self.tools)
+
+    def repository(self):
+        return self._repository
+
+    @accepts(SceneRepository)
+    def setRepository(self, repository):
+        self._repository = repository
 
     def _setUpUi(self):
         self.setLayout(QVBoxLayout())

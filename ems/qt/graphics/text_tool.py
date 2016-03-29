@@ -1,4 +1,5 @@
 
+from six import text_type
 from ems.qt import QtCore, QtGui, QtWidgets
 from ems.qt.graphics.tool import GraphicsTool
 from ems.qt.richtext.inline_edit_graphicsitem import TextItem
@@ -102,6 +103,22 @@ class TextTool(GraphicsTool):
 
     def icon(self, fileName):
         return QIcon(self.imagePath(fileName))
+
+    def canSerialize(self, item):
+        return isinstance(item, TextItem)
+
+    def canDeserialize(self, itemData):
+        return isinstance(itemData, TextItem)
+
+    def serialize(self, item):
+        fixedBounds = item.fixedBounds
+        fixedBoundsList = {'width':fixedBounds.width(),
+                           'height':fixedBounds.height()}
+        return {
+            'position': item.pos(),
+            'fixedBounds': fixedBoundsList,
+            'html': text_type(item.toHtml())
+        }
 
     def _disconnectUnselectedItems(self):
         for item in self.scene.items():
