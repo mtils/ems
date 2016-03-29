@@ -89,10 +89,16 @@ class TextItem(QGraphicsTextItem):
         return self.document().isRedoAvailable()
 
     def copy(self):
+        print("item.copy", self.scene())
         event = QKeyEvent(QEvent.KeyPress, Qt.Key_C, Qt.ControlModifier)
         QApplication.sendEvent(self.scene(), event)
 
+    def cut(self):
+        event = QKeyEvent(QEvent.KeyPress, Qt.Key_X, Qt.ControlModifier)
+        QApplication.sendEvent(self.scene(), event)
+
     def paste(self):
+        print("item.paste")
         event = QKeyEvent(QEvent.KeyPress, Qt.Key_P, Qt.ControlModifier)
         QApplication.sendEvent(self.scene(), event)
 

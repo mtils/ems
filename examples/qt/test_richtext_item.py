@@ -3,8 +3,6 @@ from __future__ import print_function
 
 import os
 
-#from ems.qt4.gui.widgets.richtext.baseeditor import BaseEditor
-
 from ems.qt import QtWidgets, QtGui, QtCore
 
 from ems.qt.richtext.inline_edit_graphicsitem import TextItem
@@ -17,6 +15,8 @@ from ems.qt.graphics.selection_rect import SelectionRect
 from ems.qt.graphics.page_item import PageItem
 from ems.qt.tool_widgets.one_of_a_list_slider import OneOfAListSlider
 from ems.qt.edit_actions import EditActions
+from ems.qt.graphics.graphics_view import GraphicsView
+from ems.qt.graphics.graphics_scene import GraphicsScene
 
 QAction = QtWidgets.QAction
 pyqtSignal = QtCore.pyqtSignal
@@ -32,70 +32,6 @@ QColor = QtGui.QColor
 QSlider = QtWidgets.QSlider
 QPointF = QtCore.QPointF
 QTransform = QtGui.QTransform
-
-class GraphicsView(QGraphicsView):
-
-    emptyAreaClicked = pyqtSignal(QPointF)
-
-    def __init__(self, parent=None):
-        super(GraphicsView, self).__init__(parent)
-        self.setDragMode(QGraphicsView.RubberBandDrag)
-        #self.setRenderHint(QPainter.Antialiasing)
-        self.setRenderHint(QPainter.TextAntialiasing)
-
-    def mousePressEvent(self, event):
-        super(GraphicsView, self).mousePressEvent(event)
-
-        clickedItem = self.itemAt(event.pos())
-
-        if clickedItem and not isinstance(clickedItem, PageItem):
-            return
-
-        scenePoint = self.mapToScene(event.pos())
-        self.emptyAreaClicked.emit(scenePoint)
-
-    def setZoom(self, percent):
-        transform = QTransform()
-        scale = percent/100.0
-        transform.scale(scale, scale)
-        self.setTransform(transform)
-
-class GraphicsScene(QGraphicsScene):
-
-    focusItemChanged = pyqtSignal()
-
-    def __init__(self, *args, **kwargs):
-        super(GraphicsScene, self).__init__(*args, **kwargs)
-        self._currentFocusItem = None
-        #self.selectionChanged.connect(self._onSelectionChanged)
-        self._selectionRect = SelectionRect()
-        self.setBackgroundBrush(QColor(187,187,187))
-
-    def setFocusItem(self, item, reason=Qt.OtherFocusReason):
-        super(GraphicsScene, self).setFocusItem(item, reason)
-
-    def mouseReleaseEvent(self, event):
-        super(GraphicsScene, self).mouseReleaseEvent(event)
-        focusItem = self.focusItem()
-        if self._currentFocusItem is focusItem:
-            return
-        self._currentFocusItem = focusItem
-        self.focusItemChanged.emit()
-
-    def _onSelectionChanged(self):
-        items = self.selectedItems()
-        if len(items) != 1:
-            self._selectionRect.setVisible(False)
-            return
-        self._selectionRect.setTarget(items[0])
-        self._selectionRect.setVisible(True)
-        #self.addItem(self._selectionRect)
-        print('selectionChanged', self.selectedItems())
-
-class ZoomSlider(QSlider):
-    pass
-
-#resource = QResource()
 
 resourcePath = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','..','ems','qt4','gui','widgets','icons.rcc'))
 QResource.registerResource(resourcePath)
@@ -168,8 +104,13 @@ textTool.currentCharFormatChanged.connect(dialog.charFormatActions.signals.updat
 textTool.currentBlockFormatChanged.connect(dialog.blockFormatActions.signals.setBlockFormat)
 textTool.undoAvailable.connect(dialog.editActions.actionUndo.setEnabled)
 textTool.redoAvailable.connect(dialog.editActions.actionRedo.setEnabled)
+textTool.copyAvailable.connect(dialog.editActions.actionCopy.setEnabled)
+textTool.copyAvailable.connect(dialog.editActions.actionCut.setEnabled)
 dialog.editActions.actionUndo.triggered.connect(textTool.undo)
 dialog.editActions.actionRedo.triggered.connect(textTool.redo)
+dialog.editActions.actionCopy.triggered.connect(textTool.copy)
+dialog.editActions.actionCut.triggered.connect(textTool.cut)
+dialog.editActions.actionPaste.triggered.connect(textTool.paste)
 
 dialog.charFormatActions.signals.charFormatDiffChanged.connect(textTool.mergeFormatOnWordOrSelection)
 dialog.blockFormatActions.signals.blockFormatModified.connect(textTool.setBlockFormatOnCurrentBlock)

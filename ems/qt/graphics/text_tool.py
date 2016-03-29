@@ -22,7 +22,7 @@ class TextTool(GraphicsTool):
 
     redoAvailable = pyqtSignal(bool)
 
-    isCopyAvailable = pyqtSignal(bool)
+    copyAvailable = pyqtSignal(bool)
 
     def __init__(self, parent=None, resourcePath=':/ImageEditor/icons'):
 
@@ -52,10 +52,12 @@ class TextTool(GraphicsTool):
         self._currentItem.currentBlockFormatChanged.connect(self.currentBlockFormatChanged)
         self._currentItem.undoAvailable.connect(self.undoAvailable)
         self._currentItem.redoAvailable.connect(self.redoAvailable)
+        self._currentItem.hasSelectionChanged.connect(self.copyAvailable)
         self.currentCharFormatChanged.emit(self._currentItem.currentCharFormat())
         self.currentBlockFormatChanged.emit(self._currentItem.currentBlockFormat())
         self.undoAvailable.emit(self._currentItem.isUndoAvailable())
         self.redoAvailable.emit(self._currentItem.isRedoAvailable())
+        self.copyAvailable.emit(self._currentItem.cursorHasSelection())
 
     def resetCurrentItem(self):
         self._disconnectUnselectedItems()
@@ -66,24 +68,34 @@ class TextTool(GraphicsTool):
         self.redoAvailable.emit(False)
 
     def mergeFormatOnWordOrSelection(self, charFormat):
-        if not self._currentItem:
-            return
-        self._currentItem.mergeFormatOnWordOrSelection(charFormat)
+        if self._currentItem:
+            self._currentItem.mergeFormatOnWordOrSelection(charFormat)
 
     def setBlockFormatOnCurrentBlock(self, blockFormat):
-        if not self._currentItem:
-            return
-        self._currentItem.setBlockFormatOnCurrentBlock(blockFormat)
+        if self._currentItem:
+            self._currentItem.setBlockFormatOnCurrentBlock(blockFormat)
 
     def undo(self):
-        if not self._currentItem:
-            return
-        self._currentItem.undo()
+        if self._currentItem:
+            self._currentItem.undo()
 
     def redo(self):
-        if not self._currentItem:
-            return
-        self._currentItem.redo()
+        if self._currentItem:
+            self._currentItem.redo()
+
+    def copy(self):
+        print('copy', self._currentItem)
+        if self._currentItem:
+            self._currentItem.copy()
+
+    def cut(self):
+        if self._currentItem:
+            self._currentItem.cut()
+
+    def paste(self):
+        print('paste', self._currentItem)
+        if self._currentItem:
+            self._currentItem.paste()
 
     def imagePath(self, fileName):
         return "{}/{}".format(self.resourcePath, fileName)
@@ -109,5 +121,9 @@ class TextTool(GraphicsTool):
                 pass
             try:
                 item.redoAvailable.disconnect(self.redoAvailable)
+            except TypeError:
+                pass
+            try:
+                item.hasSelectionChanged.disconnect(self.copyAvailable)
             except TypeError:
                 pass
