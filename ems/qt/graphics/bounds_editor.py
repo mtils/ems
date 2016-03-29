@@ -38,20 +38,28 @@ class BoundsEditor(QObject):
         self._isMoving = False
         self._currentMouseOperation = ''
         self._isResizing = False
+        self._selectionBoundsColor = QColor(187,187,187)
+        self._itemBoundsColor = QColor(85, 85, 85)
 
-    def paintSelection(self, painter, boundingRect):
+    def paintSelection(self, painter, itemBoundingRect):
 
         pen = QPen(Qt.SolidLine)
-        pen.setColor(QColor(128,179,255))
+        pen.setColor(self._itemBoundsColor)
+        pen.setWidthF(1.0)
+
+        painter.setPen(pen)
+
+        painter.drawRect(itemBoundingRect)
+
+        boundingRect = self.boundingRect(itemBoundingRect)
+
+        pen = QPen(Qt.SolidLine)
+        pen.setColor(self._selectionBoundsColor)
         pen.setWidthF(1.0)
 
         painter.setPen(pen)
 
         painter.drawRect(boundingRect)
-
-        rect = self.boundingRect(boundingRect)
-
-        painter.drawRect(rect)
 
     def boundingRect(self, itemBoundingRect):
         myRect = QRectF(itemBoundingRect.topLeft(), itemBoundingRect.size())

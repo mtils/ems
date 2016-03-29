@@ -13,6 +13,7 @@ from ems.qt.layout.toolbararea import ToolBarArea
 from ems.qt.graphics.tool import GraphicsToolDispatcher
 from ems.qt.graphics.text_tool import TextTool
 from ems.qt.graphics.selection_rect import SelectionRect
+from ems.qt.graphics.page_item import PageItem
 
 QAction = QtWidgets.QAction
 pyqtSignal = QtCore.pyqtSignal
@@ -24,6 +25,7 @@ QVBoxLayout = QtWidgets.QVBoxLayout
 QToolBar = QtWidgets.QToolBar
 QResource = QtCore.QResource
 QPainter = QtGui.QPainter
+QColor = QtGui.QColor
 
 QPointF = QtCore.QPointF
 
@@ -40,7 +42,9 @@ class GraphicsView(QGraphicsView):
     def mousePressEvent(self, event):
         super(GraphicsView, self).mousePressEvent(event)
 
-        if self.itemAt(event.pos()):
+        clickedItem = self.itemAt(event.pos())
+
+        if clickedItem and not isinstance(clickedItem, PageItem):
             return
 
         scenePoint = self.mapToScene(event.pos())
@@ -55,6 +59,7 @@ class GraphicsScene(QGraphicsScene):
         self._currentFocusItem = None
         #self.selectionChanged.connect(self._onSelectionChanged)
         self._selectionRect = SelectionRect()
+        self.setBackgroundBrush(QColor(187,187,187))
 
     def setFocusItem(self, item, reason=Qt.OtherFocusReason):
         super(GraphicsScene, self).setFocusItem(item, reason)
@@ -119,6 +124,9 @@ view.setScene(scene)
 dialog.tools.setScene(scene)
 
 view.emptyAreaClicked.connect(dialog.tools.addItemAt)
+
+page = PageItem()
+scene.addItem(page)
 
 #textItem = TextItem('Hallo', QPointF(15.0,15.0), view.scene() )
 

@@ -16,3 +16,9 @@ try:
     ems.qt.QtWidgets = QtWidgets
 except ImportError:
     pass
+
+try:
+    from PyQt5 import QtPrintSupport
+    ems.qt.QtPrintSupport = QtPrintSupport
+except ImportError:
+    pass
