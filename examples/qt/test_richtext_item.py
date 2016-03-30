@@ -15,8 +15,6 @@ serializer = DictSceneSerializer()
 storage = JsonFileSceneStorage(serializer)
 uriProvider = TempFileTargetUriProvider()
 
-
-
 QResource = QtCore.QResource
 
 resourcePath = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','..','ems','qt4','gui','widgets','icons.rcc'))

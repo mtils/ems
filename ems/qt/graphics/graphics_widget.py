@@ -6,6 +6,7 @@ from ems.qt.graphics.text_tool import TextTool
 from ems.qt.edit_actions import EditActions
 from ems.qt.richtext.char_format_actions import CharFormatActions
 from ems.qt.richtext.block_format_actions import BlockFormatActions
+from ems.qt.print_actions import PrintActions
 from ems.qt.layout.toolbararea import ToolBarArea
 from ems.qt.graphics.graphics_view import GraphicsView
 from ems.qt.graphics.graphics_scene import GraphicsScene
@@ -13,6 +14,7 @@ from ems.qt.tool_widgets.one_of_a_list_slider import OneOfAListSlider
 from ems.qt.graphics.page_item import PageItem
 
 Qt = QtCore.Qt
+pyqtSignal = QtCore.pyqtSignal
 QWidget = QtWidgets.QWidget
 QVBoxLayout = QtWidgets.QVBoxLayout
 QToolBar = QtWidgets.QToolBar
@@ -20,6 +22,8 @@ QSlider = QtWidgets.QSlider
 QAction = QtWidgets.QAction
 
 class GraphicsWidget(QWidget):
+
+    printPreviewRequested = pyqtSignal()
 
     def __init__(self, parent=None, scene=None, tools=None):
         super(GraphicsWidget, self).__init__(parent)
@@ -40,6 +44,7 @@ class GraphicsWidget(QWidget):
         self.toolBars = ToolBarArea(self)
         self.addToolBar = QToolBar()
         self.textToolbar = QToolBar()
+        #self.printToolbar = QToolBar()
         self.layout().addWidget(self.toolBars)
         self.view = GraphicsView()
         self.layout().addWidget(self.view)
@@ -59,6 +64,7 @@ class GraphicsWidget(QWidget):
             if isinstance(tool, TextTool):
                 self.textTool = tool
         self.editActions = EditActions(self)
+        self.printActions = PrintActions(self)
         self.charFormatActions = CharFormatActions(self)
         self.blockFormatActions = BlockFormatActions(self)
 
@@ -69,8 +75,13 @@ class GraphicsWidget(QWidget):
     def _addToolsToToolbars(self):
         self.editActions.addToToolbar(self.addToolBar)
         self.addToolBar.addSeparator()
+        self.printActions.addToToolbar(self.addToolBar)
+        self.toolBars.addToolBar(self.addToolBar)
+        self.addToolBar.addSeparator()
         for action in self.tools.actions:
             self.addToolBar.addAction(action)
+
+        #self.printActions.addToToolbar(self.printToolbar)
         self.charFormatActions.addToToolbar(self.textToolbar, addActions=False)
         self.charFormatActions.addToToolbar(self.textToolbar, addWidgets=False)
         self.blockFormatActions.addToToolbar(self.textToolbar, addWidgets=False)
@@ -104,6 +115,8 @@ class GraphicsWidget(QWidget):
 
         self.charFormatActions.signals.charFormatDiffChanged.connect(self.textTool.mergeFormatOnWordOrSelection)
         self.blockFormatActions.signals.blockFormatModified.connect(self.textTool.setBlockFormatOnCurrentBlock)
+
+        self.printActions.actionPrintPreview.triggered.connect(self.printPreviewRequested)
 
     def _setupPageFormat(self):
         page = PageItem()

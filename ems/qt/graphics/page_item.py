@@ -1,5 +1,6 @@
 
 from ems.qt import QtCore, QtGui, QtWidgets, QtPrintSupport
+from ems.qt.graphics.interfaces import Finalizer
 
 Qt = QtCore.Qt
 QGraphicsObject = QtWidgets.QGraphicsObject
@@ -12,6 +13,19 @@ QPrinter = QtPrintSupport.QPrinter
 QColor = QtGui.QColor
 QPen = QtGui.QPen
 QBrush = QtGui.QBrush
+
+class PageItemHider(Finalizer):
+
+    def toFinalized(self, scene):
+        for item in scene.items():
+            if isinstance(item, PageItem):
+                item.setVisible(False)
+
+
+    def toEditable(self, scene):
+        for item in scene.items():
+            if isinstance(item, PageItem):
+                item.setVisible(True)
 
 class Margins(object):
 

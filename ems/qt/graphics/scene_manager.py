@@ -1,13 +1,16 @@
 
 from ems.typehint import accepts
 from ems.qt.event_hook_proxy import SignalEventHookProxy
-from ems.qt import QtWidgets, QtGui, QtCore
-from ems.qt.graphics.graphics_scene import GraphicsScene
+from ems.qt import QtWidgets, QtGui, QtCore, QtPrintSupport
+from ems.qt.graphics.graphics_scene import GraphicsScene, BackgroundCorrector
 from ems.qt.graphics.graphics_widget import GraphicsWidget
 from ems.qt.graphics.storage.interfaces import SceneStorageManager
 from ems.qt.graphics.tool import GraphicsTool
 from ems.qt.graphics.tool import GraphicsToolDispatcher
 from ems.qt.graphics.text_tool import TextTool
+from ems.qt.graphics.interfaces import Finalizer
+from ems.qt.graphics.page_item import PageItemHider
+
 
 Qt = QtCore.Qt
 QObject = QtCore.QObject
@@ -18,7 +21,9 @@ QVBoxLayout = QtWidgets.QVBoxLayout
 QToolBar = QtWidgets.QToolBar
 QSlider = QtWidgets.QSlider
 QAction = QtWidgets.QAction
-
+QKeySequence = QtGui.QKeySequence
+QPrintPreviewDialog = QtPrintSupport.QPrintPreviewDialog
+QPainter = QtGui.QPainter
 
 class SceneManager(QObject):
 
@@ -34,6 +39,7 @@ class SceneManager(QObject):
         self._importAction = None
         self._exportAction = None
         self._actions = []
+        self._finalizers = [BackgroundCorrector(), PageItemHider()]
         if storageManager:
             self.setStorageManager(storageManager)
 
@@ -54,6 +60,7 @@ class SceneManager(QObject):
             self._widget = GraphicsWidget(scene=self.scene, tools=self.tools)
             for action in self.actions():
                 self._widget.addAction(action)
+            self._widget.printPreviewRequested.connect(self.showPrintPreviewDialog)
         return self._widget
 
     widget = pyqtProperty(GraphicsWidget, getWidget)
@@ -97,7 +104,7 @@ class SceneManager(QObject):
         if self._loadAction:
             return self._loadAction
 
-        self._loadAction = QAction('Load', self.getWidget(), shortcut = Qt.CTRL + Qt.Key_O)
+        self._loadAction = QAction('Load', self.getWidget(), shortcut = QKeySequence.Open)
         self._loadAction.triggered.connect(self.load)
         return self._loadAction
 
@@ -105,7 +112,7 @@ class SceneManager(QObject):
     def saveAction(self):
         if self._saveAction:
             return self._saveAction
-        self._saveAction = QAction('Save', self.getWidget(), shortcut = Qt.CTRL + Qt.Key_S)
+        self._saveAction = QAction('Save', self.getWidget(), shortcut = QKeySequence.Save)
         self._saveAction.triggered.connect(self.save)
         return self._saveAction
 
@@ -124,6 +131,27 @@ class SceneManager(QObject):
         self._exportAction = QAction('Export', self.getWidget())
         self._exportAction.triggered.connect(self.exportScene)
         return self._exportAction
+
+    def printScene(self, printer):
+        painter = QPainter(printer)
+        for finalizer in self._finalizers:
+            finalizer.toFinalized(self.scene)
+        self.scene.render(painter)
+        for finalizer in self._finalizers:
+            finalizer.toEditable(self.scene)
+
+    def showPrintPreviewDialog(self):
+        self.printPrvDlg = QPrintPreviewDialog(self.getWidget())
+        self.printPrvDlg.setWindowTitle(u'Druckvorschau')
+        self.printPrvDlg.paintRequested.connect(self.printScene)
+        self.printPrvDlg.show()
+
+    @accepts(Finalizer)
+    def addFinalizer(self, finalizer):
+        self._finalizers.append(finalizer)
+
+    def hasFinalizer(self, finalizer):
+        return finalizer in self._finalizers
 
     def _createTools(self):
         tools = GraphicsToolDispatcher(self)
