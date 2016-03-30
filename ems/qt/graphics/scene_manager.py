@@ -58,8 +58,7 @@ class SceneManager(QObject):
     def getWidget(self):
         if not self._widget:
             self._widget = GraphicsWidget(scene=self.scene, tools=self.tools)
-            for action in self.actions():
-                self._widget.addAction(action)
+            self._addActionsToWidget(self._widget)
             self._widget.printPreviewRequested.connect(self.showPrintPreviewDialog)
         return self._widget
 
@@ -172,3 +171,7 @@ class SceneManager(QObject):
         self._actions.append(self.saveAction)
         self._actions.append(self.importAction)
         self._actions.append(self.exportAction)
+
+    def _addActionsToWidget(self, widget):
+        for action in self.actions():
+            widget.addAction(action)
