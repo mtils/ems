@@ -101,6 +101,9 @@ class TextItem(QGraphicsTextItem):
         event = QKeyEvent(QEvent.KeyPress, Qt.Key_P, Qt.ControlModifier)
         QApplication.sendEvent(self.scene(), event)
 
+    def pasteText(self, text):
+        self.textCursor().insertText(text)
+
     def _updateSelection(self, selected):
         self.prepareGeometryChange()
 
