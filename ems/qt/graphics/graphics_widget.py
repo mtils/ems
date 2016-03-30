@@ -21,18 +21,22 @@ QAction = QtWidgets.QAction
 
 class GraphicsWidget(QWidget):
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, scene=None, tools=None):
         super(GraphicsWidget, self).__init__(parent)
         self._zoomSteps = (50,75,100,150,200,300,500)
         self._pageSize = (595, 842) # A4 in points
-        self._setUpUi()
-        self._setUpTools()
+        self.textTool = None
+        scene = scene if scene is not None else GraphicsScene()
+        tools = tools if tools is not None else GraphicsToolDispatcher(9)
+        self._setUpUi(scene)
+        self._setUpTools(tools)
         self._addToolsToToolbars()
         self._connectTools()
         self._setupPageFormat()
 
-    def _setUpUi(self):
+    def _setUpUi(self, scene):
         self.setLayout(QVBoxLayout())
+        self.layout().setStretch(0,1)
         self.toolBars = ToolBarArea(self)
         self.addToolBar = QToolBar()
         self.textToolbar = QToolBar()
@@ -42,17 +46,18 @@ class GraphicsWidget(QWidget):
         self._zoomSlider = self._createZoomSlider(self, self._zoomSteps)
         self._zoomSlider.listValueChanged.connect(self.view.setZoom)
         self.layout().addWidget(self._zoomSlider)
-        self.scene = GraphicsScene()
+        self.scene = scene
         self.view.setScene(self.scene)
         self.scene.setSceneRect(0, 0, self._pageSize[0], self._pageSize[1])
 
 
 
-    def _setUpTools(self):
-        self.tools = GraphicsToolDispatcher(self)
+    def _setUpTools(self, tools):
+        self.tools = tools
         self.tools.setScene(self.scene)
-        self.textTool = TextTool()
-        self.tools.addTool(self.textTool)
+        for tool in self.tools.tools():
+            if isinstance(tool, TextTool):
+                self.textTool = tool
         self.editActions = EditActions(self)
         self.charFormatActions = CharFormatActions(self)
         self.blockFormatActions = BlockFormatActions(self)
@@ -83,6 +88,8 @@ class GraphicsWidget(QWidget):
         return zoomSlider
 
     def _connectTools(self):
+        if self.textTool is None:
+            return
         self.textTool.currentCharFormatChanged.connect(self.charFormatActions.signals.updateCharFormatWithoutDiffs)
         self.textTool.currentBlockFormatChanged.connect(self.blockFormatActions.signals.setBlockFormat)
         self.textTool.undoAvailable.connect(self.editActions.actionUndo.setEnabled)

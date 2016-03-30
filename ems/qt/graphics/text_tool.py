@@ -10,7 +10,6 @@ QAction = QtWidgets.QAction
 QTextCharFormat = QtGui.QTextCharFormat
 QTextBlockFormat = QtGui.QTextBlockFormat
 pyqtSignal = QtCore.pyqtSignal
-QResource = QtCore.QResource
 QIcon = QtGui.QIcon
 QSizeF = QtCore.QSizeF
 

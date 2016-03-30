@@ -12,8 +12,12 @@ class SceneStorageManager(object):
         self._tools = None
 
     @abstractmethod
-    def actions(self):
-        return []
+    def load(self, *args):
+        pass
+
+    @abstractmethod
+    def save(self, *args):
+        pass
 
     @abstractmethod
     def setScene(self, scene):
