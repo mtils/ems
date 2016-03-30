@@ -116,7 +116,7 @@ class GraphicsToolDispatcher(GraphicsTool):
     def serialize(self, item):
         return self._findSerializer(item).serialize(item)
 
-    def unserialize(self, itemData):
+    def deserialize(self, itemData):
         return self._findDeserializer(itemData).deserialize(itemData)
 
     def setScene(self, scene):

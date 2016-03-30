@@ -1,15 +1,7 @@
 
-import os, tempfile
 from abc import ABCMeta, abstractmethod
 
 from six import add_metaclass
-
-from ems.qt import QtCore, QtWidgets
-from ems.qt.graphics.tool import GraphicsTool
-
-QObject = QtCore.QObject
-pyqtProperty = QtCore.pyqtProperty
-QGraphicsScene = QtWidgets.QGraphicsScene
 
 @add_metaclass(ABCMeta)
 class SceneStorageManager(object):

@@ -5,6 +5,7 @@ from ems.qt.graphics.tool import GraphicsTool
 from ems.qt.richtext.inline_edit_graphicsitem import TextItem
 
 Qt = QtCore.Qt
+QPointF = QtCore.QPointF
 QAction = QtWidgets.QAction
 QTextCharFormat = QtGui.QTextCharFormat
 QTextBlockFormat = QtGui.QTextBlockFormat
@@ -37,7 +38,7 @@ class TextTool(GraphicsTool):
 
 
     def addItemAt(self, point):
-        textItem = TextItem('Neuer Text', point, self.scene )
+        textItem = TextItem('Neuer Text', point)
         textItem.setFixedBounds(QSizeF(300,100))
         self.scene.clearSelection()
         self.scene.addItem(textItem)
@@ -108,17 +109,30 @@ class TextTool(GraphicsTool):
         return isinstance(item, TextItem)
 
     def canDeserialize(self, itemData):
-        return isinstance(itemData, TextItem)
+        return (itemData['type'] == 'text-item')
 
     def serialize(self, item):
         fixedBounds = item.fixedBounds
         fixedBoundsList = {'width':fixedBounds.width(),
                            'height':fixedBounds.height()}
         return {
-            'position': item.pos(),
+            'type': 'text-item',
+            'position': [item.pos().x(), item.pos().y()],
             'fixedBounds': fixedBoundsList,
             'html': text_type(item.toHtml())
         }
+
+    def deserialize(self, itemData):
+
+        if itemData['type'] != 'text-item':
+            return
+
+        pos = QPointF(itemData['position'][0], itemData['position'][1])
+        textItem = TextItem('', pos)
+        textItem.setHtml(itemData['html'])
+        textItem.setFixedBounds(QSizeF(itemData['fixedBounds']['width'],itemData['fixedBounds']['height']))
+
+        return textItem
 
     def _disconnectUnselectedItems(self):
         for item in self.scene.items():

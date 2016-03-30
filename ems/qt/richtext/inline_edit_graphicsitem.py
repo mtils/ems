@@ -39,8 +39,7 @@ class TextItem(QGraphicsTextItem):
     hasSelectionChanged = pyqtSignal(bool)
 
 
-    def __init__(self, text, position, scene,
-                 font=None, transform=QTransform()):
+    def __init__(self, text, position, font=None, transform=QTransform()):
         font = font if font is not None else QFont("Arial", 12)
         super(TextItem, self).__init__(text)
         self._lastCursorPosition = -1

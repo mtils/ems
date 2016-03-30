@@ -1,10 +1,11 @@
-from pprint import pprint as pp
-from ems.qt.graphics.interfaces import SceneRepository
+
+from ems.qt.graphics.storage.interfaces import SceneSerializer
 from ems.qt.graphics.page_item import PageItem
 
-class JsonFileRepository(SceneRepository):
+class DictSceneSerializer(SceneSerializer):
 
-    def save(self, scene, tools):
+    def serialize(self, scene, tools):
+
         saveData = {
             '@author': 'Michael Tils',
             '@desciption': 'Graphics Scene Contents',
@@ -21,7 +22,14 @@ class JsonFileRepository(SceneRepository):
 
         saveData['@data']['pages'].append({'items':items})
 
-        pp(saveData)
+        return saveData
 
-    def load(self, scene, tools):
-        pass
+    def deserialize(self, sceneData, scene, tools):
+
+        page = PageItem()
+        scene.addItem(page)
+
+        for page in sceneData['@data']['pages']:
+            for item in page['items']:
+                item = tools.deserialize(item)
+                scene.addItem(item)
