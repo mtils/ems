@@ -132,8 +132,8 @@ class SceneManager(QObject):
         self._exportAction.triggered.connect(self.exportScene)
         return self._exportAction
 
-    def printScene(self, printer):
-        painter = QPainter(printer)
+    def printScene(self, printer, painter=None):
+        painter = painter if isinstance(painter, QPainter) else QPainter(printer)
         for finalizer in self._finalizers:
             finalizer.toFinalized(self.scene)
         self.scene.render(painter)
@@ -152,6 +152,11 @@ class SceneManager(QObject):
 
     def hasFinalizer(self, finalizer):
         return finalizer in self._finalizers
+
+    def finalizer(self, cls):
+        for finalizer in self._finalizers:
+            if isinstance(finalizer, cls):
+                return finalizer
 
     def _createTools(self):
         tools = GraphicsToolDispatcher(self)
