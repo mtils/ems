@@ -51,6 +51,7 @@ class SceneManager(QObject):
     def getScene(self):
         if not self._scene:
             self._scene = GraphicsScene()
+            self._scene.deleteRequested.connect(self.deleteIfWanted)
         return self._scene
 
     scene = pyqtProperty(GraphicsScene, getScene)
@@ -144,6 +145,14 @@ class SceneManager(QObject):
         self.printPrvDlg.setWindowTitle(u'Druckvorschau')
         self.printPrvDlg.paintRequested.connect(self.printScene)
         self.printPrvDlg.show()
+
+    def deleteIfWanted(self):
+        items = self.scene.selectedItems()
+        if not len(items):
+            return
+
+        for item in items:
+            self.scene.removeItem(item)
 
     @accepts(Finalizer)
     def addFinalizer(self, finalizer):

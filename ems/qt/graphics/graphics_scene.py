@@ -14,6 +14,8 @@ class GraphicsScene(QGraphicsScene):
 
     focusItemChanged = pyqtSignal()
 
+    deleteRequested = pyqtSignal()
+
     def __init__(self, *args, **kwargs):
         super(GraphicsScene, self).__init__(*args, **kwargs)
         self._currentFocusItem = None
@@ -30,6 +32,15 @@ class GraphicsScene(QGraphicsScene):
         self._currentFocusItem = focusItem
         self.focusItemChanged.emit()
 
+    def keyReleaseEvent(self, keyEvent):
+
+        if keyEvent.key() != Qt.Key_Delete:
+            return super(GraphicsScene, self).keyReleaseEvent(keyEvent)
+
+        if self.focusItem():
+            return super(GraphicsScene, self).keyReleaseEvent(keyEvent)
+
+        self.deleteRequested.emit()
 
 class BackgroundCorrector(Finalizer):
 
