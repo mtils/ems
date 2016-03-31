@@ -8,6 +8,7 @@ from ems.qt.graphics.storage.interfaces import SceneStorageManager
 from ems.qt.graphics.tool import GraphicsTool
 from ems.qt.graphics.tool import GraphicsToolDispatcher
 from ems.qt.graphics.text_tool import TextTool
+from ems.qt.graphics.pixmap_tool import PixmapTool
 from ems.qt.graphics.interfaces import Finalizer
 from ems.qt.graphics.page_item import PageItemHider
 
@@ -181,6 +182,8 @@ class SceneManager(QObject):
         tools.setScene(self.scene)
         textTool = TextTool()
         tools.addTool(textTool)
+        pixmapTool = PixmapTool()
+        tools.addTool(pixmapTool)
         return tools
 
     def _populateActions(self):
