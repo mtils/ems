@@ -4,13 +4,63 @@ from ems.qt import QtWidgets, QtGui, QtCore
 from ems.qt.graphics.graphics_view import GraphicsView
 
 QObject = QtCore.QObject
+QEvent = QtCore.QEvent
 pyqtSignal = QtCore.pyqtSignal
 pyqtProperty = QtCore.pyqtProperty
 QGraphicsScene = QtWidgets.QGraphicsScene
+QAction = QtWidgets.QAction
+QPointF = QtCore.QPointF
+QRectF = QtCore.QRectF
+
+class ToolAction(QAction):
+
+    invokedAtPoint = pyqtSignal(QPointF)
+
+    invokedAtRect = pyqtSignal(QRectF)
+
+    DIRECT = 0
+
+    POINT = 1
+
+    RECT = 2
+
+    def __init__(self, *args, **kwargs):
+        super(ToolAction, self).__init__(*args, **kwargs)
+        self._type = ToolAction.DIRECT
+
+
+    def invoke(self, view):
+        if not self.isCheckable():
+            return
+        if not self.isChecked():
+            return
+        if self.type() == ToolAction.POINT:
+            print 'getPointAnd', view
+            view.getPointAnd(self.invokeAtPoint)
+            return
+        if self.type() == ToolAction.RECT:
+            view.getRectAnd(self.invokeAtRect)
+            return
+
+    def invokeAtPoint(self, point):
+        self.invokedAtPoint.emit(point)
+
+    def invokeAtRect(self, rect):
+        self.invokedAtRect.emit(rect)
+
+    def invokeByType(self, point=None, rect=None):
+        if self._type == ToolAction.DIRECT:
+            return self.invoke()
+        if self._type == ToolAction.POINT:
+            return self.invokeAtPoint(point)
+        if self._type == ToolAction.RECT:
+            return self.invokeAtRect(rect)
+
+    def type(self):
+        return self._type
+
 
 class GraphicsTool(QObject):
-
-    itemAdded = pyqtSignal()
 
     invoked = pyqtSignal()
 
@@ -79,6 +129,15 @@ class GraphicsTool(QObject):
 
     view = pyqtProperty(GraphicsView, getView, setView)
 
+    def mousePressWhenActive(self, event):
+        return False
+
+    def mouseMoveWhenActive(self, event):
+        return False
+
+    def mouseReleaseWhenActive(self, event):
+        return False
+
     def getPointAnd(self, callback, cancelCallback=None, **params):
         self.view.getPointAnd(callback, cancelCallback, **params)
 
@@ -90,12 +149,12 @@ class GraphicsToolDispatcher(GraphicsTool):
     def __init__(self, parent=None):
         super(GraphicsToolDispatcher, self).__init__(parent)
         self._tools = []
-        self.itemAdded.connect(self._deactivateActionsAfterItemAdded)
 
     def addTool(self, tool):
         tool.setScene(self.getScene())
-        tool.itemAdded.connect(self.itemAdded)
         self._tools.append(tool)
+        self._connectToolActions(tool)
+        self._invokedTool = None
 
     def tools(self):
         return self._tools
@@ -179,3 +238,63 @@ class GraphicsToolDispatcher(GraphicsTool):
     def _deactivateActionsAfterItemAdded(self):
         for action in self.actions:
             action.setChecked(False)
+
+    def _connectToolActions(self, tool):
+        for action in tool.actions:
+            if action.isCheckable():
+               action.toggled.connect(self._onToolActionToggled)
+               continue
+            action.triggered.connect(self._onToolActionTriggered)
+
+    def _onToolActionToggled(self, toggled):
+        if not toggled:
+            return self._uninstallMouseFilterIfNoActionChecked()
+        action = self.sender()
+        self._uncheckActionsExcept(action)
+
+        self._invokedTool = self._findToolOfAction(action)
+
+        if not self._invokedTool:
+            return
+
+        #action.invoke(self.view)
+        self._installMouseFilter()
+
+    def _onToolActionTriggered(self):
+        self._uncheckActionsExcept(self.sender())
+
+    def _uncheckActionsExcept(self, exceptAction=None):
+        for action in self.actions:
+            if action.isCheckable() and action is not exceptAction:
+                action.setChecked(False)
+
+    def _installMouseFilter(self):
+        self.scene.installEventFilter(self)
+
+    def _uninstallMouseFilterIfNoActionChecked(self):
+        for action in self.actions:
+            if action.isCheckable() and action.isChecked():
+                return
+        self.scene.removeEventFilter(self)
+        self._invokedTool = None
+
+    def eventFilter(self, view, event):
+
+        if not self._invokedTool:
+            return False
+
+        if event.type() == QEvent.GraphicsSceneMousePress:
+            return self._invokedTool.mousePressWhenActive(event)
+        if event.type() == QEvent.GraphicsSceneMouseMove:
+            return self._invokedTool.mouseMoveWhenActive(event)
+        if event.type() == QEvent.GraphicsSceneMouseRelease:
+            result = self._invokedTool.mouseReleaseWhenActive(event)
+            self._uncheckActionsExcept()
+            return result
+
+        return False
+
+    def _findToolOfAction(self, action):
+        for tool in self.tools():
+            if action in tool.actions:
+                return tool

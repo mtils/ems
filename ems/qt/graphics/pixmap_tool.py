@@ -7,7 +7,7 @@ except ImportError:
 
 from six import text_type, PY3, PY2
 from ems.qt import QtCore, QtGui, QtWidgets
-from ems.qt.graphics.tool import GraphicsTool
+from ems.qt.graphics.tool import GraphicsTool, ToolAction
 from ems.qt.richtext.inline_edit_graphicsitem import TextItem
 from ems.qt.graphics.pixmap_item import PixmapItem
 
@@ -32,8 +32,8 @@ class PixmapTool(GraphicsTool):
         super(PixmapTool, self).__init__(parent)
 
         self.resourcePath = resourcePath
-        self.addPixmapItem = QAction(self.icon('frame_image.png'), "Add Image", self)
-        self.addPixmapItem.setCheckable(True)
+        self.addPixmapItem = ToolAction(self.icon('frame_image.png'), "Add Image", self)
+        self.addPixmapItem.setCheckable(False)
         self.addPixmapItem.triggered.connect(self.requestFileName)
         self._actions.append(self.addPixmapItem)
         self._currentItem = None
@@ -77,7 +77,6 @@ class PixmapTool(GraphicsTool):
         self.scene.clearSelection()
         self.scene.addItem(item)
         item.setSelected(True)
-        self.itemAdded.emit()
         return
 
     def canHandle(self, item):

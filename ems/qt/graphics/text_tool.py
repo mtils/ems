@@ -1,7 +1,7 @@
 
 from six import text_type
 from ems.qt import QtCore, QtGui, QtWidgets
-from ems.qt.graphics.tool import GraphicsTool
+from ems.qt.graphics.tool import GraphicsTool, ToolAction
 from ems.qt.richtext.inline_edit_graphicsitem import TextItem
 
 Qt = QtCore.Qt
@@ -12,6 +12,7 @@ QTextBlockFormat = QtGui.QTextBlockFormat
 pyqtSignal = QtCore.pyqtSignal
 QIcon = QtGui.QIcon
 QSizeF = QtCore.QSizeF
+QRectF = QtCore.QRectF
 
 class TextTool(GraphicsTool):
 
@@ -30,23 +31,23 @@ class TextTool(GraphicsTool):
         super(TextTool, self).__init__(parent)
 
         self.resourcePath = resourcePath
-        self.addTextItem = QAction(self.icon('frame_text.png'), "Add Text Box", self)
+        self.addTextItem = ToolAction(self.icon('frame_text.png'), "Add Text Box", self)
+        self.addTextItem._type = ToolAction.POINT
         self.addTextItem.setCheckable(True)
-        self.addTextItem.triggered.connect(self.requestViewForTextPosition)
+        #self.addTextItem.triggered.connect(self.requestViewForTextPosition)
+        self.addTextItem.invokedAtPoint.connect(self.addItemAt)
         self._actions.append(self.addTextItem)
         self._currentItem = None
+        self._mousePressPos = None
 
-
-    def requestViewForTextPosition(self):
-        self.getPointAnd(self.addItemAt)
-
-    def addItemAt(self, point):
+    def addItemAt(self, point, size=None):
         textItem = TextItem('Neuer Text', point)
-        textItem.setFixedBounds(QSizeF(300,100))
+        size = size if size else QSizeF(300,100)
+        textItem.setFixedBounds(size)
         self.scene.clearSelection()
         self.scene.addItem(textItem)
         textItem.setSelected(True)
-        self.itemAdded.emit()
+
 
     def canHandle(self, item):
         return isinstance(item, TextItem)
@@ -107,6 +108,29 @@ class TextTool(GraphicsTool):
 
     def icon(self, fileName):
         return QIcon(self.imagePath(fileName))
+
+    def mousePressWhenActive(self, event):
+        self._mousePressPos = event.scenePos()
+        return True
+
+    def mouseReleaseWhenActive(self, event):
+        if self._mousePressPos.x() < event.scenePos().x():
+            topLeft = self._mousePressPos
+            bottomRight = event.scenePos()
+        else:
+            topLeft = event.scenePos()
+            bottomRight = self._mousePressPos
+        targetRect = QRectF(topLeft, bottomRight)
+
+        pos = targetRect.topLeft()
+        size = targetRect.size()
+
+        if size.width() < 30.0:
+            size = None
+
+        self.addItemAt(pos, size)
+
+        return True
 
     def canSerialize(self, item):
         return isinstance(item, TextItem)
