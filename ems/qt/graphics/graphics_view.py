@@ -15,11 +15,33 @@ class GraphicsView(QGraphicsView):
 
     def __init__(self, parent=None):
         super(GraphicsView, self).__init__(parent)
+
+        self._lastPressedPoint = None
+        self._lastReleasedPoint = None
+        self._pointCallback = None
+        self._pointCancelCallback = None
+        self._pointCallbackParams = {}
+        self._rectCallback = None
+        self._rectCancelCallback = None
+        self._rectCallbackParams = {}
+
         self.setDragMode(QGraphicsView.RubberBandDrag)
         #self.setRenderHint(QPainter.Antialiasing)
         self.setRenderHint(QPainter.TextAntialiasing)
 
+    def focusOutEvent(self, event):
+        #self.discardCurrentRequests()
+        super(GraphicsView, self).focusOutEvent(event)
+
     def mousePressEvent(self, event):
+
+        self._lastPressedPoint = self.mapToScene(event.pos())
+
+        if not self.hasCurrentPointRequest():
+            return super(GraphicsView, self).mousePressEvent(event)
+
+        return
+
         super(GraphicsView, self).mousePressEvent(event)
 
         clickedItem = self.itemAt(event.pos())
@@ -29,6 +51,77 @@ class GraphicsView(QGraphicsView):
 
         scenePoint = self.mapToScene(event.pos())
         self.emptyAreaClicked.emit(scenePoint)
+
+    def mouseMoveEvent(self, event):
+        super(GraphicsView, self).mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        self._lastReleasedPoint = self.mapToScene(event.pos())
+        if self.hasCurrentPointRequest():
+            self._pointCallback(self.mapToScene(event.pos()), **self._pointCallbackParams)
+            self._pointCallback = None
+            self._pointCallbackParams.clear()
+            return
+
+        super(GraphicsView, self).mouseReleaseEvent(event)
+
+    def getPointAnd(self, pointCallback, cancelCallback=None, **params):
+        if not callable(pointCallback):
+            raise TypeError('pointCallback has to be callable')
+
+        self._pointCallback = pointCallback
+        self._pointCallbackParams = params
+
+        if cancelCallback is None:
+            return
+
+        if not callable(cancelCallback):
+            raise TypeError('cancelCallback has to be callable')
+
+        self._pointCancelCallback = cancelCallback
+
+
+    def getRectAnd(self, rectCallback, cancelCallback=None, **params):
+
+        if not callable(rectCallback):
+            raise TypeError('rectCallback has to be callable')
+
+        self._rectCallback = rectCallback
+        self._rectCallbackParams = params
+
+        if not callable(cancelCallback):
+            raise TypeError('cancelCallback has to be callable')
+
+        self._rectCancelCallback = cancelCallback
+
+    def hasCurrentRequest(self):
+        return self.hasCurrentPointRequest() or self.hasCurrentRectRequest()
+
+    def hasCurrentPointRequest(self):
+        return callable(self._pointCallback)
+
+    def hasCurrentRectRequest(self):
+        return callable(self._rectCallback)
+
+    def discardCurrentPointRequest(self):
+        self._pointCallback = None
+        self._pointCallbackParams.clear()
+        self._pointCancelCallback = None
+
+    def discardCurrentRectRequest(self):
+        self._rectCallback = None
+        self._rectCallbackParams.clear()
+        self._rectCancelCallback = None
+
+    def discardCurrentRequests(self):
+        self.discardCurrentPointRequest()
+        self.discardCurrentRectRequest()
+
+    def lastPressedPoint(self):
+        return self._lastPressedPoint
+
+    def lastReleasedPoint(self):
+        return self._lastReleasedPoint
 
     def setZoom(self, percent):
         transform = QTransform()

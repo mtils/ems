@@ -69,7 +69,6 @@ class GraphicsWidget(QWidget):
         self.blockFormatActions = BlockFormatActions(self)
 
         self.scene.focusItemChanged.connect(self.tools.updateFocusItem)
-        self.view.emptyAreaClicked.connect(self.tools.addItemAt)
 
 
     def _addToolsToToolbars(self):

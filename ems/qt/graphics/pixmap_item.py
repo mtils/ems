@@ -33,6 +33,7 @@ class PixmapItem(QGraphicsPixmapItem):
                       QGraphicsItem.ItemIsMovable)
 
         self._boundsEditor = BoundsEditor(self, self.imageBoundingRect)
+        self._boundsEditor.itemRectPenWidth = 2.0
         self._positionProxy = SignalEventHookProxy(self._boundsEditor.positionChanged)
         self._sizeProxy = SignalEventHookProxy(self._boundsEditor.sizeChanged)
         self._imageScale = 1.0

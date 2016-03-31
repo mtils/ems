@@ -39,8 +39,9 @@ class BoundsEditor(QObject):
         self._margin = 10.0
         self._currentMouseOperation = ''
         self._selectionBoundsColor = QColor(187,187,187)
-        self._itemBoundsColor = QColor(85, 85, 85)
+        self._itemBoundsColor = QColor(128, 179, 255)
         self._selectionHovered = False
+        self.itemRectPenWidth = 1.0
 
     def paintSelection(self, painter, option, widget=None):
 
@@ -51,7 +52,7 @@ class BoundsEditor(QObject):
 
         pen = QPen(Qt.SolidLine)
         pen.setColor(self._itemBoundsColor)
-        pen.setWidthF(1.0)
+        pen.setWidthF(self.itemRectPenWidth)
 
         painter.setPen(pen)
 

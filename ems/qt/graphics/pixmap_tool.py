@@ -34,21 +34,33 @@ class PixmapTool(GraphicsTool):
         self.resourcePath = resourcePath
         self.addPixmapItem = QAction(self.icon('frame_image.png'), "Add Image", self)
         self.addPixmapItem.setCheckable(True)
+        self.addPixmapItem.triggered.connect(self.requestFileName)
         self._actions.append(self.addPixmapItem)
         self._currentItem = None
 
+    def requestFileName(self):
 
-    def addItemAt(self, point):
-
-        fileName = QFileDialog.getOpenFileName(self.scene.views()[0],
-                                               'Open Image File',
-                                               '',
+        fileName = QFileDialog.getOpenFileName(self.view, 'Open Image File', '',
                                                'Image Files (*.jpg *.jpeg *.png)')
         if not fileName:
             return
 
         if isinstance(fileName, tuple):
             fileName = fileName[0]
+
+        targetPoint = self.view.lastReleasedPoint()
+
+        if not targetPoint:
+            targetPoint = QPointF(80.0, 80.0)
+
+        self.addItemAt(targetPoint, fileName)
+
+        #self.getPointAnd(self.addItemAt, fileName=fileName)
+
+    def requestViewForTextPosition(self):
+        self.getPointAnd(self.addItemAt)
+
+    def addItemAt(self, point, fileName):
 
         pixmap = QPixmap(fileName)
 

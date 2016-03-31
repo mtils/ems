@@ -32,9 +32,13 @@ class TextTool(GraphicsTool):
         self.resourcePath = resourcePath
         self.addTextItem = QAction(self.icon('frame_text.png'), "Add Text Box", self)
         self.addTextItem.setCheckable(True)
+        self.addTextItem.triggered.connect(self.requestViewForTextPosition)
         self._actions.append(self.addTextItem)
         self._currentItem = None
 
+
+    def requestViewForTextPosition(self):
+        self.getPointAnd(self.addItemAt)
 
     def addItemAt(self, point):
         textItem = TextItem('Neuer Text', point)

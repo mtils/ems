@@ -1,6 +1,8 @@
 
 from ems.qt import QtWidgets, QtGui, QtCore
 
+from ems.qt.graphics.graphics_view import GraphicsView
+
 QObject = QtCore.QObject
 pyqtSignal = QtCore.pyqtSignal
 pyqtProperty = QtCore.pyqtProperty
@@ -10,10 +12,15 @@ class GraphicsTool(QObject):
 
     itemAdded = pyqtSignal()
 
+    invoked = pyqtSignal()
+
+    cancelled = pyqtSignal()
+
     def __init__(self, parent=None):
         super(GraphicsTool, self).__init__(parent)
         self._actions = []
         self._scene = None
+        self._view = None
 
     def getActions(self):
         return self._actions
@@ -57,6 +64,26 @@ class GraphicsTool(QObject):
         self._scene = scene
 
     scene = pyqtProperty(QGraphicsScene, getScene, setScene)
+
+    def getView(self):
+        if self._view:
+            return self._view
+
+        self._view = self.scene.views()[0]
+        if not self._view:
+            raise LookupError('No view for scene {0} found'.format(self.scene))
+        return self._view
+
+    def setView(self, view):
+        self._view = view
+
+    view = pyqtProperty(GraphicsView, getView, setView)
+
+    def getPointAnd(self, callback, cancelCallback=None, **params):
+        self.view.getPointAnd(callback, cancelCallback, **params)
+
+    def getRectAnd(self, callback, cancelCallback=None, **params):
+        self.view.getRectAnd(callback, cancelCallback, **params)
 
 class GraphicsToolDispatcher(GraphicsTool):
 
