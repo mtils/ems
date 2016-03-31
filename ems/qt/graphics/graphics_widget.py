@@ -84,6 +84,7 @@ class GraphicsWidget(QWidget):
         #self.printActions.addToToolbar(self.printToolbar)
         self.charFormatActions.addToToolbar(self.textToolbar, addActions=False)
         self.charFormatActions.addToToolbar(self.textToolbar, addWidgets=False)
+        self.textToolbar.addSeparator()
         self.blockFormatActions.addToToolbar(self.textToolbar, addWidgets=False)
         self.toolBars.addToolBar(self.addToolBar)
         self.toolBars.addToolBarBreak()

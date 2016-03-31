@@ -27,7 +27,7 @@ class CharFormatActions(QObject):
     documentChanged = pyqtSignal(QTextDocument)
     currentBlockFormatChanged = pyqtSignal(QTextCharFormat)
 
-    def __init__(self, parentWidget, signalProxy=None, resourcePath=':/textedit'):
+    def __init__(self, parentWidget, signalProxy=None, resourcePath=':/text-editor'):
         super(CharFormatActions, self).__init__(parentWidget)
         self.resourcePath = resourcePath
         self.actions = []
@@ -57,7 +57,7 @@ class CharFormatActions(QObject):
     def _addActions(self, parent):
 
         self.actionTextBold = QAction(
-                ThemeIcon('format-text-bold', self._icon('textbold.png')),
+                ThemeIcon('format-text-bold', self._icon('bold.png')),
                 "&Bold", parent, priority=QAction.LowPriority,
                 shortcut=Qt.CTRL + Qt.Key_B,
                 triggered=self.signals.setBold, checkable=True)
@@ -71,7 +71,7 @@ class CharFormatActions(QObject):
 
 
         self.actionTextItalic = QAction(
-                ThemeIcon('format-text-italic', self._icon('textitalic.png')),
+                ThemeIcon('format-text-italic', self._icon('italic.png')),
                 "&Italic", self, priority=QAction.LowPriority,
                 shortcut=Qt.CTRL + Qt.Key_I,
                 triggered=self.signals.setItalic, checkable=True)
@@ -85,7 +85,7 @@ class CharFormatActions(QObject):
 
 
         self.actionTextUnderline = QAction(
-                ThemeIcon('format-text-underline', self._icon('textunder.png')),
+                ThemeIcon('format-text-underline', self._icon('underline.png')),
                 "&Underline", self, priority=QAction.LowPriority,
                 shortcut=Qt.CTRL + Qt.Key_U,
                 triggered=self.signals.setUnderline, checkable=True)

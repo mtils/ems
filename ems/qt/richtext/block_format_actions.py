@@ -29,7 +29,7 @@ class BlockFormatActions(QObject):
     documentChanged = pyqtSignal(QTextDocument)
     currentBlockFormatChanged = pyqtSignal(QTextCharFormat)
 
-    def __init__(self, parentWidget, signalProxy=None, resourcePath=':/textedit'):
+    def __init__(self, parentWidget, signalProxy=None, resourcePath=':/text-editor'):
         super(BlockFormatActions, self).__init__(parentWidget)
         self.resourcePath = resourcePath
         self.actions = []
@@ -58,25 +58,25 @@ class BlockFormatActions(QObject):
     def _addActions(self, parent):
 
         self.actionAlignLeft = QAction(
-                ThemeIcon('format-justify-left', self._icon('textleft.png')),
+                ThemeIcon('format-justify-left', self._icon('align-left.png')),
                 "&Left", parent, triggered=self.signals.setAlignLeft)
 
         self.signals.alignLeftChanged.connect(self.actionAlignLeft.setChecked)
 
         self.actionAlignCenter = QAction(
-                ThemeIcon('format-justify-center',self._icon('textcenter.png')),
+                ThemeIcon('format-justify-center',self._icon('align-center.png')),
                 "C&enter", parent, triggered=self.signals.setAlignCenter)
 
         self.signals.alignCenterChanged.connect(self.actionAlignCenter.setChecked)
 
         self.actionAlignRight = QAction(
-                ThemeIcon('format-justify-right', self._icon('textright.png')),
+                ThemeIcon('format-justify-right', self._icon('align-right.png')),
                 "&Right", parent, triggered=self.signals.setAlignRight)
 
         self.signals.alignRightChanged.connect(self.actionAlignRight.setChecked)
 
         self.actionAlignJustify = QAction(
-                ThemeIcon('format-justify-fill',self._icon('textjustify.png')),
+                ThemeIcon('format-justify-fill',self._icon('align-justify.png')),
                 "&Justify", parent, triggered=self.signals.setAlignJustify)
 
         self.signals.alignJustifyChanged.connect(self.actionAlignJustify.setChecked)

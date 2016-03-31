@@ -10,7 +10,7 @@ QApplication = QtWidgets.QApplication
 
 class PrintActions(QObject):
 
-    def __init__(self, parentWidget, resourcePath=':/textedit'):
+    def __init__(self, parentWidget, resourcePath=':/edit'):
         super(PrintActions, self).__init__(parentWidget)
         self.resourcePath = resourcePath
         self.actions = []
@@ -20,7 +20,7 @@ class PrintActions(QObject):
     def _addActions(self, parent):
 
         self.actionPrintPreview = QAction(
-                ThemeIcon('document-print-preview', self._icon('print-preview.png')),
+                ThemeIcon('document-print-preview', self._icon('print.png')),
                 "PrintPre&view", parent, shortcut=QKeySequence.Print)
 
         self.actions.append(self.actionPrintPreview)
