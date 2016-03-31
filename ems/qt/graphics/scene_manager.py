@@ -99,6 +99,16 @@ class SceneManager(QObject):
 
     storageManager = pyqtProperty(SceneStorageManager, getStorageManager, setStorageManager)
 
+    def getImportStorageManager(self):
+        return self._importStorageManager
+
+    def setImportStorageManager(self, storageManager):
+        self._importStorageManager = storageManager
+        self._importStorageManager.setScene(self.scene)
+        self._importStorageManager.setTools(self.tools)
+
+    importStorageManager = pyqtProperty(SceneStorageManager, getImportStorageManager, setImportStorageManager)
+
     @property
     def loadAction(self):
         if self._loadAction:
