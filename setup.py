@@ -4,12 +4,12 @@ from setuptools import find_packages
 setup(
   name = 'ems',
   packages = find_packages(),
-  version = '0.2.17',
+  version = '0.2.18',
   description = 'Small collection of classes to build model centric applications with python and Qt',
   author = 'Michael Tils',
   author_email = 'mtils@web-utils.de',
   url = 'https://github.com/mtils/ems',
-  download_url = 'https://github.com/mtils/ems/tarball/0.2.17',
+  download_url = 'https://github.com/mtils/ems/tarball/0.2.18',
   keywords = ['qt', 'gui', 'rad','scaffolding'],
   install_requires = [
     # 'dbfpy', not installable via pip
