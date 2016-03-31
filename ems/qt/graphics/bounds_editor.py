@@ -14,6 +14,7 @@ QSizeF = QtCore.QSizeF
 QPointF = QtCore.QPointF
 QPainterPath = QtGui.QPainterPath
 QPen = QtGui.QPen
+QStyle = QtWidgets.QStyle
 
 class BoundsEditor(QObject):
 
@@ -31,17 +32,22 @@ class BoundsEditor(QObject):
 
     ITEM = 'item'
 
-    def __init__(self, parent=None):
+    def __init__(self, item, boundingRectMethod=None, parent=None):
         super(BoundsEditor, self).__init__(parent)
-        #self._item = item
+        self._item = item
+        self._boundingRectMethod = boundingRectMethod if boundingRectMethod is not None else self._item.boundingRect
         self._margin = 10.0
-        self._isMoving = False
         self._currentMouseOperation = ''
-        self._isResizing = False
         self._selectionBoundsColor = QColor(187,187,187)
         self._itemBoundsColor = QColor(85, 85, 85)
+        self._selectionHovered = False
 
-    def paintSelection(self, painter, itemBoundingRect):
+    def paintSelection(self, painter, option, widget=None):
+
+        itemBoundingRect = self._boundingRectMethod()
+
+        if not (option.state & QStyle.State_Selected):
+            return
 
         pen = QPen(Qt.SolidLine)
         pen.setColor(self._itemBoundsColor)
@@ -50,6 +56,12 @@ class BoundsEditor(QObject):
         painter.setPen(pen)
 
         painter.drawRect(itemBoundingRect)
+
+        if not option.state & QStyle.State_MouseOver:
+            return
+
+        if not self._selectionHovered and not self.hasCurrentMouseOperation():
+            return
 
         boundingRect = self.boundingRect(itemBoundingRect)
 
@@ -71,7 +83,8 @@ class BoundsEditor(QObject):
     def shape(self, boundingRect):
         pass
 
-    def belongsToSelection(self, pos, itemBoundingRect):
+    def belongsToSelection(self, pos):
+        itemBoundingRect = self._boundingRectMethod()
         selectionRect = self.boundingRect(itemBoundingRect)
         if not selectionRect.contains(pos):
             return False
@@ -79,15 +92,28 @@ class BoundsEditor(QObject):
             return False
         return True
 
-    def mousePress(self, event, itemBoundingRect):
-        self._isMoving = True
+    def mousePressEvent(self, event):
+
+        if not self.belongsToSelection(event.pos()):
+            return False
+
+        itemBoundingRect = self._boundingRectMethod()
+
         areaType = self.areaType(event.pos(), itemBoundingRect)
         if areaType == self.ITEM:
             self._currentMouseOperation = ''
             return
         self._currentMouseOperation = areaType
 
-    def mouseMove(self, itemPos, event, itemBoundingRect):
+        return True
+
+    def mouseMoveEvent(self, event):
+
+        if not self.hasCurrentMouseOperation():
+            return False
+
+        itemPos = self._item.pos()
+        itemBoundingRect = self._boundingRectMethod()
 
         scenePos = event.scenePos()
         lastScenePos = event.lastScenePos()
@@ -110,10 +136,50 @@ class BoundsEditor(QObject):
             size = QSizeF(itemBoundingRect.width()+relativeX, itemBoundingRect.height()+relativeY)
             self.sizeChanged.emit(size)
 
-    def mouseRelease(self):
+        return True
+
+    def mouseReleaseEvent(self, event):
         self._currentMouseOperation = ''
-        self._isMoving = False
-        self._isResizing = False
+        if not self.belongsToSelection(event.pos()):
+            return False
+
+    def hoverEnterEvent(self, event):
+        if not self.belongsToSelection(event.pos()):
+            self._selectionHovered = False
+            self._item.update()
+            return False
+
+        self._selectionHovered = True
+        cursorType = self.getCursorByPosition(event.pos())
+
+        if cursorType:
+            self._item.setCursor(cursorType)
+
+        self._item.update()
+        return True
+
+    def hoverMoveEvent(self, event):
+
+        if not self.belongsToSelection(event.pos()):
+            self._selectionHovered = False
+            self._item.update()
+            return False
+
+        self._selectionHovered = True
+
+        cursorType = self.getCursorByPosition(event.pos())
+
+        if cursorType:
+            self._item.setCursor(cursorType)
+
+        self._item.update()
+
+        return True
+
+    def hoverLeaveEvent(self, event):
+        self._selectionHovered = False
+        self._item.update()
+        return False
 
     def areaType(self, point, itemBoundingRect):
         selectionRect = self.boundingRect(itemBoundingRect)
@@ -137,7 +203,8 @@ class BoundsEditor(QObject):
     def hasCurrentMouseOperation(self):
         return bool(self._currentMouseOperation)
 
-    def getCursorByPosition(self, pos, itemBoundingRect):
+    def getCursorByPosition(self, pos):
+        itemBoundingRect = self._boundingRectMethod()
         areaType = self.areaType(pos, itemBoundingRect)
         if areaType == BoundsEditor.MOVE:
             return Qt.DragMoveCursor

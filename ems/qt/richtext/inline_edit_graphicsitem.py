@@ -52,7 +52,7 @@ class TextItem(QGraphicsTextItem):
         self.setTransform(transform)
         self.setTextInteractionFlags(Qt.TextEditable | Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
         self.cursorPositionChanged[QTextCursor].connect(self._updateStyle)
-        self._boundsEditor = BoundsEditor()
+        self._boundsEditor = BoundsEditor(self, self.textBoundingRect)
         self._boundsEditor.positionChanged.connect(self.setPos)
         self._boundsEditor.sizeChanged.connect(self.setFixedBounds)
         self._fixedBounds = QSizeF()
@@ -152,46 +152,40 @@ class TextItem(QGraphicsTextItem):
         self.textCursor().setBlockFormat(blockFormat)
 
     def hoverEnterEvent(self, event):
-        if not self._boundsEditor.belongsToSelection(event.pos(), self.textBoundingRect()):
+
+        if not self._boundsEditor.hoverEnterEvent(event):
             self.setCursor(Qt.IBeamCursor)
-            return
-
-        cursorType = self._boundsEditor.getCursorByPosition(event.pos(), self.textBoundingRect())
-
-        if cursorType:
-            self.setCursor(cursorType)
 
     def hoverMoveEvent(self, event):
 
-        if not self._boundsEditor.belongsToSelection(event.pos(), self.textBoundingRect()):
+        if not self._boundsEditor.hoverMoveEvent(event):
             self.setCursor(Qt.IBeamCursor)
             return
 
-        cursorType = self._boundsEditor.getCursorByPosition(event.pos(), self.textBoundingRect())
+    def hoverLeaveEvent(self, event):
+        self._boundsEditor.hoverLeaveEvent(event)
+        super(TextItem, self).hoverLeaveEvent(event)
 
-        if cursorType:
-            self.setCursor(cursorType)
+
+    def mousePressEvent(self, event):
+        if not self._boundsEditor.mousePressEvent(event):
+            return super(TextItem, self).mousePressEvent(event)
+
+
+    def mouseMoveEvent(self, event):
+        if not self._boundsEditor.mouseMoveEvent(event):
+            return super(TextItem, self).mouseMoveEvent(event)
+
 
     def mouseReleaseEvent(self, event):
-        self._boundsEditor.mouseRelease()
-        if not self._boundsEditor.belongsToSelection(event.pos(), self.textBoundingRect()):
+
+        if not self._boundsEditor.mouseReleaseEvent(event):
             super(TextItem, self).mouseReleaseEvent(event)
             self._updateCursorPosition(self.textCursor())
             return
         self.setSelected(True)
+        return
 
-    def mouseMoveEvent(self, event):
-        if not self._boundsEditor.hasCurrentMouseOperation():
-            return super(TextItem, self).mouseMoveEvent(event)
-
-        self._boundsEditor.mouseMove(self.pos(), event, self.textBoundingRect())
-
-    def mousePressEvent(self, event):
-        if not self._boundsEditor.belongsToSelection(event.pos(), self.textBoundingRect()):
-            super(TextItem, self).mousePressEvent(event)
-            return
-        self._boundsEditor.mousePress(event, self.textBoundingRect())
-        super(TextItem, self).mousePressEvent(event)
 
     def keyReleaseEvent(self, event):
         super(TextItem, self).keyReleaseEvent(event)
@@ -216,10 +210,7 @@ class TextItem(QGraphicsTextItem):
 
         option.exposedRect = originalRect
 
-        if not (option.state & QStyle.State_Selected):
-            return
-
-        self._boundsEditor.paintSelection(painter, self.textBoundingRect())
+        self._boundsEditor.paintSelection(painter, option, widget)
 
     def cursorHasSelection(self):
         return self._hasSelection
