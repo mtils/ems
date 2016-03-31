@@ -21,10 +21,14 @@ class SceneStorageManager(AbstractSceneStorageManager):
 
     def load(self, *args):
         uri = self._targetProvider.targetUriForRead()
+        if not uri:
+            return
         return self._storage.load(self._scene, self._tools, uri)
 
     def save(self, *args):
         uri = self._targetProvider.targetUriForWrite()
+        if not uri:
+            return
         return self._storage.save(self._scene, self._tools, uri)
 
     def getScene(self):
