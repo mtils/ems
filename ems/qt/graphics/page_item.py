@@ -105,7 +105,7 @@ class PageItem(QGraphicsObject):
         self._pageRectPenStyle = Qt.SolidLine
         self._marginRectColor = self._pageRectColor
         self._pageColor = QColor(255, 255, 255)
-        self.setMargins(Margins(10.0, 10.0, 10.0, 10.0))
+        self.setMargins(Margins(2.0, 2.0, 2.0, 2.0))
 
     def boundingRect(self):
         return self._pageRect
