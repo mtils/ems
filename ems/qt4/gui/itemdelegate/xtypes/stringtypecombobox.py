@@ -148,6 +148,9 @@ class StringComboboxDelegate(XTypeDelegate):
     def updateEditorByModel(self):
         index = self._connectedModel.index(self._currentRow, self._connectedColumn)
         text = variant_to_pyobject(index.data(Qt.EditRole))
-        self._connectedWidget.lineEdit().setText(QString.fromUtf8(text))
+        try:
+            self._connectedWidget.lineEdit().setText(QString.fromUtf8(text))
+        except RuntimeError: # Happens if the _connectedWidget is destroyed
+            return
 
 
