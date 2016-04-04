@@ -244,6 +244,9 @@ class CharFormatProxy(QObject):
         diff.setForeground(color)
         self._emitDiff(diff)
 
+    def clearFormat(self):
+        self.setCharFormat(QTextCharFormat())
+
     def _emitDiff(self, diff):
         if self._blockDiffEmitting:
             return

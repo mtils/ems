@@ -106,6 +106,13 @@ class CharFormatActions(QObject):
 
         self.actions.append(self.actionTextColor)
 
+        self.actionClearFormat = QAction(ThemeIcon('format-text-clear', self._icon('magic.png')),
+                                         "&Remove Format", self, priority=QAction.LowPriority,
+                                         shortcut=Qt.CTRL + Qt.Key_E,
+                                         triggered=self.signals.clearFormat)
+
+        self.actions.append(self.actionClearFormat)
+
         self.fontCombo = QFontComboBox()
         self.fontCombo.activated[str].connect(self.signals.setFontFamily)
 
