@@ -387,7 +387,7 @@ class SearchModel(QmlTableModel):
         key.replace('__', '.')
 
         if hasattr(currentObj, key):
-            return currentObj.__getattribute__(key)
+            return getattr(currentObj, key)
         elif key.find('.'):
             stack = key.split('.')
             value = self._extractValueRecursive(currentObj, stack)
