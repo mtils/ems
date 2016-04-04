@@ -196,6 +196,23 @@ class CharFormatProxy(QObject):
 
     pointSize = pyqtProperty(float, getPointSize, setPointSize)
 
+
+    def getPixelSize(self):
+        return self._pixelSize
+
+    def setPixelSize(self, pixelSize):
+        if self.getPixelSize() == pixelSize():
+            return
+        self._charFormat.setFontPixelSize(pixelSize)
+        self._pixelSize = pixelSize
+        self.pixelSizeChanged.emit(pixelSize)
+        self.charFormatModified.emit(self._charFormat)
+        diff = QTextCharFormat()
+        diff.setFontPixelSize(pixelSize)
+        self._emitDiff(diff)
+
+    pixelSize = pyqtProperty(int, getPixelSize, setPixelSize)
+
     def anchorHref(self):
         return self._anchorHref
 

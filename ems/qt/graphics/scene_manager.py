@@ -10,11 +10,11 @@ from ems.qt.graphics.tool import GraphicsToolDispatcher
 from ems.qt.graphics.text_tool import TextTool
 from ems.qt.graphics.pixmap_tool import PixmapTool
 from ems.qt.graphics.interfaces import Finalizer
-from ems.qt.graphics.page_item import PageItemHider
-
+from ems.qt.graphics.page_item import PageItemHider, PageItem
 
 Qt = QtCore.Qt
 QObject = QtCore.QObject
+QRectF = QtCore.QRectF
 pyqtProperty = QtCore.pyqtProperty
 pyqtSlot = QtCore.pyqtSlot
 QWidget = QtWidgets.QWidget
@@ -147,7 +147,12 @@ class SceneManager(QObject):
         painter = painter if isinstance(painter, QPainter) else QPainter(printer)
         for finalizer in self._finalizers:
             finalizer.toFinalized(self.scene)
-        self.scene.render(painter)
+        pageItem = self._findPageItem()
+        if pageItem:
+            self.scene.render(painter, QRectF(), pageItem.boundingRect())
+        else:
+            self.scene.render(painter)
+
         for finalizer in self._finalizers:
             finalizer.toEditable(self.scene)
 
@@ -197,3 +202,8 @@ class SceneManager(QObject):
     def _addActionsToWidget(self, widget):
         for action in self.actions():
             widget.addAction(action)
+
+    def _findPageItem(self):
+        for item in self.scene.items():
+            if isinstance(item, PageItem):
+                return item

@@ -59,6 +59,7 @@ class TextItem(QGraphicsTextItem):
         self._hasSelection = False
         self.document().undoAvailable.connect(self.undoAvailable)
         self.document().redoAvailable.connect(self.redoAvailable)
+        self.document().setUseDesignMetrics(True)
 
 
     def getFixedBounds(self):
