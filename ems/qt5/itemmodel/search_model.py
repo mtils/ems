@@ -201,6 +201,7 @@ class SearchModel(QmlTableModel):
         self._needsRefill = False
 
         self.beginResetModel()
+        self._setBusy(True)
         self._objectCache = []
         self._valueCache.clear()
         self._editBuffer.clear()
@@ -210,6 +211,7 @@ class SearchModel(QmlTableModel):
 
         self.endResetModel()
         self.layoutChanged.emit()
+        self._setBusy(False)
         self._setDirty(False)
         self._isInRefill = False
 
