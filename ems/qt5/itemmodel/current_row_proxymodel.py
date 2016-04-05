@@ -166,6 +166,21 @@ class CurrentRowProxyModel(FullProxyModel):
         self.dataChanged.emit(self.index(0, fromIndex.column()),
                               self.index(0, toIndex.column()))
 
+
+    @pyqtSlot(str, 'QVariant', result='QVariant')
+    def findRow(self, key, value):
+
+        sourceModel = self.sourceModel()
+        if not sourceModel:
+            return -1
+
+        for i in range(sourceModel.rowCount()):
+            data = sourceModel.get(i)
+            if data[key] == value:
+                return i
+
+        return -1
+
     def _emitRowChangeSignals(self, currentRow):
 
         if currentRow == -1:
