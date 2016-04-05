@@ -10,10 +10,13 @@ class QmlTableModel(QAbstractTableModel):
 
     countChanged = pyqtSignal(int, arguments=('length'))
 
+    busyStateChanged = pyqtSignal(bool)
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self._roleNames = None
         self.__lastEmittedCount = -1
+        self.__busy = False
         self.layoutChanged.connect(self._emitCount)
         self.modelReset.connect(self._emitCount)
         self.rowsInserted.connect(self._emitCount)
@@ -118,3 +121,14 @@ class QmlTableModel(QAbstractTableModel):
             return [role for role, value in roleNames.items() if value.decode() == name][0]
         except IndexError:
             raise KeyError("cannot find roleOfName {0}".format(name))
+
+    def isBusy(self):
+        return self.__busy
+
+    def _setBusy(self, busy):
+        if self.__busy == busy:
+            return
+        self.__busy = busy
+        self.busyStateChanged.emit(self.__busy)
+
+    busy = pyqtProperty(bool, isBusy, notify=busyStateChanged)
