@@ -148,3 +148,9 @@ function pyObject() {
         return qmlApp.getNativeObject.apply(null, arguments);
     }
 }
+
+function qtObject(binding) {
+    if (qmlApp !== undefined) {
+        return qmlApp.make(binding);
+    }
+}
