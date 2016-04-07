@@ -34,8 +34,7 @@ class QmlApplicationBootstrapper(Bootstrapper):
 
         self.app.booted += self.createHiddenMainWindow
 
-        app['events'].listen('auth.loggedIn', self.showMainWindow)
-        app['events'].listen('auth.loggedOut', self.hideMainWindow)
+        self.hookIntoStartEvents(app)
 
     def createHiddenMainWindow(self, app):
 
@@ -81,3 +80,8 @@ class QmlApplicationBootstrapper(Bootstrapper):
     def mainQmlFileUrl(self):
         return None
         return QUrl.fromLocalFile(os.path.join(self.qmlPath, 'desktop.qml'))
+
+    def hookIntoStartEvents(self, app):
+        print(app.bound('auth'))
+        app['events'].listen('auth.loggedIn', self.showMainWindow)
+        app['events'].listen('auth.loggedOut', self.hideMainWindow)
