@@ -82,6 +82,10 @@ class QmlApplicationBootstrapper(Bootstrapper):
         return QUrl.fromLocalFile(os.path.join(self.qmlPath, 'desktop.qml'))
 
     def hookIntoStartEvents(self, app):
-        print(app.bound('auth'))
-        app['events'].listen('auth.loggedIn', self.showMainWindow)
-        app['events'].listen('auth.loggedOut', self.hideMainWindow)
+
+        if app.bound('auth'):
+            app['events'].listen('auth.loggedIn', self.showMainWindow)
+            app['events'].listen('auth.loggedOut', self.hideMainWindow)
+            return
+
+        app['events'].listen('gui.ready', self.showMainWindow)
