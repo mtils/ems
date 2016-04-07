@@ -112,6 +112,10 @@ class Config(object):
             profileId = self.getDefaultProfile()
         return self.__profileNames[profileId]
 
+
+    def get(self, key):
+        return self.__getitem__(key)
+
     def __getitem__(self,key):
 
         self.__autoloadIfNeeded()
