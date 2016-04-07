@@ -57,5 +57,6 @@ target/
 # KDE files
 .kdev4
 *.kdev4
+*.kate-swp
 **/.directory
 .kateproject*
