@@ -1,7 +1,11 @@
 
 from collections import OrderedDict
 from abc import ABCMeta, abstractmethod
+
+from six import add_metaclass
+
 from ems.event.hook import EventHookProperty
+
 
 AND = 'and'
 OR = 'or'
@@ -18,7 +22,8 @@ def parseWhere(key, operator=None, value=None, boolean=AND):
 
     return (key, '=', operator, boolean)
 
-class Queryable(object, metaclass=ABCMeta):
+@add_metaclass(ABCMeta)
+class Queryable(object):
 
     @abstractmethod
     def where(self, key, operator=None, value=None, boolean=AND):
@@ -152,7 +157,8 @@ class Criteria(Queryable, Sortable):
         self._filter.where(key, operator, value, boolean)
         return self
 
-class Search(Queryable, HoldsKeys, metaclass=ABCMeta):
+@add_metaclass(ABCMeta)
+class Search(Queryable, HoldsKeys):
 
     searching = EventHookProperty()
     '''
