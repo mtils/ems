@@ -183,7 +183,7 @@ class Search(Queryable, HoldsKeys):
 
     def __init__(self, criteria=None):
         self._criteria = criteria if criteria else Criteria()
-        super().__init__()
+        super(Search, self).__init__()
 
     @abstractmethod
     def all(self):
