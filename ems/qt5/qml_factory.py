@@ -1,12 +1,15 @@
 
-from PyQt5.QtCore import QObject, pyqtSlot
+from PyQt5.QtCore import QObject, pyqtSlot, pyqtSignal
 from PyQt5.QtQml import QQmlEngine
 
 from ems.typehint import accepts
 from ems.app import app
 from ems.ioc.container import Container
+from ems.qt5.util import QError
 
 class Factory(QObject):
+
+    error = pyqtSignal(QError)
 
     def __init__(self, engine, scriptEngine):
         super().__init__()
@@ -17,9 +20,13 @@ class Factory(QObject):
     @pyqtSlot("QString", result=QObject)
     @pyqtSlot("QString", QObject, result=QObject)
     def make(self, abstract, parent=None):
-        obj = app(abstract)
-        self._engine.setObjectOwnership(obj, self._engine.CppOwnership)
-        return obj
+        try:
+            obj = app(abstract)
+            self._engine.setObjectOwnership(obj, self._engine.CppOwnership)
+            return obj
+        except Exception as e:
+            self.error.emit(QError(e))
+            return QObject()
 
     @pyqtSlot("QString", result=float)
     @pyqtSlot("QString", "QJSValue", result=float)
@@ -27,16 +34,20 @@ class Factory(QObject):
     @pyqtSlot("QString", "QJSValue", "QJSValue", "QJSValue", result=float)
     def getFloat(self, abstractMethod, arg1=None, arg2=None, arg3=None):
 
-        abstract, method = self._splitAbstractMethod(abstractMethod)
+        try:
+            abstract, method = self._splitAbstractMethod(abstractMethod)
 
-        obj = app(abstract)
-        result = getattr(obj, method)(*self._argsToPython(abstractMethod, *(arg1, arg2, arg3)))
+            obj = app(abstract)
+            result = getattr(obj, method)(*self._argsToPython(abstractMethod, *(arg1, arg2, arg3)))
 
-        if isinstance(result, float):
-            return result
-        if isinstance(result, int):
-            return float(result)
-        return 0.0
+            if isinstance(result, float):
+                return result
+            if isinstance(result, int):
+                return float(result)
+            return 0.0
+        except Exception as e:
+            self.error.emit(QError(e))
+            return 0.0
 
     @pyqtSlot("QString", result=int)
     @pyqtSlot("QString", "QJSValue", result=int)
@@ -44,16 +55,20 @@ class Factory(QObject):
     @pyqtSlot("QString", "QJSValue", "QJSValue", "QJSValue", result=int)
     def getInt(self, abstractMethod, arg1=None, arg2=None, arg3=None):
 
-        abstract, method = self._splitAbstractMethod(abstractMethod)
+        try:
+            abstract, method = self._splitAbstractMethod(abstractMethod)
 
-        obj = app(abstract)
-        result = getattr(obj, method)(*self._argsToPython(abstractMethod,*(arg1, arg2, arg3)))
+            obj = app(abstract)
+            result = getattr(obj, method)(*self._argsToPython(abstractMethod,*(arg1, arg2, arg3)))
 
-        if isinstance(result, float):
-            return int(result)
-        if isinstance(result, int):
-            return result
-        return 0
+            if isinstance(result, float):
+                return int(result)
+            if isinstance(result, int):
+                return result
+            return 0
+        except Exception as e:
+            self.error.emit(QError(e))
+            return 0
 
     @pyqtSlot("QString", result='QString')
     @pyqtSlot("QString", "QJSValue", result='QString')
@@ -61,15 +76,19 @@ class Factory(QObject):
     @pyqtSlot("QString", "QJSValue", "QJSValue", "QJSValue", result='QString')
     def getString(self, abstractMethod, arg1=None, arg2=None, arg3=None):
 
-        abstract, method = self._splitAbstractMethod(abstractMethod)
+        try:
+            abstract, method = self._splitAbstractMethod(abstractMethod)
 
-        obj = app(abstract)
-        result = getattr(obj, method)(*self._argsToPython(abstractMethod,*(arg1, arg2, arg3)))
+            obj = app(abstract)
+            result = getattr(obj, method)(*self._argsToPython(abstractMethod,*(arg1, arg2, arg3)))
 
-        if isinstance(result, str):
-            return result
+            if isinstance(result, str):
+                return result
 
-        return str(result)
+            return str(result)
+        except Exception as e:
+            self.error.emit(QError(e))
+            return ''
 
     @pyqtSlot("QString", result=bool)
     @pyqtSlot("QString", "QJSValue", result=bool)
@@ -77,15 +96,19 @@ class Factory(QObject):
     @pyqtSlot("QString", "QJSValue", "QJSValue", "QJSValue", result=bool)
     def getBool(self, abstractMethod, arg1=None, arg2=None, arg3=None):
 
-        abstract, method = self._splitAbstractMethod(abstractMethod)
+        try:
+            abstract, method = self._splitAbstractMethod(abstractMethod)
 
-        obj = app(abstract)
-        result = getattr(obj, method)(*self._argsToPython(abstractMethod,*(arg1, arg2, arg3)))
+            obj = app(abstract)
+            result = getattr(obj, method)(*self._argsToPython(abstractMethod,*(arg1, arg2, arg3)))
 
-        if isinstance(result, bool):
-            return result
+            if isinstance(result, bool):
+                return result
 
-        return bool(result)
+            return bool(result)
+        except Exception as e:
+            self.error.emit(QError(e))
+            return False
 
     @pyqtSlot("QString", result="QVariantMap")
     @pyqtSlot("QString", "QJSValue", result="QVariantMap")
@@ -93,21 +116,25 @@ class Factory(QObject):
     @pyqtSlot("QString", "QJSValue", "QJSValue", "QJSValue", result="QVariantMap")
     def getDict(self, abstractMethod, arg1=None, arg2=None, arg3=None):
 
-        abstract, method = self._splitAbstractMethod(abstractMethod)
+        try:
+            abstract, method = self._splitAbstractMethod(abstractMethod)
 
-        obj = app(abstract)
-        result = getattr(obj, method)(*self._argsToPython(abstractMethod,*(arg1, arg2, arg3)))
+            obj = app(abstract)
+            result = getattr(obj, method)(*self._argsToPython(abstractMethod,*(arg1, arg2, arg3)))
 
-        if result is None:
-            return None
+            if result is None:
+                return None
 
-        if self._isInstanceOfClass(result):
-            return self._instanceToDict(result)
+            if self._isInstanceOfClass(result):
+                return self._instanceToDict(result)
 
-        for key in result:
-            result[key] = self._toQml(result[key])
+            for key in result:
+                result[key] = self._toQml(result[key])
 
-        return result
+            return result
+        except Exception as e:
+            self.error.emit(QError(e))
+            return {}
 
     @pyqtSlot("QString", result='QVariantList')
     @pyqtSlot("QString", "QJSValue", result='QVariantList')
@@ -115,19 +142,23 @@ class Factory(QObject):
     @pyqtSlot("QString", "QJSValue", "QJSValue", "QJSValue", result='QVariantList')
     def getList(self, abstractMethod, arg1=None, arg2=None, arg3=None):
 
-        abstract, method = self._splitAbstractMethod(abstractMethod)
+        try:
+            abstract, method = self._splitAbstractMethod(abstractMethod)
 
-        obj = app(abstract)
-        result = getattr(obj, method)(*self._argsToPython(abstractMethod,*(arg1, arg2, arg3)))
+            obj = app(abstract)
+            result = getattr(obj, method)(*self._argsToPython(abstractMethod,*(arg1, arg2, arg3)))
 
-        if result is None:
-            return None
+            if result is None:
+                return None
 
-        items = []
-        for item in result:
-            items.append(self._toQml(item))
+            items = []
+            for item in result:
+                items.append(self._toQml(item))
 
-        return items
+            return items
+        except Exception as e:
+            self.error.emit(QError(e))
+            return []
 
     @pyqtSlot("QString", result='QVariant')
     @pyqtSlot("QString", "QJSValue", result='QVariant')
@@ -136,12 +167,16 @@ class Factory(QObject):
     def getNativeObject(self, abstractMethod, arg1=None, arg2=None, arg3=None):
 
         try:
-            abstract, method = self._splitAbstractMethod(abstractMethod)
-        except ValueError:
-            return app(abstractMethod)
+            try:
+                abstract, method = self._splitAbstractMethod(abstractMethod)
+            except ValueError:
+                return app(abstractMethod)
 
-        obj = app(abstract)
-        return getattr(obj, method)(*self._argsToPython(abstractMethod,*(arg1, arg2, arg3)))
+            obj = app(abstract)
+            return getattr(obj, method)(*self._argsToPython(abstractMethod,*(arg1, arg2, arg3)))
+        except Exception as e:
+            self.error.emit(QError(e))
+            return None
 
     def _splitAbstractMethod(self, abstractMethod):
         return abstractMethod.split('.', 1)
