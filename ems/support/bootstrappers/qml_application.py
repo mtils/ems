@@ -39,6 +39,7 @@ class QmlApplicationBootstrapper(Bootstrapper):
     def createHiddenMainWindow(self, app):
 
         self.win = QQuickView()
+        self.win.statusChanged.connect(self._onQQuickViewStatusChanged)
 
         self.win.setResizeMode(QQuickView.SizeRootObjectToView)
         self.addQmlImportPaths(self.win.engine())
@@ -89,3 +90,16 @@ class QmlApplicationBootstrapper(Bootstrapper):
             return
 
         app['events'].listen('gui.ready', self.showMainWindow)
+
+    def _onQQuickViewStatusChanged(self, status):
+        if status != QQuickView.Ready:
+            return
+
+        root = self.win.rootObject()
+        try:
+            root.itemCreated.connect(self._forwardItemsToEvents)
+        except AttributeError:
+            return
+
+    def _forwardItemsToEvents(self, item):
+        self.app['events'].fire('qml.item-created', item)
