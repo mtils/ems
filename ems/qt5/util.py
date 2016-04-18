@@ -1,7 +1,10 @@
 
 import os.path
 
-from PyQt5.QtCore import QObject, pyqtProperty
+from ems.qt import QtCore
+
+QObject = QtCore.QObject
+pyqtProperty = QtCore.pyqtProperty
 
 def qmlImportPath(compiled=False):
     if not compiled:
