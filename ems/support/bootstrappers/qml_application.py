@@ -9,42 +9,29 @@ from PyQt5.QtQml import qmlRegisterType
 from PyQt5.QtQuick import QQuickView
 
 from ems.app import Bootstrapper
+from ems.support.bootstrappers.qapplication import QApplicationBootstrapper
 from ems.qt.qml_dispatcher import QmlDispatcher, QmlFileLoader
 from ems.qt5.qml_dispatcher import ComponentCreator
 from ems.qt5.qml_factory import Factory
-from ems.qt5.util import qmlImportPath
 from ems.qt5.itemmodel.custom_filtermodel import SortFilterProxyModel
 from ems.qt5.itemmodel.sequencecolumn_model import SequenceColumnModel
 from ems.qt5.itemmodel.current_row_proxymodel import CurrentRowProxyModel
 
 
-class QmlApplicationBootstrapper(Bootstrapper):
+class QmlApplicationBootstrapper(QApplicationBootstrapper):
 
-    def __init__(self):
-        self.app = None
-        self._win = None
-        self._features = None
-        self._registry = None
-
-    def bootstrap(self, app):
-
-        self.app = app
-
+    def setupPaths(self):
         self.qmlPath = self.qmlFilePath()
-
-        self.app.booted += self.createHiddenMainWindow
-
-        self.hookIntoStartEvents(app)
 
     def createHiddenMainWindow(self, app):
 
-        self.win = QQuickView()
-        self.win.statusChanged.connect(self._onQQuickViewStatusChanged)
+        self.win = win = QQuickView()
+        win.statusChanged.connect(self._onQQuickViewStatusChanged)
 
-        self.win.setResizeMode(QQuickView.SizeRootObjectToView)
-        self.addQmlImportPaths(self.win.engine())
+        win.setResizeMode(QQuickView.SizeRootObjectToView)
+        self.addQmlImportPaths(win.engine())
 
-        qmlapp = Factory(self.win.engine(), None)
+        qmlapp = Factory(win.engine(), None)
         app.shareInstance('qmlapp', qmlapp)
 
         qmlRegisterSingletonType(Factory, 'org.ems', 1, 0, 'QmlFactory', Factory.new)
@@ -52,44 +39,28 @@ class QmlApplicationBootstrapper(Bootstrapper):
         qmlRegisterType(SequenceColumnModel, 'org.ems', 1, 0, 'SequenceColumnModel')
         qmlRegisterType(CurrentRowProxyModel, 'org.ems', 1, 0, 'CurrentRowModel')
 
-        self.win.engine().rootContext().setContextProperty("qmlApp", qmlapp)
+        win.engine().rootContext().setContextProperty("qmlApp", qmlapp)
 
         qmlFileUrl = self.mainQmlFileUrl()
 
         if qmlFileUrl:
-            self.win.setSource(qmlFileUrl)
+            win.setSource(qmlFileUrl)
         else:
-            self.app('events').listen("qml.apply-url", self.win.setSource)
+            self.app('events').listen("qml.apply-url", win.setSource)
 
-        self.win.resize(1076,700)
-        self.win.hide()
+        win.resize(1076,700)
+        win.hide()
 
-        app['events'].fire('gui.ready')
-
-    def showMainWindow(self, *args):
-        self.win.show()
-
-    def hideMainWindow(self):
-        self.win.hide()
+        return win
 
     def addQmlImportPaths(self, engine):
-        engine.addImportPath(qmlImportPath())
+        engine.addImportPath(self._qmlImportPath())
 
     def qmlFilePath(self):
         return os.path.join(self.app.path,'resources','qml')
 
     def mainQmlFileUrl(self):
         return None
-        return QUrl.fromLocalFile(os.path.join(self.qmlPath, 'desktop.qml'))
-
-    def hookIntoStartEvents(self, app):
-
-        if app.bound('auth'):
-            app['events'].listen('auth.loggedIn', self.showMainWindow)
-            app['events'].listen('auth.loggedOut', self.hideMainWindow)
-            return
-
-        app['events'].listen('gui.ready', self.showMainWindow)
 
     def _onQQuickViewStatusChanged(self, status):
         if status != QQuickView.Ready:
@@ -103,3 +74,11 @@ class QmlApplicationBootstrapper(Bootstrapper):
 
     def _forwardItemsToEvents(self, item):
         self.app['events'].fire('qml.item-created', item)
+
+    def _qmlImportPath(self, compiled=False):
+        if not compiled:
+            return os.path.abspath(
+                os.path.join(
+                    os.path.dirname(__file__),'..','..','qt5','assets','qml'
+                )
+            )
