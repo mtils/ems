@@ -4,7 +4,10 @@ Created on 24.02.2011
 @author: michi
 '''
 from ems.converter import Converter
-from ems.converter.readers.dbase import DBase
+try:
+    from ems.converter.readers.dbase import DBase
+except ImportError:
+    pass
 from ems.converter.readers.dbdump import DBDump
 from ems.converter.readers.excel import Excel
 from ems.converter.readers.csv import CSVReader #@UnresolvedImport
@@ -32,7 +35,10 @@ from ems.converter.plugin import Plugin
 def getPreConfigured(plugins=()):
     converter = Converter()
     converter.addPlugin(Converter.preprocessor,AttributeSet())
-    converter.addPlugin(Converter.reader,DBase())
+    try:
+        converter.addPlugin(Converter.reader,DBase())
+    except ImportError:
+        pass
     converter.addPlugin(converter.reader,DBDump())
     converter.addPlugin(Converter.reader,Excel())
     converter.addPlugin(Converter.reader,CSVReader())
