@@ -1,7 +1,7 @@
 from copy import copy
 
 from PyQt4.QtCore import QModelIndex, Qt, QVariant, pyqtSlot, QString, QObject
-from PyQt4.QtCore import pyqtProperty, QSize
+from PyQt4.QtCore import pyqtProperty, QSize, pyqtSignal
 from PyQt4.QtGui import QPixmap, QIcon
 from PyQt4.QtDeclarative import QDeclarativeImageProvider
 
@@ -39,6 +39,8 @@ class QmlProxyModel(EditableProxyModel):
     RoleOffset = 1024
     InstanceCount = 0
 
+    countChanged = pyqtSignal(int)
+
     def __init__(self, parent=None):
         super(QmlProxyModel, self).__init__(parent)
         self._roleSrcColumns = {}
@@ -47,6 +49,7 @@ class QmlProxyModel(EditableProxyModel):
         self._mapCount = QmlProxyModel.RoleOffset
         self._imageProvider = None
         self._imageUpdateCount = 0
+        self.__lastEmittedCount = -1
         QmlProxyModel.InstanceCount += 1
         self._imageProviderPrefix = 'qmlproxy{0}'.format(QmlProxyModel.InstanceCount)
         self._connectedToSourceModel = False
@@ -123,7 +126,7 @@ class QmlProxyModel(EditableProxyModel):
             return 0
         return self.sourceModel().rowCount()
 
-    @pyqtProperty(int)
+    @pyqtProperty(int, notify=countChanged)
     def count(self):
         return self.rowCount()
 
@@ -158,6 +161,12 @@ class QmlProxyModel(EditableProxyModel):
         src = self.sourceModel()
         src.dataChanged.connect(self._onSourceModelDataChanged)
         src.modelAboutToBeReset.connect(self._onSourceModelReset)
+
+        src.layoutChanged.connect(self._emitCount)
+        src.modelReset.connect(self._emitCount)
+        src.rowsInserted.connect(self._emitCount)
+        src.rowsRemoved.connect(self._emitCount)
+
         self._connectedToSourceModel = True
 
     def _onSourceModelDataChanged(self, topLeft, bottomRight):
@@ -198,6 +207,14 @@ class QmlProxyModel(EditableProxyModel):
     def _updateRoleMappings(self):
         self._roleMappings = self._createRoleMappings()
         self.setRoleNames(self._roleMappings)
+
+
+    def _emitCount(self, *args):
+        count = self.rowCount()
+        if count == self.__lastEmittedCount:
+            return
+        self.countChanged.emit(count)
+        self.__lastEmittedCount = count
 
     def data(self, proxyIndex, role=Qt.DisplayRole):
 
