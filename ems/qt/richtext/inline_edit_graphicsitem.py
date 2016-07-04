@@ -1,6 +1,7 @@
 
 from ems.qt import QtCore, QtGui, QtWidgets
 from ems.qt.graphics.bounds_editor import BoundsEditor
+from ems.qt.graphics.graphics_view import GraphicsView, ViewportWidget
 
 Qt = QtCore.Qt
 pyqtSignal = QtCore.pyqtSignal
@@ -53,6 +54,7 @@ class TextItem(QGraphicsTextItem):
         self.setTextInteractionFlags(Qt.TextEditable | Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
         self.cursorPositionChanged[QTextCursor].connect(self._updateStyle)
         self._boundsEditor = BoundsEditor(self, self.textBoundingRect)
+        self._boundsEditor.hideSelectionBounds()
         self._boundsEditor.positionChanged.connect(self.setPos)
         self._boundsEditor.sizeChanged.connect(self.setFixedBounds)
         self._fixedBounds = QSizeF()
@@ -187,10 +189,17 @@ class TextItem(QGraphicsTextItem):
         self.setSelected(True)
         return
 
-
     def keyReleaseEvent(self, event):
         super(TextItem, self).keyReleaseEvent(event)
         self._updateCursorPosition(self.textCursor())
+
+    def focusInEvent(self, event):
+        super(TextItem, self).focusInEvent(event)
+        self.setSelected(True)
+
+    def focusOutEvent(self, event):
+        super(TextItem, self).focusOutEvent(event)
+        self.setSelected(False)
 
     def currentCharFormat(self):
         return self.textCursor().charFormat()
@@ -200,14 +209,26 @@ class TextItem(QGraphicsTextItem):
 
     def paint(self, painter, option, widget=None):
 
+        viewMode = widget.viewMode if hasattr(widget, 'viewMode') else ViewportWidget.PRINTING
+
         originalRect = option.exposedRect
         smallerRect = self.textBoundingRect()
         option.exposedRect = smallerRect
 
         newOption = QStyleOptionGraphicsItem(option)
-        newOption.state = newOption.state & ~QStyle.State_Selected & ~QStyle.State_HasFocus
 
-        super(TextItem, self).paint(painter, newOption, widget)
+        # Hide cursor and selection / focus stuff when not in edit mode
+        if viewMode != ViewportWidget.EDIT:
+            newOption.state = QStyle.State_None
+            cursor = self.textCursor()
+            originalCursor = QTextCursor(cursor)
+            cursor.clearSelection()
+            self.setTextCursor(cursor)
+            super(TextItem, self).paint(painter, newOption, widget)
+            self.setTextCursor(originalCursor)
+
+        else:
+            super(TextItem, self).paint(painter, newOption, widget)
 
         option.exposedRect = originalRect
 

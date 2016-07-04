@@ -42,6 +42,7 @@ class BoundsEditor(QObject):
         self._itemBoundsColor = QColor(128, 179, 255)
         self._selectionHovered = False
         self.itemRectPenWidth = 1.0
+        self._showSelectionBounds = True
 
     def paintSelection(self, painter, option, widget=None):
 
@@ -50,13 +51,12 @@ class BoundsEditor(QObject):
         if not (option.state & QStyle.State_Selected):
             return
 
-        pen = QPen(Qt.SolidLine)
-        pen.setColor(self._itemBoundsColor)
-        pen.setWidthF(self.itemRectPenWidth)
-
-        painter.setPen(pen)
-
-        painter.drawRect(itemBoundingRect)
+        if self._showSelectionBounds:
+            pen = QPen(Qt.SolidLine)
+            pen.setColor(self._itemBoundsColor)
+            pen.setWidthF(self.itemRectPenWidth)
+            painter.setPen(pen)
+            painter.drawRect(itemBoundingRect)
 
         if not option.state & QStyle.State_MouseOver:
             return
@@ -83,6 +83,12 @@ class BoundsEditor(QObject):
 
     def shape(self, boundingRect):
         pass
+
+    def showSelectionBounds(self, show=True):
+        self._showSelectionBounds = show
+
+    def hideSelectionBounds(self, hide=True):
+        return self.showSelectionBounds(not hide)
 
     def belongsToSelection(self, pos):
         itemBoundingRect = self._boundingRectMethod()

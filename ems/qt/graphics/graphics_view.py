@@ -3,6 +3,7 @@ from ems.qt import QtWidgets, QtGui, QtCore
 from ems.qt.graphics.page_item import PageItem
 
 QAction = QtWidgets.QAction
+QWidget = QtWidgets.QWidget
 pyqtSignal = QtCore.pyqtSignal
 QGraphicsView = QtWidgets.QGraphicsView
 QPainter = QtGui.QPainter
@@ -24,6 +25,7 @@ class GraphicsView(QGraphicsView):
         self._rectCallback = None
         self._rectCancelCallback = None
         self._rectCallbackParams = {}
+        self.setViewport(ViewportWidget())
 
         self.setDragMode(QGraphicsView.RubberBandDrag)
         #self.setRenderHint(QPainter.Antialiasing)
@@ -128,3 +130,14 @@ class GraphicsView(QGraphicsView):
         scale = percent/100.0
         transform.scale(scale, scale)
         self.setTransform(transform)
+
+
+class ViewportWidget(QWidget):
+
+   EDIT = 1
+   PREVIEW = 2
+   PRINTING = 3
+
+   def __init__(self, parent=None):
+       super(ViewportWidget, self).__init__(parent)
+       self.viewMode = self.EDIT
