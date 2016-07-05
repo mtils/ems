@@ -54,7 +54,7 @@ class TextItem(QGraphicsTextItem):
         self.setTextInteractionFlags(Qt.TextEditable | Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
         self.cursorPositionChanged[QTextCursor].connect(self._updateStyle)
         self._boundsEditor = BoundsEditor(self, self.textBoundingRect)
-        self._boundsEditor.hideSelectionBounds()
+        #self._boundsEditor.hideSelectionBounds()
         self._boundsEditor.positionChanged.connect(self.setPos)
         self._boundsEditor.sizeChanged.connect(self.setFixedBounds)
         self._fixedBounds = QSizeF()
@@ -91,7 +91,6 @@ class TextItem(QGraphicsTextItem):
         return self.document().isRedoAvailable()
 
     def copy(self):
-        print("item.copy", self.scene())
         event = QKeyEvent(QEvent.KeyPress, Qt.Key_C, Qt.ControlModifier)
         QApplication.sendEvent(self.scene(), event)
 
@@ -100,7 +99,6 @@ class TextItem(QGraphicsTextItem):
         QApplication.sendEvent(self.scene(), event)
 
     def paste(self):
-        print("item.paste")
         event = QKeyEvent(QEvent.KeyPress, Qt.Key_P, Qt.ControlModifier)
         QApplication.sendEvent(self.scene(), event)
 
@@ -216,6 +214,10 @@ class TextItem(QGraphicsTextItem):
         option.exposedRect = smallerRect
 
         newOption = QStyleOptionGraphicsItem(option)
+        newOption.exposedRect = smallerRect
+
+        # Let the bounds editor paint the selection
+        newOption.state = newOption.state & ~QStyle.State_Selected & ~QStyle.State_HasFocus
 
         # Hide cursor and selection / focus stuff when not in edit mode
         if viewMode != ViewportWidget.EDIT:
@@ -232,7 +234,8 @@ class TextItem(QGraphicsTextItem):
 
         option.exposedRect = originalRect
 
-        self._boundsEditor.paintSelection(painter, option, widget)
+        if viewMode == ViewportWidget.EDIT:
+            self._boundsEditor.paintSelection(painter, option, widget)
 
     def cursorHasSelection(self):
         return self._hasSelection
