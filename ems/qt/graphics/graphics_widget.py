@@ -50,6 +50,7 @@ class GraphicsWidget(QWidget):
         self.layout().addWidget(self.view)
         self._zoomSlider = self._createZoomSlider(self, self._zoomSteps)
         self._zoomSlider.listValueChanged.connect(self.view.setZoom)
+        self.view.zoomChangeRequested.connect(self._zoomSlider.moveHandleRelative)
         self.layout().addWidget(self._zoomSlider)
         self.scene = scene
         self.view.setScene(self.scene)

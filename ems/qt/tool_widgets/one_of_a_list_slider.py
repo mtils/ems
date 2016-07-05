@@ -40,5 +40,11 @@ class OneOfAListSlider(QSlider):
             return
         self.setValue(self._valueList.index(listValue))
 
+    def moveHandleRelative(self, upOrDown):
+        """
+        Moves relative up=1, down=-1
+        """
+        self.setValue(self.value()+upOrDown)
+
     def _updateListValue(self, value):
         self.listValueChanged.emit(self._valueList[value])

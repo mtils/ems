@@ -5,6 +5,7 @@ from ems.qt.graphics.page_item import PageItem
 QAction = QtWidgets.QAction
 QWidget = QtWidgets.QWidget
 pyqtSignal = QtCore.pyqtSignal
+Qt = QtCore.Qt
 QGraphicsView = QtWidgets.QGraphicsView
 QPainter = QtGui.QPainter
 QPointF = QtCore.QPointF
@@ -13,6 +14,9 @@ QTransform = QtGui.QTransform
 class GraphicsView(QGraphicsView):
 
     emptyAreaClicked = pyqtSignal(QPointF)
+
+    # + 1 on zoom in, -1 on zoom out
+    zoomChangeRequested = pyqtSignal(int)
 
     def __init__(self, parent=None):
         super(GraphicsView, self).__init__(parent)
@@ -66,6 +70,14 @@ class GraphicsView(QGraphicsView):
             return
 
         super(GraphicsView, self).mouseReleaseEvent(event)
+
+    def wheelEvent(self, event):
+        if not int(event.modifiers() & Qt.ControlModifier):
+            return super(GraphicsView, self).wheelEvent(event)
+
+        #zoom on ctrl + wheel
+        zoomType = 1 if event.delta() > 0 else -1
+        self.zoomChangeRequested.emit(zoomType)
 
     def getPointAnd(self, pointCallback, cancelCallback=None, **params):
         if not callable(pointCallback):
