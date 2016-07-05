@@ -157,9 +157,12 @@ class SceneManager(QObject):
             finalizer.toEditable(self.scene)
 
     def showPrintPreviewDialog(self):
-        self.printPrvDlg = QPrintPreviewDialog(self.getWidget())
+        margin = 30
+        parent = self.getWidget()
+        self.printPrvDlg = QPrintPreviewDialog(parent)
         self.printPrvDlg.setWindowTitle(u'Druckvorschau')
         self.printPrvDlg.paintRequested.connect(self.printScene)
+        self.printPrvDlg.resize(parent.width()-margin, parent.height()-margin)
         self.printPrvDlg.show()
 
     def deleteIfWanted(self):
