@@ -173,6 +173,9 @@ class StringType(XType):
     def value2String(self, value):
         return value
 
+class ColorType(StringType):
+    pass
+
 class FilesystemPathType(StringType):
     def __init__(self):
         super(FilesystemPathType, self).__init__()
@@ -182,6 +185,9 @@ class FilePathType(FilesystemPathType):
     pass
 
 class DirectoryPathType(FilesystemPathType):
+    pass
+
+class ImagePathType(FilePathType):
     pass
 
 class UnitType(NumberType):
